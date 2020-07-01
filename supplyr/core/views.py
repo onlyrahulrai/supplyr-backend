@@ -5,15 +5,19 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .serializers import UserDetailsSerializer
 
 User = get_user_model()
 
-class UserDetailsViewSet(viewsets.ModelViewSet):
+class UserDetailsView(APIView):
     permission_classes = [IsAuthenticated]
-    queryset = User.objects.all()
-    serializer_class = UserDetailsSerializer
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        serializer = UserDetailsSerializer(user)
+        return Response(serializer.data)
 
 class LoginView(ObtainAuthToken):
     def post(self, request, *args, **kwargs):

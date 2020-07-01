@@ -18,14 +18,15 @@ from django.urls import path, include
 from rest_framework import routers
 # from rest_framework.authtoken.views import obtain_auth_token
 
-from supplyr.core.views import UserDetailsViewSet, LoginView
+from supplyr.core.views import UserDetailsView, LoginView
 
-router = routers.DefaultRouter()
-router.register(r'users', UserViewSet)
+# router = routers.DefaultRouter()
+# router.register(r'users', UserDetailsViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include(router.urls)),
+    # path('', include(router.urls)),
     path('login', LoginView.as_view()),
+    path('user-details/', UserDetailsView.as_view())
     # path('api-auth/', include('rest_framework.urls'))
 ]
