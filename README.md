@@ -54,4 +54,12 @@ python manage.py migrate
 ```
 
 iv. Run server to start the backend.
-You can create a user from django admin panel for testing
+```shell
+python manage.py runserver
+```
+
+v. Create a user using the following command:
+
+```shell
+python manage.py createsuperuser
+```
