@@ -27,6 +27,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # path('', include(router.urls)),
     path('login', LoginView.as_view()),
+    path('dj-rest-auth/', include('dj_rest_auth.urls')),
     path('user-details/', UserDetailsView.as_view())
     # path('api-auth/', include('rest_framework.urls'))
 ]
