@@ -153,10 +153,12 @@ REST_FRAMEWORK = {
 
 # dj-rest-auth configuration start
 REST_USE_JWT = True
-JWT_AUTH_COOKIE = 's-auth'
+# JWT_AUTH_COOKIE = 'sauth'
+# JWT_AUTH_HTTPONLY = True
+# JWT_AUTH_SAMESITE = False
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(seconds=30),
 }
 # dj-rest-auth configuration end
 
@@ -164,3 +166,7 @@ SIMPLE_JWT = {
 CORS_ORIGIN_WHITELIST = [
     #Insert production API url here
 ]
+
+
+# Enable this to allow cross domain cookies
+# CORS_ALLOW_CREDENTIALS = True 
