@@ -158,7 +158,7 @@ REST_USE_JWT = True
 # JWT_AUTH_SAMESITE = False
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(seconds=30),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=2),
 }
 # dj-rest-auth configuration end
 
