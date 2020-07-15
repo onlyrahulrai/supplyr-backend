@@ -38,12 +38,18 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'django_extensions',
+
+    'allauth',
+    'allauth.account',
     'dj_rest_auth',
+    'dj_rest_auth.registration',
+
+    'django_extensions',
 
     'supplyr.core.apps.CoreConfig',
 ]
@@ -91,23 +97,24 @@ DATABASES = {
     }
 }
 
+SITE_ID = 1
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    # },
 ]
 
 AUTH_USER_MODEL = 'core.User'
@@ -152,6 +159,7 @@ REST_FRAMEWORK = {
 }
 
 # dj-rest-auth configuration start
+
 REST_USE_JWT = True
 # JWT_AUTH_COOKIE = 'sauth'
 # JWT_AUTH_HTTPONLY = True
@@ -160,6 +168,14 @@ REST_USE_JWT = True
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=2),
 }
+
+#Change ACCOUNT_EMAIL_VERIFICATION to 'optional' to setup verification mails. (After configuring SMTP)
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+
+
 # dj-rest-auth configuration end
 
 

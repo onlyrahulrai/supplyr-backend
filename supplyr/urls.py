@@ -28,6 +28,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     # path('', include(router.urls)),
     path('login/', CustomLoginView.as_view()),
+    path('register/', include('dj_rest_auth.registration.urls')),
     # path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # path('dj-rest-auth/', include('dj_rest_auth.urls')),
     path('user-details/', UserDetailsView.as_view()),
