@@ -38,6 +38,7 @@ class Entity(models.Model):
     gst_number = models.CharField(max_length=20, blank=True, null=True)
     pan_number = models.CharField(max_length=15, blank=True, null=True)
     tan_number = models.CharField(max_length=15, blank=True, null=True)
+    gst_certificate = models.FileField(upload_to="uploads/gst_certificates", max_length=150, blank=True, null=True)
 
 
     class Meta:

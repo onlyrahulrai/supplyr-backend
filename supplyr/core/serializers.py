@@ -33,5 +33,11 @@ class ProfilingSerializer(serializers.ModelSerializer):
             'is_gst_enrolled',
             'gst_number',
             'pan_number',
-            'tan_number'
+            'tan_number',
+            'gst_certificate',
             ]
+
+class ProfilingDocumentsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Entity
+        fields = ['gst_certificate']
