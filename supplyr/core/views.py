@@ -33,6 +33,15 @@ class CustomLoginView(LoginView):
 class ProfilingView(APIView):
     permission_classes = [IsAuthenticated]
 
+    def get(self, request, *args, **kwargs):
+        #TODO add approved validation
+        print(request.user)
+        existing_profile = Entity.objects.filter(owner=request.user).first()
+        if not existing_profile:
+            return Response("No data for user", status=status.HTTP_404_NOT_FOUND)
+        serializer = ProfilingSerializer(existing_profile)
+        return Response(serializer.data)
+
     def post(self, request, *args, **kwargs):
         if(request.user.status == 'approved'):
             return Response("User Already Approved", status=status.HTTP_400_BAD_REQUEST)
