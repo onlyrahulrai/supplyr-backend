@@ -11,7 +11,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from dj_rest_auth.views import LoginView
 
 from .serializers import UserDetailsSerializer, ProfilingSerializer, ProfilingDocumentsSerializer
-from .models import Entity
+from .models import Profile
 
 User = get_user_model()
 
@@ -37,7 +37,7 @@ class ProfilingView(APIView):
     def get(self, request, *args, **kwargs):
         #TODO add approved validation
         print(request.user)
-        existing_profile = Entity.objects.filter(owner=request.user).first()
+        existing_profile = Profile.objects.filter(owner=request.user).first()
         if not existing_profile:
             return Response("No data for user", status=status.HTTP_404_NOT_FOUND)
         serializer = ProfilingSerializer(existing_profile)
@@ -51,7 +51,7 @@ class ProfilingView(APIView):
         data = request.data.copy()
         data['owner'] = request.user.pk
         
-        existing_profile = Entity.objects.filter(owner=request.user).first()
+        existing_profile = Profile.objects.filter(owner=request.user).first()
         if existing_profile:
             serializer = ProfilingSerializer(existing_profile, data = data)
         else:
@@ -72,11 +72,11 @@ class ProfilingDocumentsUploadView(APIView):
         if(request.user.status == 'approved'):
             return Response("User Already Approved", status=status.HTTP_400_BAD_REQUEST)
         
-        data = request.data
+        data = request.data.copy()
+        data['owner'] = request.user.pk
 
-        existing_profile = Entity.objects.filter(owner=request.user).first()
+        existing_profile = Profile.objects.filter(owner=request.user).first()
         if existing_profile:
-            print("FOUND", data)
             serializer = ProfilingDocumentsSerializer(existing_profile, data = data)
         else:
             serializer = ProfilingDocumentsSerializer(data = data)

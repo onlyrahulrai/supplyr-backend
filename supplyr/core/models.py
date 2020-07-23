@@ -18,7 +18,7 @@ class User(AbstractUser):
         return 'verified'
 
 
-class Entity(models.Model):
+class Profile(models.Model):
     class EntityTypes(models.TextChoices):
         PVTLTD = 'pvtltd', 'Private Limited'
         LLP = 'llp', 'Limited Liablity Partnership'
@@ -31,9 +31,9 @@ class Entity(models.Model):
         WHOLESELLER = 3, 'Wholeseller'
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    business_name = models.CharField(max_length=100)
-    entity_category = models.IntegerField(choices=EntityCategory.choices)
-    entity_type = models.CharField(max_length=15, choices=EntityTypes.choices)
+    business_name = models.CharField(max_length=100, blank=True, null=True)
+    entity_category = models.IntegerField(choices=EntityCategory.choices, blank=True, null=True)
+    entity_type = models.CharField(max_length=15, choices=EntityTypes.choices, blank=True, null=True)
     is_gst_enrolled = models.BooleanField(default=False, blank=True, null=True)
     gst_number = models.CharField(max_length=20, blank=True, null=True)
     pan_number = models.CharField(max_length=15, blank=True, null=True)
