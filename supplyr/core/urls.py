@@ -5,7 +5,7 @@ from rest_framework import routers
 # from rest_framework_simplejwt.views import TokenRefreshView
 # from rest_framework.authtoken.views import obtain_auth_token
 
-from supplyr.core.views import UserDetailsView, CustomLoginView, ProfilingView, ProfilingDocumentsUploadView
+from supplyr.core.views import UserDetailsView, CustomLoginView, ProfilingView, ProfilingDocumentsUploadView, CategoriesView
 
 # router = routers.DefaultRouter()
 # router.register(r'users', UserDetailsViewSet)
@@ -19,4 +19,5 @@ urlpatterns = [
     path('user-details/', UserDetailsView.as_view()),
     path('user-profiling/', ProfilingView.as_view()),
     path('user-profiling-documents/', ProfilingDocumentsUploadView.as_view()),
+    path('categories/', CategoriesView.as_view()),
 ]

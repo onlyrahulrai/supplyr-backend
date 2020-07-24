@@ -15,8 +15,22 @@ class User(AbstractUser):
 
     @property
     def status(self):
-        return 'verified'
+        return 'profiled'
 
+    # @property
+    # def status_int(self):
+    #     return 3
+
+class Category(models.Model):
+    name = models.CharField(max_length=50)
+    serial = models.PositiveSmallIntegerField()
+    is_active = models.BooleanField(default=True)
+
+class SubCategory(models.Model):
+    name = models.CharField(max_length=50)
+    serial = models.PositiveSmallIntegerField(null= True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='sub_categories')
+    is_active = models.BooleanField(default=True)
 
 class Profile(models.Model):
     class EntityTypes(models.TextChoices):
@@ -30,7 +44,7 @@ class Profile(models.Model):
         DISTRIBUTOR = 2, 'Distributer'
         WHOLESELLER = 3, 'Wholeseller'
 
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='profiles')
     business_name = models.CharField(max_length=100, blank=True, null=True)
     entity_category = models.IntegerField(choices=EntityCategory.choices, blank=True, null=True)
     entity_type = models.CharField(max_length=15, choices=EntityTypes.choices, blank=True, null=True)
@@ -39,9 +53,10 @@ class Profile(models.Model):
     pan_number = models.CharField(max_length=15, blank=True, null=True)
     tan_number = models.CharField(max_length=15, blank=True, null=True)
     gst_certificate = models.FileField(upload_to="uploads/gst_certificates", max_length=150, blank=True, null=True)
+    operational_fields = models.ManyToManyField(SubCategory)
 
 
     class Meta:
-        verbose_name_plural = 'Entities'
+        verbose_name_plural = 'Profiles'
 
-    
+

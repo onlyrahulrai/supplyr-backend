@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
-from .models import Profile
+from .models import Profile, Category, SubCategory
 
 User = get_user_model()
 
@@ -71,3 +71,25 @@ class ProfilingDocumentsSerializer(serializers.ModelSerializer):
             'owner',
             'gst_certificate'
             ]
+
+class SubCategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = SubCategory
+        fields = [
+            'id',
+            'name'
+        ]
+
+class CategoriesSerializer(serializers.ModelSerializer):
+    
+    sub_categories = SubCategorySerializer(many=True)
+
+    class Meta:
+        model = Category
+        fields = [
+            'name',
+            'id',
+            'sub_categories'
+        ]
+        depth = 1
