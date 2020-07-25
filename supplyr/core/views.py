@@ -123,3 +123,13 @@ class CategoriesView(APIView):
             'selected_sub_categories': user_selected_sub_categories
         }
         return Response(response_data)
+
+    def post(self, request, *args, **kwargs):
+
+        if(request.user.status == 'approved'):
+            return Response("User Already Approved", status=status.HTTP_400_BAD_REQUEST)
+
+        sub_categories = request.data['sub_categories']
+        profile = request.user.profiles.first()
+        profile.operational_fields.set(sub_categories)
+        return Response(True)

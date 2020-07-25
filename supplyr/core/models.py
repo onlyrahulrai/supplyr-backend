@@ -15,7 +15,14 @@ class User(AbstractUser):
 
     @property
     def status(self):
-        return 'profiled'
+        if self.profiles.filter(is_approved=True).exists():
+            return 'approved'
+        elif self.profiles.exclude(operational_fields = None).exists():
+            return 'categories_selected'
+        elif self.profiles.exists():
+            return 'profiled'
+        else:
+            return 'verified'
 
     # @property
     # def status_int(self):
@@ -54,6 +61,7 @@ class Profile(models.Model):
     tan_number = models.CharField(max_length=15, blank=True, null=True)
     gst_certificate = models.FileField(upload_to="uploads/gst_certificates", max_length=150, blank=True, null=True)
     operational_fields = models.ManyToManyField(SubCategory)
+    is_approved = models.BooleanField(default=False)
 
 
     class Meta:
