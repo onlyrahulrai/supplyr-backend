@@ -20,7 +20,7 @@ class User(AbstractUser):
         elif self.profiles.exclude(operational_fields = None).exists():
             return 'categories_selected'
         elif self.profiles.exists():
-            return 'profiled'
+            return 'form_filled'
         else:
             return 'verified'
 
@@ -60,7 +60,7 @@ class Profile(models.Model):
     pan_number = models.CharField(max_length=15, blank=True, null=True)
     tan_number = models.CharField(max_length=15, blank=True, null=True)
     gst_certificate = models.FileField(upload_to="uploads/gst_certificates", max_length=150, blank=True, null=True)
-    operational_fields = models.ManyToManyField(SubCategory)
+    operational_fields = models.ManyToManyField(SubCategory, blank=True)
     is_approved = models.BooleanField(default=False)
 
 
