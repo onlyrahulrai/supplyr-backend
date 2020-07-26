@@ -109,7 +109,7 @@ class ProfilingDocumentsUploadView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class CategoriesView(APIView):
+class CategoriesView(APIView, UserInfoMixin):
 
     permission_classes = [IsAuthenticated]
 
@@ -135,4 +135,6 @@ class CategoriesView(APIView):
         sub_categories = request.data['sub_categories']
         profile = request.user.profiles.first()
         profile.operational_fields.set(sub_categories)
-        return Response(True)
+        response = self.inject_user_info({'success': True}, request.user)
+
+        return Response(response)

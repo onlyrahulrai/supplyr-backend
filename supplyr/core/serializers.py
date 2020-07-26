@@ -9,17 +9,16 @@ User = get_user_model()
 
 def get_profiling_data(user):
     existing_profile = user.profiles.first()
-    if not existing_profile:
-        return None
-    details_serializer = ProfilingSerializer(existing_profile)
-    entity_details = details_serializer.data
+    entity_details = None
+    user_selected_sub_categories = []
+    if  existing_profile:
+        entity_details = ProfilingSerializer(existing_profile).data
+        user_selected_sub_categories = existing_profile.operational_fields.all().values_list('id', flat=True)
 
     ### Category Information
     categories = Category.objects.filter(is_active=True).exclude(sub_categories = None)
     cat_serializer = CategoriesSerializer(categories, many=True)
     cat_serializer_data = cat_serializer.data
-
-    user_selected_sub_categories = user.profiles.first().operational_fields.all().values_list('id', flat=True)
 
     categories_data = {
             'categories': cat_serializer_data,
