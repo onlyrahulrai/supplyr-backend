@@ -34,6 +34,9 @@ class Category(models.Model):
     serial = models.PositiveSmallIntegerField()
     is_active = models.BooleanField(default=True)
 
+    class Meta:
+        ordering = ['serial']
+
 class SubCategory(models.Model):
     name = models.CharField(max_length=50)
     serial = models.PositiveSmallIntegerField(null= True, blank=True)
