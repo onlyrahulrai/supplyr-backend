@@ -12,6 +12,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from dj_rest_auth.views import LoginView
 
 from .serializers import UserDetailsSerializer, ProfilingSerializer, ProfilingDocumentsSerializer, CategoriesSerializer
+from .permissions import IsUnapproved
 from .models import Profile, Category
 
 User = get_user_model()
@@ -54,15 +55,7 @@ class CustomLoginView(LoginView):
 
 
 class ProfilingView(APIView, UserInfoMixin):
-    permission_classes = [IsAuthenticated]
-
-    # def get(self, request, *args, **kwargs):
-    #     #TODO add approved validation
-    #     existing_profile = Profile.objects.filter(owner=request.user).first()
-    #     if not existing_profile:
-    #         return Response("No data for user", status=status.HTTP_404_NOT_FOUND)
-    #     serializer = ProfilingSerializer(existing_profile)
-    #     return Response(serializer.data)
+    permission_classes = [IsUnapproved]
 
     def post(self, request, *args, **kwargs):
         if(request.user.status == 'approved'):
@@ -87,12 +80,10 @@ class ProfilingView(APIView, UserInfoMixin):
 
 class ProfilingDocumentsUploadView(APIView):
     
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsUnapproved]
     parser_classes = [FormParser, MultiPartParser]
 
     def post(self, request, *args, **kwargs):
-        if(request.user.status == 'approved'):
-            return Response("User Already Approved", status=status.HTTP_400_BAD_REQUEST)
         
         data = request.data.copy()
         data['owner'] = request.user.pk
@@ -111,26 +102,9 @@ class ProfilingDocumentsUploadView(APIView):
 
 class CategoriesView(APIView, UserInfoMixin):
 
-    permission_classes = [IsAuthenticated]
-
-    # def get(self, request, *args, **kwargs):
-
-    #     categories = Category.objects.filter(is_active=True).exclude(sub_categories = None)
-    #     serializer = CategoriesSerializer(categories, many=True)
-    #     serializer_data = serializer.data
-
-    #     user_selected_sub_categories = request.user.profiles.first().operational_fields.all().values_list('id', flat=True)
-        
-    #     response_data = {
-    #         'categories': serializer_data,
-    #         'selected_sub_categories': user_selected_sub_categories
-    #     }
-    #     return Response(response_data)
+    permission_classes = [IsUnapproved]
 
     def post(self, request, *args, **kwargs):
-
-        if(request.user.status == 'approved'):
-            return Response("User Already Approved", status=status.HTTP_400_BAD_REQUEST)
 
         sub_categories = request.data['sub_categories']
         profile = request.user.profiles.first()

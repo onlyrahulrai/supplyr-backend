@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from os.path import splitext
 
 
 class User(AbstractUser):
@@ -39,6 +40,11 @@ class SubCategory(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='sub_categories')
     is_active = models.BooleanField(default=True)
 
+def get_document_upload_path(instance, filename, document_category):
+    file, ext = splitext(filename)
+    new_filename = 'gst' + ext
+    return f"documents/{ instance.id }/{ new_filename }"
+
 class Profile(models.Model):
     class EntityTypes(models.TextChoices):
         PVTLTD = 'pvtltd', 'Private Limited'
@@ -51,6 +57,9 @@ class Profile(models.Model):
         DISTRIBUTOR = 2, 'Distributer'
         WHOLESELLER = 3, 'Wholeseller'
 
+    def get_gst_upload_path(self, filename):
+        return get_document_upload_path(self, filename, 'gst')
+
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='profiles')
     business_name = models.CharField(max_length=100, blank=True, null=True)
     entity_category = models.IntegerField(choices=EntityCategory.choices, blank=True, null=True)
@@ -59,7 +68,7 @@ class Profile(models.Model):
     gst_number = models.CharField(max_length=20, blank=True, null=True)
     pan_number = models.CharField(max_length=15, blank=True, null=True)
     tan_number = models.CharField(max_length=15, blank=True, null=True)
-    gst_certificate = models.FileField(upload_to="uploads/gst_certificates", max_length=150, blank=True, null=True)
+    gst_certificate = models.FileField(upload_to=get_gst_upload_path, max_length=150, blank=True, null=True)
     operational_fields = models.ManyToManyField(SubCategory, blank=True)
     is_approved = models.BooleanField(default=False)
 
