@@ -53,14 +53,15 @@ CORS_ORIGIN_WHITELIST = [
     'http://localhost:3000',
 ]
 
-DATABASE['default'] = {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'supplyr',
-        'USER': 'dbuser'
-        'PASSWORD': 'dbpass'
-    }
+DATABASE['default']['USER'] = 'dbuser'
+DATABASE['default']['PASSWORD'] = 'dbpasss'
 ```
-(replace `dbuser` and `dbpass` with your actual database username and password and create a table named `supplyr` in your database)
+(replace `dbuser` and `dbpass` with your actual database username and password)
+
+iv. Create a database named `supplyr` in your database shell:
+```sql
+CREATE DATABASE supplyr CHARACTER SET utf8mb4;
+```
 
 iv. Run in shell to create tables
 ```shell

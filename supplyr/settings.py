@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'dj_rest_auth.registration',
 
     'django_extensions',
+    'django_mysql',
 
     'supplyr.core.apps.CoreConfig',
 ]
@@ -94,7 +95,11 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'supplyr',
-        'PASSWORD': 'z238@hp'
+        'PASSWORD': 'z238@hp',
+        'OPTIONS': {
+            # Tell MySQLdb to connect with 'utf8mb4' character set
+            'charset': 'utf8mb4',
+        },
     }
 }
 
