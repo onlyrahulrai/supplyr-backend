@@ -27,7 +27,13 @@ pyenv global 3.8.3
 ```
 
 ## 2. Project Setup
-i. Clone Project Repository, Cretae VirtualEnv & Install python dependencies
+
+i. Install OS level dependancies:
+```shell
+sudo apt-get install default-libmysqlclient-dev
+```
+
+ii. Clone Project Repository, Cretae VirtualEnv & Install python dependencies
 ```shell
 cd <YOUR_WORKING_DIRECTORY>
 git clone https://github.com/abutalhadanish/supplyr-backend.git
@@ -37,7 +43,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-ii. Add local settings & run migrations
+iii. Add local settings & run migrations
 
 Add ```supplyr/settings_local.py``` with following contents:
 ```python
@@ -46,19 +52,27 @@ from .settings import *
 CORS_ORIGIN_WHITELIST = [
     'http://localhost:3000',
 ]
-```
 
-iii. Run in shell to create tables
+DATABASE['default'] = {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'supplyr',
+        'USER': 'dbuser'
+        'PASSWORD': 'dbpass'
+    }
+```
+(replace `dbuser` and `dbpass` with your actual database username and password and create a table named `supplyr` in your database)
+
+iv. Run in shell to create tables
 ```shell
 python manage.py migrate
 ```
 
-iv. Run server to start the backend.
+v. Run server to start the backend.
 ```shell
 python manage.py runserver
 ```
 
-v. Create a user using the following command:
+vi. Create a user using the following command:
 
 ```shell
 python manage.py createsuperuser
