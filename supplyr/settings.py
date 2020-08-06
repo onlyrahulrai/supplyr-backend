@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django_mysql',
 
     'supplyr.core.apps.CoreConfig',
+    'supplyr.inventory.apps.InventoryConfig',
 ]
 
 MIDDLEWARE = [
