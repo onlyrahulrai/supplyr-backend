@@ -35,8 +35,8 @@ class Variant(Model):
     option3_value = models.CharField(max_length=50, blank=True, null=True)
 
     quantity = models.PositiveIntegerField(default=0)
-    price = models.DecimalField(default=0, decimal_places=2, max_digits=12)
-    sale_price = models.DecimalField(default=0, decimal_places=2, max_digits=12)
+    price = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
+    sale_price = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

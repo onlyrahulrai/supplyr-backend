@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
@@ -17,5 +17,13 @@ class AddProduct(APIView):
             product = product_serializer.save(owner = profile)
 
 
-
         return Response({"product": product_serializer.data})
+
+class ProductDetails(APIView):
+    permission_classes = [IsApproved]
+
+    def get(self, request, *args, **kwargs):
+        product_id = kwargs.get("id")
+        product = get_object_or_404(Product, id=product_id)
+        product_serializer = ProductDetailsSerializer(product)
+        return Response(product_serializer.data)
