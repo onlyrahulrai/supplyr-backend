@@ -16,6 +16,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
+from django.conf.urls.static import static
+from django.conf import settings
 # from rest_framework_simplejwt.views import TokenRefreshView
 # from rest_framework.authtoken.views import obtain_auth_token
 
@@ -29,4 +31,4 @@ urlpatterns = [
     path('', include('supplyr.core.urls')),
     path('inventory/', include('supplyr.inventory.urls')),
     path('register/', include('dj_rest_auth.registration.urls')),
-]
+]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

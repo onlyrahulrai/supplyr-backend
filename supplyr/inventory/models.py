@@ -42,11 +42,11 @@ class Variant(Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
-# class VariantImage(Model):
-#     variant = models.ForeignKey(Variant, on_delete=models.CASCADE)
-#     image = models.ImageField()
-#     serial = models.PositiveSmallIntegerField()
-#     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
+class ProductImage(Model):
+    variant = models.ForeignKey(Variant, on_delete=models.CASCADE, blank=True, null=True)
+    image = models.ImageField()
+    serial = models.PositiveSmallIntegerField(blank=True, null=True)
+    uploaded_by = models.ForeignKey('core.Profile', on_delete=models.CASCADE)
 
 
 

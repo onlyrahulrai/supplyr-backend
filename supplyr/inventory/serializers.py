@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import Product, Variant
+from .models import Product, Variant, ProductImage
 from supplyr.core.models import Profile
 
 class VariantSerializer(serializers.ModelSerializer):
@@ -94,3 +94,14 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         model = Product
         fields = ['id', 'title', 'description', 'owner', 'variants_data']
         # depth = 1
+
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = [
+            # 'uploaded_by',
+            'image',
+            'id'
+            ]
+        read_only_fields = ['id']
