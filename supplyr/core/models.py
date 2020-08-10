@@ -47,7 +47,7 @@ class SubCategory(models.Model):
 
 def get_document_upload_path(instance, filename, document_category):
     file, ext = splitext(filename)
-    new_filename = 'gst' + ext
+    new_filename = document_category + ext
     return f"documents/{ instance.id }/{ new_filename }"
 
 class Profile(Model):

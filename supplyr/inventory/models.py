@@ -1,3 +1,5 @@
+from datetime import datetime
+import os
 from django.db import models
 from django.contrib.auth import get_user_model
 
@@ -43,10 +45,22 @@ class Variant(Model):
 
 
 class ProductImage(Model):
-    variant = models.ForeignKey(Variant, on_delete=models.CASCADE, blank=True, null=True)
-    image = models.ImageField()
+    def get_image_upload_path(self, filename, thumb=False):
+        file, ext = os.path.splitext(filename)
+        new_filename = 'product_temp_images/' + str(int(datetime.now().timestamp())) + ('_thumb' if thumb else '') + ext
+        #Default temporary upload path. It will be relocated once product in saved
+        return new_filename
+
+    def get_thumb_upload_path(self, filename):
+        return get_image_upload_path(self, filename, True)
+
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=True, null=True, related_name='images')
+    image = models.ImageField(upload_to = get_image_upload_path)
+    thumbnail = models.ImageField(upload_to= get_thumb_upload_path, blank=True, null=True)
     serial = models.PositiveSmallIntegerField(blank=True, null=True)
     uploaded_by = models.ForeignKey('core.Profile', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_temp = models.BooleanField(default=True)
 
 
 

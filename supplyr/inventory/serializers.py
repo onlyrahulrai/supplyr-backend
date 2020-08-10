@@ -1,7 +1,9 @@
+import os
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Product, Variant, ProductImage
 from supplyr.core.models import Profile
+from django.conf import settings
 
 class VariantSerializer(serializers.ModelSerializer):
 
@@ -32,9 +34,15 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
             model = Profile
             fields = ['business_name', 'id']
 
+    class ProductImagesSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = ProductImage
+            fields = ['id', 'image']
+
     # variants = VariantSerializer(many=True)
     variants_data = serializers.SerializerMethodField('get_variants_data')
     owner = ProductOwnerSerializer(read_only=True)
+    images = ProductImagesSerializer(read_only=True, many=True)
 
 
     def get_variants_data(self, instance):
@@ -48,6 +56,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     
     def to_internal_value(self, data):
         internal_value = super().to_internal_value(data)
+        print('internal_value', data)
 
         variants_raw_data = data.get('variants_data')
         is_multi_variant = variants_raw_data.get('multiple')
@@ -72,8 +81,11 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
             'data': variants_field_data
         }
 
+        images = data.get('images')
+
         internal_value.update({
-            'variants_data': variants_final_data
+            'variants_data': variants_final_data,
+            'images': images,
         })
 
         return internal_value
@@ -87,12 +99,31 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         if variants_serializer.is_valid(raise_exception=True):
             variants = variants_serializer.save(product = product)
 
+        if validated_data['images']:
+            for image_id in validated_data['images']:
+                if image := ProductImage.objects.filter(id=image_id).first():
+                    if image.uploaded_by != product.owner or image.product:
+                        continue
+                    initial_path = image.image.path
+                    filename = os.path.split(initial_path)[1]
+                    image.image.name = f'product_images/{product.id}/{filename}'
+                    new_path = settings.MEDIA_ROOT + image.image.name
+                    if not os.path.exists(os.path.dirname(new_path)):
+                        os.makedirs(os.path.dirname(new_path))
+                    os.rename(initial_path, new_path)
+                    image.product = product
+                    image.save()
+
+                    print("NF", new_path)
+
+
         print("Project", product, "variants", product.variants.all())
+        print("VD", validated_data)
         return product
         
     class Meta:
         model = Product
-        fields = ['id', 'title', 'description', 'owner', 'variants_data']
+        fields = ['id', 'title', 'description', 'owner', 'images', 'variants_data']
         # depth = 1
 
 
