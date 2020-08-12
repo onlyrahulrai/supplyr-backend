@@ -35,6 +35,8 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
             fields = ['business_name', 'id']
 
     class ProductImagesSerializer(serializers.ModelSerializer):
+        image = serializers.CharField(source = 'image_md.url')
+        
         class Meta:
             model = ProductImage
             fields = ['id', 'image']
@@ -46,7 +48,6 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
 
     def get_variants_data(self, instance):
-        print(instance.owner.business_name)
         multiple = instance.has_mutiple_variants()
         variants = instance.variants if multiple else instance.variants.first()
         return {
@@ -102,7 +103,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         if validated_data['images']:
             for image_id in validated_data['images']:
                 if image := ProductImage.objects.filter(id=image_id).first():
-                    if image.uploaded_by != product.owner or image.product:
+                    if image.uploaded_by != product.owner or image.product or not image.is_temp:
                         continue
                     initial_path = image.image.path
                     filename = os.path.split(initial_path)[1]
@@ -112,15 +113,16 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
                         os.makedirs(os.path.dirname(new_path))
                     os.rename(initial_path, new_path)
                     image.product = product
+                    image.is_temp = False
                     image.save()
 
-                    print("NF", new_path)
+                    image.generate_sizes()
 
 
         print("Project", product, "variants", product.variants.all())
         print("VD", validated_data)
         return product
-        
+
     class Meta:
         model = Product
         fields = ['id', 'title', 'description', 'owner', 'images', 'variants_data']

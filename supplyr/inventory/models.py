@@ -4,6 +4,9 @@ from django.db import models
 from django.contrib.auth import get_user_model
 
 from django_mysql.models import Model
+from django.core.files.base import ContentFile
+from PIL import Image
+from io import BytesIO
 
 User = get_user_model()
 
@@ -45,23 +48,72 @@ class Variant(Model):
 
 
 class ProductImage(Model):
-    def get_image_upload_path(self, filename, thumb=False):
+
+    image_sizes = [
+        {
+            'field_name': 'image_sm',
+            'size': [200,200],
+            'quality': 60,
+        },
+        {
+            'field_name': 'image_md',
+            'size': [800,800],
+            'quality': 70,
+        },
+    ]
+
+    def get_image_upload_path(self, filename, size = None):
         file, ext = os.path.splitext(filename)
-        new_filename = 'product_temp_images/' + str(int(datetime.now().timestamp())) + ('_thumb' if thumb else '') + ext
-        #Default temporary upload path. It will be relocated once product in saved
+        if self.product:
+            base_directory = os.path.join('product_images', str(self.product.id))
+        else:
+            base_directory = 'product_temp_images'
+        new_filename = os.path.join(base_directory, str(int(datetime.now().timestamp())) + (('_'+ size) if size else '') + ext)
         return new_filename
 
-    def get_thumb_upload_path(self, filename):
-        return get_image_upload_path(self, filename, True)
+    def get_image_sm_upload_path(self, filename):
+        return self.get_image_upload_path(filename, size="sm")
+    def get_image_md_upload_path(self, filename):
+        return self.get_image_upload_path(filename, size="md")
+    
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=True, null=True, related_name='images')
     image = models.ImageField(upload_to = get_image_upload_path)
-    thumbnail = models.ImageField(upload_to= get_thumb_upload_path, blank=True, null=True)
+    image_sm = models.ImageField(upload_to= get_image_sm_upload_path, blank=True, null=True)
+    image_md = models.ImageField(upload_to= get_image_md_upload_path, blank=True, null=True)
     serial = models.PositiveSmallIntegerField(blank=True, null=True)
     uploaded_by = models.ForeignKey('core.Profile', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     is_temp = models.BooleanField(default=True)
 
+    def generate_sizes(self):
+        original_image = Image.open(self.image)
+        ext = os.path.splitext(self.image.path)[1]
+
+        if ext in [".jpg", ".jpeg"]:
+            PIL_TYPE = 'JPEG'
+            FILE_EXTENSION = 'jpg'
+
+        elif ext == ".png":
+            PIL_TYPE = 'PNG'
+            FILE_EXTENSION = 'png'
+
+        if original_image.mode not in ('L', 'RGB'):
+            original_image = original_image.convert('RGB')
+
+        for image in self.image_sizes:
+            if not (field := getattr(self, image['field_name'])):
+                new_image = original_image.copy()
+                new_image.thumbnail(image['size'], Image.ANTIALIAS)
+                fp = BytesIO()
+                new_image.save(fp, PIL_TYPE, quality=image['quality'])
+                cf = ContentFile(fp.getvalue())
+                field.save('only_ext_is_relevant.' + FILE_EXTENSION, content = cf, save = False)
+
+        self.save()
 
 
 
+
+
+from .signals import *

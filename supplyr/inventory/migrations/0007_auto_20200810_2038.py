@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='productimage',
             name='thumbnail',
-            field=models.ImageField(blank=True, null=True, upload_to=supplyr.inventory.models.ProductImage.get_thumb_upload_path),
+            field=models.ImageField(blank=True, null=True, upload_to=supplyr.inventory.models.ProductImage.get_image_sm_upload_path),
         ),
         migrations.AlterField(
             model_name='productimage',
