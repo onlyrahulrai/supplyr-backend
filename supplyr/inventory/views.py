@@ -5,7 +5,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
 
 from supplyr.core.permissions import IsApproved
-from .serializers import ProductDetailsSerializer, ProductImageSerializer
+from .serializers import ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer
 from .models import Product
 
 class AddProduct(APIView):
@@ -44,3 +44,14 @@ class ProductImageUpload(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save(uploaded_by = request.user.profiles.first())
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class ProductListView(APIView):
+    permission_classes = [IsApproved]
+
+    def get(self, request, *args, **kwargs):
+        profile = request.user.profiles.first()
+        products = Product.objects.filter(owner = profile, is_active = True)
+        product_serializer = ProductListSerializer(products, many=True)
+        print (products.count())
+        return Response(product_serializer.data)

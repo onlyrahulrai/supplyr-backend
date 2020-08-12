@@ -25,6 +25,17 @@ class Product(Model):
             return not (variant.option1_name == "default" and variant.option1_value == "default")
         
         return False
+
+    @property
+    def featured_image(self):
+        if image := self.images.first():
+            if image_sm := image.image_sm:
+                return image_sm
+        return None
+
+    @property
+    def default_variant(self):
+        return self.variants.first()
     
 
 class Variant(Model):

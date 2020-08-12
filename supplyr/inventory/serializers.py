@@ -5,6 +5,28 @@ from .models import Product, Variant, ProductImage
 from supplyr.core.models import Profile
 from django.conf import settings
 
+class ProductListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'title', 'featured_image', 'price', 'sale_price']
+
+
+    featured_image = serializers.SerializerMethodField()
+    def get_featured_image(self, instance):
+        if image := instance.featured_image:
+            return image.url
+        return None
+
+    price = serializers.SerializerMethodField()
+    def get_price(self, instance):
+        return instance.default_variant.price
+
+    sale_price = serializers.SerializerMethodField()
+    def get_sale_price(self, instance):
+        return instance.default_variant.sale_price or instance.default_variant.price
+
+        
+
 class VariantSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
@@ -27,6 +49,8 @@ class VariantSerializer(serializers.ModelSerializer):
         model = Variant
         exclude = ['is_active', 'created_at','product']
         # Product has been excluded but it will need to be passed as attribute while creating new variant
+
+
 
 class ProductDetailsSerializer(serializers.ModelSerializer):
     class ProductOwnerSerializer(serializers.ModelSerializer):
