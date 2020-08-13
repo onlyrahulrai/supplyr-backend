@@ -8,7 +8,7 @@ from django.conf import settings
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'featured_image', 'price', 'sale_price']
+        fields = ['id', 'title', 'featured_image', 'price', 'sale_price', 'has_multiple_variants', 'quantity']
 
 
     featured_image = serializers.SerializerMethodField()
@@ -24,6 +24,10 @@ class ProductListSerializer(serializers.ModelSerializer):
     sale_price = serializers.SerializerMethodField()
     def get_sale_price(self, instance):
         return instance.default_variant.sale_price or instance.default_variant.price
+
+    quantity = serializers.SerializerMethodField()
+    def get_quantity(self, instance):
+        return instance.default_variant.quantity or instance.default_variant.quantity
 
         
 
@@ -72,7 +76,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
 
     def get_variants_data(self, instance):
-        multiple = instance.has_mutiple_variants()
+        multiple = instance.has_multiple_variants()
         variants = instance.variants if multiple else instance.variants.first()
         return {
             'multiple': multiple,

@@ -18,7 +18,7 @@ class Product(Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def has_mutiple_variants(self):
+    def has_multiple_variants(self):
         if self.variants.count() > 1:
             return True
         elif variant := self.variants.first():

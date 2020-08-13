@@ -165,7 +165,9 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         # 'rest_framework.authentication.TokenAuthentication',
         'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
-    ]
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'supplyr.core.pagination.CustomPagination',
+    'PAGE_SIZE': 16,
 }
 
 # dj-rest-auth configuration start
