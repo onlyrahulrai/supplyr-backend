@@ -97,8 +97,8 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
             for (fieldIndex, field_data) in enumerate(variants_field_data):
                 for (optionIndex, option) in enumerate(variant_options, start=1):
                     field_data['option'+str(optionIndex)+'_name'] = option
-                    field_data['option'+str(optionIndex)+'_value'] = field_data['option'+str(optionIndex)]
-                    del field_data['option'+str(optionIndex)]
+                    # field_data['option'+str(optionIndex)+'_value'] = field_data['option'+str(optionIndex)]
+                    # del field_data['option'+str(optionIndex)]
                 variants_field_data[fieldIndex] = field_data
         
         else:
