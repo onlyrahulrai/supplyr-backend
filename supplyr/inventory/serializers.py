@@ -49,6 +49,21 @@ class VariantSerializer(serializers.ModelSerializer):
 
         return variant
 
+    def to_internal_value(self, data):
+        internal_value = super().to_internal_value(data)
+        if id := data.get('id'):
+            internal_value['id'] = id
+        return internal_value
+
+    def create(self, validated_data):
+        print ("vdata", validated_data)
+        if id := validated_data.get('id'):
+            if variant := Variant.objects.get(id=id, product=validated_data.get('product')):
+                return self.update(variant, validated_data)
+
+        return super().create(validated_data)
+
+
     class Meta:
         model = Variant
         exclude = ['is_active', 'created_at','product']
@@ -77,7 +92,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     def get_variants_data(self, instance):
         multiple = instance.has_multiple_variants()
-        variants = instance.variants if multiple else instance.variants.first()
+        variants = instance.variants.filter(is_active=True) if multiple else instance.variants.filter(is_active=True).first()
         return {
             'multiple': multiple,
             'data': VariantSerializer(variants, many=multiple).data
@@ -85,7 +100,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     
     def to_internal_value(self, data):
         internal_value = super().to_internal_value(data)
-        print('internal_value', data)
+        # print('internal_value', data)
 
         variants_raw_data = data.get('variants_data')
         is_multi_variant = variants_raw_data.get('multiple')
@@ -149,6 +164,42 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
         print("Project", product, "variants", product.variants.all())
         print("VD", validated_data)
+        return product
+    
+    def update(self, instance, validated_data):
+        product = instance
+        super().update(instance, validated_data)
+        variants_data = validated_data['variants_data']
+        is_multi_variant = variants_data['multiple']
+        print("VD", variants_data['data'])
+        variants_before = set(product.variants.filter(is_active = True).values_list('id', flat=True))  
+        variants_serializer = VariantSerializer(data = variants_data['data'], many=is_multi_variant)
+        if variants_serializer.is_valid(raise_exception=True):
+            variants = variants_serializer.save(product = product)
+            print(f'{variants=}')
+        variants_after = set(map(lambda v: v.id, variants))
+        variants_to_be_removed = variants_before - variants_after
+        Variant.objects.filter(id__in = variants_to_be_removed).update(is_active = False)
+        print(f'{variants_before=}, {variants_after=}, diff={variants_before - variants_after}')
+
+        # if validated_data['images']:
+        #     for image_id in validated_data['images']:
+        #         if image := ProductImage.objects.filter(id=image_id).first():
+        #             if image.uploaded_by != product.owner or image.product or not image.is_temp:
+        #                 continue
+        #             initial_path = image.image.path
+        #             filename = os.path.split(initial_path)[1]
+        #             image.image.name = f'product_images/{product.id}/{filename}'
+        #             new_path = settings.MEDIA_ROOT + image.image.name
+        #             if not os.path.exists(os.path.dirname(new_path)):
+        #                 os.makedirs(os.path.dirname(new_path))
+        #             os.rename(initial_path, new_path)
+        #             image.product = product
+        #             image.is_temp = False
+        #             image.save()
+
+        #             image.generate_sizes()
+
         return product
 
     class Meta:

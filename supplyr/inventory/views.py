@@ -12,10 +12,16 @@ from .models import Product
 class AddProduct(APIView):
     permission_classes = [IsApproved]
     def post(self, request, *args, **kwargs):
-        # product = Product.objects.first()
-        print(request.data)
+        
+        # print(request.data)
         profile = request.user.profiles.first()
-        product_serializer = ProductDetailsSerializer(data = request.data)
+        
+        if product_id := request.data.get('id'):
+            product = get_object_or_404(Product, pk=product_id, owner = profile)
+            product_serializer = ProductDetailsSerializer(product, data = request.data)
+        else:
+            product_serializer = ProductDetailsSerializer(data = request.data)
+
         if product_serializer.is_valid():
             product = product_serializer.save(owner = profile)
 
