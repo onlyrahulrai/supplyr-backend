@@ -19,9 +19,9 @@ class Product(Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def has_multiple_variants(self):
-        if self.variants.count() > 1:
+        if self.variants.filter(is_active=True).count() > 1:
             return True
-        elif variant := self.variants.first():
+        elif variant := self.variants.filter(is_active=True).first():
             return not (variant.option1_name == "default" and variant.option1_value == "default")
         
         return False
@@ -41,18 +41,19 @@ class Product(Model):
 class Variant(Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
 
-    option1_name = models.CharField(max_length=30, blank=True, null=True)
-    option1_value = models.CharField(max_length=50, blank=True, null=True)
+    option1_name = models.CharField(max_length=50, blank=True, null=True)
+    option1_value = models.CharField(max_length=150, blank=True, null=True)
 
-    option2_name = models.CharField(max_length=30, blank=True, null=True)
-    option2_value = models.CharField(max_length=30, blank=True, null=True)
+    option2_name = models.CharField(max_length=50, blank=True, null=True)
+    option2_value = models.CharField(max_length=150, blank=True, null=True)
 
     option3_name = models.CharField(max_length=50, blank=True, null=True)
-    option3_value = models.CharField(max_length=50, blank=True, null=True)
+    option3_value = models.CharField(max_length=150, blank=True, null=True)
 
     quantity = models.PositiveIntegerField(default=0)
     price = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
     sale_price = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
+    featured_image = models.ForeignKey('ProductImage', blank=True, null=True, on_delete=models.SET_NULL, related_name='featured_in_variants')
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -92,10 +93,11 @@ class ProductImage(Model):
     image = models.ImageField(upload_to = get_image_upload_path)
     image_sm = models.ImageField(upload_to= get_image_sm_upload_path, blank=True, null=True)
     image_md = models.ImageField(upload_to= get_image_md_upload_path, blank=True, null=True)
-    serial = models.PositiveSmallIntegerField(blank=True, null=True)
+    order = models.PositiveSmallIntegerField(blank=True, null=True)
     uploaded_by = models.ForeignKey('core.Profile', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     is_temp = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True)
 
     def generate_sizes(self):
         original_image = Image.open(self.image)
@@ -122,6 +124,9 @@ class ProductImage(Model):
                 field.save('only_ext_is_relevant.' + FILE_EXTENSION, content = cf, save = False)
 
         self.save()
+    
+    class Meta:
+        ordering = ['order']
 
 
 

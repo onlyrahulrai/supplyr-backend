@@ -28,12 +28,26 @@ class AddProduct(APIView):
 
         return Response({"product": product_serializer.data})
 
+class DeleteProduct(APIView):
+    permission_classes = [IsApproved]
+
+    def post(self, request, *args, **kwargs):
+        profile = request.user.profiles.first()
+        if product_id := request.data.get('id'):
+            product = get_object_or_404(Product, pk=product_id, owner = profile)
+            product.is_active = False
+            product.save()
+            return Response({
+                "success": True,
+            })
+        return Response({"success": False}, status=400)
+
 class ProductDetails(APIView):
     permission_classes = [IsApproved]
 
     def get(self, request, *args, **kwargs):
         product_id = kwargs.get("id")
-        product = get_object_or_404(Product, id=product_id)
+        product = get_object_or_404(Product, id=product_id, is_active = True)
         product_serializer = ProductDetailsSerializer(product)
         return Response(product_serializer.data)
 

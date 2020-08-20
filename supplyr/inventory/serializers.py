@@ -5,6 +5,7 @@ from .models import Product, Variant, ProductImage
 from supplyr.core.models import Profile
 from django.conf import settings
 
+
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
@@ -56,12 +57,20 @@ class VariantSerializer(serializers.ModelSerializer):
         return internal_value
 
     def create(self, validated_data):
-        print ("vdata", validated_data)
-        if id := validated_data.get('id'):
+        if id := validated_data.get('id'):  #For pre-existing variants, update rather than creating
             if variant := Variant.objects.get(id=id, product=validated_data.get('product')):
                 return self.update(variant, validated_data)
 
         return super().create(validated_data)
+
+    def update(self, variant, validated_data):
+        variant_obj = super().update(variant, validated_data)
+        if 'featured_image' not in validated_data and variant_obj.featured_image:
+            # Featured image was earlier existed in variant, but now removed.
+            variant_obj.featured_image = None
+            variant_obj.save()
+
+        return variant_obj
 
 
     class Meta:
@@ -77,9 +86,8 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
             model = Profile
             fields = ['business_name', 'id']
 
-    class ProductImagesSerializer(serializers.ModelSerializer):
+    class ProductImageReadOnlySerializer(serializers.ModelSerializer):
         image = serializers.CharField(source = 'image_md.url')
-        
         class Meta:
             model = ProductImage
             fields = ['id', 'image']
@@ -87,7 +95,12 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     # variants = VariantSerializer(many=True)
     variants_data = serializers.SerializerMethodField('get_variants_data')
     owner = ProductOwnerSerializer(read_only=True)
-    images = ProductImagesSerializer(read_only=True, many=True)
+    images = serializers.SerializerMethodField(read_only=True)
+
+    def get_images(self, product):
+        qs = product.images.filter(is_active = True)
+        serializer = self.ProductImageReadOnlySerializer(qs, many=True)
+        return serializer.data
 
 
     def get_variants_data(self, instance):
@@ -144,6 +157,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
             variants = variants_serializer.save(product = product)
 
         if validated_data['images']:
+            image_order = 1
             for image_id in validated_data['images']:
                 if image := ProductImage.objects.filter(id=image_id).first():
                     if image.uploaded_by != product.owner or image.product or not image.is_temp:
@@ -157,17 +171,19 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
                     os.rename(initial_path, new_path)
                     image.product = product
                     image.is_temp = False
+                    image.order = image_order
                     image.save()
+                    image_order += 1
 
                     image.generate_sizes()
 
-
-        print("Project", product, "variants", product.variants.all())
-        print("VD", validated_data)
         return product
     
     def update(self, instance, validated_data):
         product = instance
+        images = validated_data['images']
+        del validated_data['images']    #Otherwise saving will break, as there are just image IDs in this field instead of instances
+        images_before = set(instance.images.filter(is_active =True).values_list('id', flat=True))
         super().update(instance, validated_data)
         variants_data = validated_data['variants_data']
         is_multi_variant = variants_data['multiple']
@@ -177,28 +193,42 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         if variants_serializer.is_valid(raise_exception=True):
             variants = variants_serializer.save(product = product)
             print(f'{variants=}')
-        variants_after = set(map(lambda v: v.id, variants))
+        variants_after = set(map(lambda v: v.id, variants)) if is_multi_variant else {variants.id}
         variants_to_be_removed = variants_before - variants_after
         Variant.objects.filter(id__in = variants_to_be_removed).update(is_active = False)
         print(f'{variants_before=}, {variants_after=}, diff={variants_before - variants_after}')
 
-        # if validated_data['images']:
-        #     for image_id in validated_data['images']:
-        #         if image := ProductImage.objects.filter(id=image_id).first():
-        #             if image.uploaded_by != product.owner or image.product or not image.is_temp:
-        #                 continue
-        #             initial_path = image.image.path
-        #             filename = os.path.split(initial_path)[1]
-        #             image.image.name = f'product_images/{product.id}/{filename}'
-        #             new_path = settings.MEDIA_ROOT + image.image.name
-        #             if not os.path.exists(os.path.dirname(new_path)):
-        #                 os.makedirs(os.path.dirname(new_path))
-        #             os.rename(initial_path, new_path)
-        #             image.product = product
-        #             image.is_temp = False
-        #             image.save()
+        if images:
+            image_order = 1
+            for image_id in images:
+                if image := ProductImage.objects.filter(id=image_id).first():
+                    if image.uploaded_by != product.owner or image.product or not image.is_temp:
+                        if image.product == product:
+                            image.order = image_order
+                            image_order += 1
+                            image.save()
+                        continue
+                    initial_path = image.image.path
+                    filename = os.path.split(initial_path)[1]
+                    image.image.name = f'product_images/{product.id}/{filename}'
+                    new_path = settings.MEDIA_ROOT + image.image.name
+                    if not os.path.exists(os.path.dirname(new_path)):
+                        os.makedirs(os.path.dirname(new_path))
+                    os.rename(initial_path, new_path)
+                    image.product = product
+                    image.is_temp = False
+                    image.order = image_order
+                    image.save()
+                    image_order += 1
 
-        #             image.generate_sizes()
+                    image.generate_sizes()
+
+        images_after = set(images)
+        images_to_be_removed = images_before - images_after
+        images_to_be_removed_queryset = ProductImage.objects.filter(id__in=images_to_be_removed)
+        removed_images = images_to_be_removed_queryset.update(is_active =False)
+        for image in images_to_be_removed_queryset:
+            image.featured_in_variants.clear()  # Remove associated featured images
 
         return product
 
