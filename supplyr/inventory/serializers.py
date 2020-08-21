@@ -4,6 +4,7 @@ from rest_framework import serializers
 from .models import Product, Variant, ProductImage
 from supplyr.core.models import Profile
 from django.conf import settings
+from django.db import transaction
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -147,6 +148,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
         return internal_value
 
+    @transaction.atomic
     def create(self, validated_data):
         product = Product.objects.create(title=validated_data['title'], description=validated_data.get('description'), owner=validated_data['owner'])
         variants_data = validated_data['variants_data']
@@ -155,7 +157,6 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         variants_serializer = VariantSerializer(data = variants_data['data'], many=is_multi_variant)
         if variants_serializer.is_valid(raise_exception=True):
             variants = variants_serializer.save(product = product)
-
         if validated_data['images']:
             image_order = 1
             for image_id in validated_data['images']:
@@ -179,6 +180,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
         return product
     
+    @transaction.atomic
     def update(self, instance, validated_data):
         product = instance
         images = validated_data['images']
