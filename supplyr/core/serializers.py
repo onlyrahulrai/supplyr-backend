@@ -3,11 +3,13 @@ from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import JWTSerializer
 from .models import Profile, Category, SubCategory
+from typing import Dict
 
 
 User = get_user_model()
 
-def get_profiling_data(user):
+def _get_profiling_data(user: User) -> Dict:
+
     existing_profile = user.profiles.first()
     entity_details = None
     user_selected_sub_categories = []
@@ -32,18 +34,30 @@ def get_profiling_data(user):
     
     return profiling_data
 
-
 class UserDetailsSerializer(serializers.ModelSerializer):
-    profiling_data = serializers.SerializerMethodField()
 
+    profiling_data = serializers.SerializerMethodField()
     def get_profiling_data(self, user):
-        if user.status != 'approved':
-            return get_profiling_data(user) 
+        """
+        Profiling data for people who are still filling the profiling form
+        """
+        if not user.is_approved:
+            return _get_profiling_data(user) 
+        return None
+    
+    profile = serializers.SerializerMethodField()
+    def get_profile(self, user):
+        """
+        Profile details for people who are approved
+        """
+        if user.is_approved:
+            profile = user.profiles.first()
+            return ShortEntityDetailsSerializer(profile).data
         return None
 
     class Meta:
         model = User
-        fields = ['name', 'username', 'is_staff', 'status', 'profiling_data']
+        fields = ['name', 'username', 'is_staff', 'status', 'profiling_data', 'profile']
 
 
 class CustomRegisterSerializer(RegisterSerializer):
@@ -63,6 +77,20 @@ class CustomJWTSerializer(JWTSerializer):
         del ret['user']
         return ret
 
+class ShortEntityDetailsSerializer(serializers.ModelSerializer):
+    sub_categories = serializers.SerializerMethodField()
+    def get_sub_categories(self, profile):
+        sub_categories = profile.operational_fields.all()
+        sub_categories_serializer = SubCategorySerializer2(sub_categories, many=True)
+        return sub_categories_serializer.data
+
+    class Meta:
+        model = Profile
+        fields = [
+            'business_name',
+            'id',
+            'sub_categories',
+            ]
 
 class ProfilingSerializer(serializers.ModelSerializer):
 
@@ -121,6 +149,17 @@ class SubCategorySerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name'
+        ]
+
+class SubCategorySerializer2(serializers.ModelSerializer):
+    category = serializers.CharField(source='category.name')
+    
+    class Meta:
+        model = SubCategory
+        fields = [
+            'id',
+            'name',
+            'category'
         ]
 
 class CategoriesSerializer(serializers.ModelSerializer):

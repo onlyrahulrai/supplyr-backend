@@ -1,19 +1,21 @@
-from datetime import datetime
 import os
-from django.db import models
-from django.contrib.auth import get_user_model
-
-from django_mysql.models import Model
-from django.core.files.base import ContentFile
-from PIL import Image
+from datetime import datetime
 from io import BytesIO
 
+from django.contrib.auth import get_user_model
+from django.core.files.base import ContentFile
+from django.db import models
+from django_mysql.models import Model
+from PIL import Image
+
 User = get_user_model()
+
 
 class Product(Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey('core.Profile', related_name='products', on_delete=models.CASCADE)
+    sub_categories = models.ManyToManyField('core.SubCategory', related_name='products')
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -127,9 +129,6 @@ class ProductImage(Model):
     
     class Meta:
         ordering = ['order']
-
-
-
 
 
 from .signals import *

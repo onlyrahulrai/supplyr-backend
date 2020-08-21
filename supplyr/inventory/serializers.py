@@ -5,6 +5,7 @@ from .models import Product, Variant, ProductImage
 from supplyr.core.models import Profile
 from django.conf import settings
 from django.db import transaction
+from supplyr.core.serializers import SubCategorySerializer2
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -97,6 +98,11 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     variants_data = serializers.SerializerMethodField('get_variants_data')
     owner = ProductOwnerSerializer(read_only=True)
     images = serializers.SerializerMethodField(read_only=True)
+    sub_categories = serializers.SerializerMethodField()
+
+    def get_sub_categories(self, product):
+        sub_categories = product.sub_categories.all()
+        return SubCategorySerializer2(sub_categories, many=True).data
 
     def get_images(self, product):
         qs = product.images.filter(is_active = True)
@@ -140,10 +146,12 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         }
 
         images = data.get('images')
+        sub_categories = data.get('sub_categories')
 
         internal_value.update({
             'variants_data': variants_final_data,
             'images': images,
+            'sub_categories': sub_categories,   #SerializerMethodField is readOnly. So need to include it here manually to save it
         })
 
         return internal_value
@@ -236,7 +244,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'title', 'description', 'owner', 'images', 'variants_data']
+        fields = ['id', 'title', 'description', 'owner', 'images', 'variants_data', 'sub_categories']
         # depth = 1
 
 

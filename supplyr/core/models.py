@@ -27,6 +27,10 @@ class User(AbstractUser):
         else:
             return 'verified'
 
+    @property
+    def is_approved(self):
+        return self.status == 'approved'
+
     # @property
     # def status_int(self):
     #     return 3
