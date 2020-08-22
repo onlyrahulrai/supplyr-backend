@@ -174,3 +174,24 @@ class CategoriesSerializer(serializers.ModelSerializer):
             'sub_categories'
         ]
         depth = 1
+
+class CategoriesSerializer2(serializers.ModelSerializer):
+    
+    sub_categories = SubCategorySerializer(many=True)
+
+    class Meta:
+        model = Category
+        fields = [
+            'name',
+            'id',
+            'sub_categories'
+        ]
+        # depth = 1
+
+    def create(self, validated_data):
+        sub_categories_data = validated_data.pop('sub_categories')
+        category = Category.objects.create(**validated_data)
+        for sub_category in sub_categories_data:
+            SubCategory.objects.create(category=category, **sub_category)
+
+        return category

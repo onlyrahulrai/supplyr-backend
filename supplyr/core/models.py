@@ -37,7 +37,9 @@ class User(AbstractUser):
 
 class Category(models.Model):
     name = models.CharField(max_length=50)
-    serial = models.PositiveSmallIntegerField()
+    serial = models.PositiveSmallIntegerField(null=True, blank=True)
+    image = models.ImageField(upload_to='category-images/', blank=True, null=True)
+    image_sm = models.ImageField(upload_to='category-images/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
     class Meta:

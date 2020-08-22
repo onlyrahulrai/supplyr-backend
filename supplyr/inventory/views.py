@@ -2,11 +2,13 @@ from django.shortcuts import render, get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework import status
-from rest_framework.generics import ListAPIView
+from rest_framework import status, mixins
+from rest_framework.generics import ListAPIView, GenericAPIView
 
 from supplyr.core.permissions import IsApproved
 from .serializers import ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer
+from supplyr.core.serializers import CategoriesSerializer2
+from supplyr.core.models import Category
 from .models import Product
 
 class AddProduct(APIView):
@@ -76,9 +78,16 @@ class ProductListView(ListAPIView):
         return Product.objects.filter(owner = profile, is_active = True)
 
 
-    # def get(self, request, *args, **kwargs):
-    #     profile = request.user.profiles.first()
-    #     products = Product.objects.filter(owner = profile, is_active = True)
-    #     product_serializer = ProductListSerializer(products, many=True)
-    #     print (products.count())
-    #     return Response(product_serializer.data)
+class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.CreateModelMixin):
+    queryset = Category.objects.filter(is_active =True)
+    serializer_class = CategoriesSerializer2
+    permission_classes = [IsApproved]
+    pagination_class = None
+
+    def get(self, request, *args, **kwargs):
+        if id := kwargs.get('pk'):
+            return super().retrieve(request, *args, **kwargs)
+        return super().list(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
