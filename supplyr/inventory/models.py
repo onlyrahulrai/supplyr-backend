@@ -7,6 +7,7 @@ from django.core.files.base import ContentFile
 from django.db import models
 from django_mysql.models import Model
 from PIL import Image
+from supplyr.core.model_utils import generate_image_sizes
 
 User = get_user_model()
 
@@ -102,30 +103,8 @@ class ProductImage(Model):
     is_active = models.BooleanField(default=True)
 
     def generate_sizes(self):
-        original_image = Image.open(self.image)
-        ext = os.path.splitext(self.image.path)[1]
+        generate_image_sizes(self, 'image', self.image_sizes)
 
-        if ext in [".jpg", ".jpeg"]:
-            PIL_TYPE = 'JPEG'
-            FILE_EXTENSION = 'jpg'
-
-        elif ext == ".png":
-            PIL_TYPE = 'PNG'
-            FILE_EXTENSION = 'png'
-
-        if original_image.mode not in ('L', 'RGB'):
-            original_image = original_image.convert('RGB')
-
-        for image in self.image_sizes:
-            if not (field := getattr(self, image['field_name'])):
-                new_image = original_image.copy()
-                new_image.thumbnail(image['size'], Image.ANTIALIAS)
-                fp = BytesIO()
-                new_image.save(fp, PIL_TYPE, quality=image['quality'])
-                cf = ContentFile(fp.getvalue())
-                field.save('only_ext_is_relevant.' + FILE_EXTENSION, content = cf, save = False)
-
-        self.save()
     
     class Meta:
         ordering = ['order']

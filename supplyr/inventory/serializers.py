@@ -213,7 +213,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
             for image_id in images:
                 if image := ProductImage.objects.filter(id=image_id).first():
                     if image.uploaded_by != product.owner or image.product or not image.is_temp:
-                        if image.product == product:
+                        if image.product == product: # If image is already attached to product. Other opterations below this block should already be completed if this is the case, hence 'continue'
                             image.order = image_order
                             image_order += 1
                             image.save()
@@ -231,7 +231,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
                     image.save()
                     image_order += 1
 
-                    image.generate_sizes()
+                    image.generate_sizes() 
 
         images_after = set(images)
         images_to_be_removed = images_before - images_after

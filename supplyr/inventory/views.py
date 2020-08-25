@@ -82,12 +82,21 @@ class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModel
     queryset = Category.objects.filter(is_active =True)
     serializer_class = CategoriesSerializer2
     permission_classes = [IsApproved]
+    # parser_classes = [FormParser, MultiPartParser]
     pagination_class = None
 
     def get(self, request, *args, **kwargs):
-        if id := kwargs.get('pk'):
+        if kwargs.get('pk'):
             return super().retrieve(request, *args, **kwargs)
         return super().list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        if category_id := kwargs.get('pk'):
+            # category_instance = get_object_or_404(Category, id=category_id)
+            return super().update(request, *args, **kwargs)
         return super().create(request, *args, **kwargs)
+    
+    def delete(self, request, *args, **kwargs):
+        if category_id := kwargs.get('pk'):
+            category = Category.objects.filter(pk=category_id).update(is_active = False)
+            return Response(None, status=204)
