@@ -67,13 +67,17 @@ iv. Run in shell to create tables
 ```shell
 python manage.py migrate
 ```
+v. Configure mysql fulltext search index by running the following command in mysql shell:
+```sql
+ALTER TABLE `inventory_product` ADD FULLTEXT(`title`);
+```
 
-v. Run server to start the backend.
+vi. Run server to start the backend.
 ```shell
 python manage.py runserver
 ```
 
-vi. Create a user using the following command:
+vii. Create a user using the following command:
 
 ```shell
 python manage.py createsuperuser

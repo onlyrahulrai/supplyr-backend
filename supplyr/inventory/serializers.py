@@ -11,7 +11,7 @@ from supplyr.core.serializers import SubCategorySerializer2
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'featured_image', 'price', 'sale_price', 'has_multiple_variants', 'quantity']
+        fields = ['id', 'title', 'featured_image', 'price', 'sale_price', 'has_multiple_variants', 'quantity', 'variants_count']
 
 
     featured_image = serializers.SerializerMethodField()

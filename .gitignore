@@ -32,3 +32,4 @@ venv/
 
 # End of https://www.toptal.com/developers/gitignore/api/django,virtualenv,python,code
 supplyr/settings_local.py
+.vscode/launch.json

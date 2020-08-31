@@ -75,7 +75,34 @@ class ProductListView(ListAPIView):
 
     def get_queryset(self):
         profile = self.request.user.profiles.first()
-        return Product.objects.filter(owner = profile, is_active = True)
+        print('RG', (self.request.query_params))
+        filters = {}
+        if search_query := self.request.GET.get('search'):
+            filters['title__search'] = search_query
+        if sub_categories  := self.request.GET.get('sub_categories'):
+            filters['sub_categories__in'] = sub_categories.split(',')
+
+        print('filters', filters)
+        return Product.objects.filter(owner = profile, is_active = True, **filters)
+
+class ProductsBulkUpdateView(APIView):
+    permission_classes = [IsApproved]
+
+    def post(self, request, *args, **kwargs):
+        operation = request.data.get('operation')
+        profile = request.user.profiles.first()
+
+        if operation in ['add-subcategories', 'remove-subcategories']:
+            product_ids = request.data.get('product_ids')
+            sub_categories_list = request.data.get('data')
+
+            for product in Product.objects.filter(pk__in = product_ids, owner=profile, is_active = True):
+                if operation == 'add-subcategories':
+                    product.sub_categories.add(*sub_categories_list)
+                else:
+                    product.sub_categories.remove(*sub_categories_list)
+        
+        return Response({'success': True})
 
 
 class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.CreateModelMixin):

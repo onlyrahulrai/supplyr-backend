@@ -11,6 +11,17 @@ from supplyr.core.model_utils import generate_image_sizes
 
 User = get_user_model()
 
+class Search(models.Lookup):
+   lookup_name = 'search'
+
+   def as_mysql(self, compiler, connection):
+       lhs, lhs_params = self.process_lhs(compiler, connection)
+       rhs, rhs_params = self.process_rhs(compiler, connection)
+       params = lhs_params + rhs_params
+       return 'MATCH (%s) AGAINST (%s IN BOOLEAN MODE)' % (lhs, rhs), params
+
+models.CharField.register_lookup(Search)
+models.TextField.register_lookup(Search)
 
 class Product(Model):
     title = models.CharField(max_length=200)
@@ -22,12 +33,15 @@ class Product(Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def has_multiple_variants(self):
-        if self.variants.filter(is_active=True).count() > 1:
+        if self.variants_count() > 1:
             return True
         elif variant := self.variants.filter(is_active=True).first():
             return not (variant.option1_name == "default" and variant.option1_value == "default")
         
         return False
+
+    def variants_count(self):
+        return self.variants.filter(is_active=True).count()
 
     @property
     def featured_image(self):
