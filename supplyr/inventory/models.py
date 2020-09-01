@@ -8,6 +8,7 @@ from django.db import models
 from django_mysql.models import Model
 from PIL import Image
 from supplyr.core.model_utils import generate_image_sizes
+from django.utils.functional import cached_property
 
 User = get_user_model()
 
@@ -33,26 +34,36 @@ class Product(Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def has_multiple_variants(self):
-        if self.variants_count() > 1:
+        if self.variants_count > 1:
             return True
-        elif variant := self.variants.filter(is_active=True).first():
-            return not (variant.option1_name == "default" and variant.option1_value == "default")
+        elif default_variant := self.default_variant:
+            #  variant = self.variants.filter(is_active=True).first():   # This is not using prefetched value becaused django is applying is_active twice and treating it as distinct query
+            return not (default_variant.option1_name == "default" and default_variant.option1_value == "default")
         
         return False
 
+    @cached_property
     def variants_count(self):
+        if hasattr(self, 'variants_count_annotated'):
+            return self.variants_count_annotated
         return self.variants.filter(is_active=True).count()
 
     @property
     def featured_image(self):
-        if image := self.images.first():
+        if hasattr(self, 'active_images_prefetched'):
+            image = (len(self.active_images_prefetched) > 0) and self.active_images_prefetched[0]
+        else:
+            image = self.images.filter(is_active = True).first()
+        if image:
             if image_sm := image.image_sm:
                 return image_sm
         return None
 
-    @property
+    @cached_property
     def default_variant(self):
-        return self.variants.first()
+        if hasattr(self, 'active_variants_prefetched'):
+            return (len(self.active_variants_prefetched) > 0) and self.active_variants_prefetched[0]
+        return self.variants.filter(is_active=True).first()
     
 
 class Variant(Model):
@@ -74,6 +85,9 @@ class Variant(Model):
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ('id',)
 
 
 class ProductImage(Model):

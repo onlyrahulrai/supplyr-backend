@@ -9,7 +9,8 @@ from supplyr.core.permissions import IsApproved
 from .serializers import ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer
 from supplyr.core.serializers import CategoriesSerializer2
 from supplyr.core.models import Category
-from .models import Product
+from .models import Product, Variant, ProductImage
+from django.db.models import Prefetch, Q, Count
 
 class AddProduct(APIView):
     permission_classes = [IsApproved]
@@ -83,7 +84,14 @@ class ProductListView(ListAPIView):
             filters['sub_categories__in'] = sub_categories.split(',')
 
         print('filters', filters)
-        return Product.objects.filter(owner = profile, is_active = True, **filters)
+        return Product.objects.filter(owner = profile, is_active = True, **filters)\
+            .annotate(variants_count_annotated=Count('variants', filter=Q(variants__is_active=True)))\
+            .prefetch_related(
+                 Prefetch('images', queryset=ProductImage.objects.filter(is_active=True), to_attr='active_images_prefetched'),
+                 Prefetch('variants', queryset=Variant.objects.filter(is_active=True), to_attr='active_variants_prefetched'),
+                 )
+                 # Didn't store annotations and prefetches into their natural names, as the model methods could fail if these has not been generated. 
+                 # Hence, stored them with unique names which I am checking in models, to use if exists.
 
 class ProductsBulkUpdateView(APIView):
     permission_classes = [IsApproved]

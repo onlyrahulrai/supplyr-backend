@@ -167,7 +167,7 @@ REST_FRAMEWORK = {
         'dj_rest_auth.jwt_auth.JWTCookieAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': 'supplyr.core.pagination.CustomPagination',
-    'PAGE_SIZE': 20,
+    'PAGE_SIZE': 30,
 }
 
 # dj-rest-auth configuration start
