@@ -11,9 +11,11 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from dj_rest_auth.views import LoginView
 
-from .serializers import UserDetailsSerializer, ProfilingSerializer, ProfilingDocumentsSerializer, CategoriesSerializer
+from .serializers import UserDetailsSerializer, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, CategoriesSerializer
 from .permissions import IsUnapproved
 from .models import SellerProfile, Category
+
+from supplyr.utils.api.mixins import APISourceMixin
 
 User = get_user_model()
   
@@ -44,10 +46,10 @@ class UserDetailsView(APIView, UserInfoMixin):
         return Response(response_data)
 
 
-class CustomLoginView(LoginView):
+class CustomLoginView(LoginView, APISourceMixin):
     def get_response(self):
         response = super().get_response()
-
+        print("SRC ", self.request.user)
         # response.data['user_info'] = response.data['user']
         # del response.data['user']
         # response.set_cookie('refresh', self.refresh_token)
@@ -67,9 +69,9 @@ class ProfilingView(APIView, UserInfoMixin):
         
         existing_profile = SellerProfile.objects.filter(owner=request.user).first()
         if existing_profile:
-            serializer = ProfilingSerializer(existing_profile, data = data)
+            serializer = SellerProfilingSerializer(existing_profile, data = data)
         else:
-            serializer = ProfilingSerializer(data = data)
+            serializer = SellerProfilingSerializer(data = data)
 
         if serializer.is_valid():
             serializer.save()
@@ -78,7 +80,7 @@ class ProfilingView(APIView, UserInfoMixin):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ProfilingDocumentsUploadView(APIView):
+class ProfilingDocumentsUploadView(APIView):    #Seller
     
     permission_classes = [IsUnapproved]
     parser_classes = [FormParser, MultiPartParser]
@@ -90,9 +92,9 @@ class ProfilingDocumentsUploadView(APIView):
 
         existing_profile = SellerProfile.objects.filter(owner=request.user).first()
         if existing_profile:
-            serializer = ProfilingDocumentsSerializer(existing_profile, data = data)
+            serializer = SellerProfilingDocumentsSerializer(existing_profile, data = data)
         else:
-            serializer = ProfilingDocumentsSerializer(data = data)
+            serializer = SellerProfilingDocumentsSerializer(data = data)
 
         if serializer.is_valid():
             serializer.save()

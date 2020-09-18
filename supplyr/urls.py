@@ -14,7 +14,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, re_path, include
 from rest_framework import routers
 from django.conf.urls.static import static
 from django.conf import settings
@@ -26,9 +26,17 @@ from supplyr.core.views import UserDetailsView, CustomLoginView
 # router = routers.DefaultRouter()
 # router.register(r'users', UserDetailsViewSet)
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
+# Optional_Param = '(?:(?P<app_type>(buyer|seller))/)?'
+# Mandatory_Param = '^(?P<app_type>(buyer|seller))/'
+
+_urlpatterns = [
     path('', include('supplyr.core.urls')),
     path('inventory/', include('supplyr.inventory.urls')),
     path('register/', include('dj_rest_auth.registration.urls')),
-]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+
+urlpatterns = [
+    re_path('^(?P<api_source>(buyer|seller))/', include(_urlpatterns)),
+    path('admin/', admin.site.urls),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

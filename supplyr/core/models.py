@@ -127,3 +127,15 @@ class SellerProfile(Model):
 
     class Meta:
         verbose_name_plural = 'Seller Profiles'
+
+
+class BuyerProfile(models.Model):
+
+    business_name = models.CharField(max_length=100, blank=True, null=True)
+
+    class Meta:
+        """Meta definition for BuyerProfile."""
+
+        verbose_name = 'BuyerProfile'
+        verbose_name_plural = 'BuyerProfiles'
+

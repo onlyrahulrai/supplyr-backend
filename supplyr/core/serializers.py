@@ -9,13 +9,13 @@ import json
 
 User = get_user_model()
 
-def _get_profiling_data(user: User) -> Dict:
+def _get_seller_profiling_data(user: User) -> Dict:
 
     existing_profile = user.seller_profiles.first()
     entity_details = None
     user_selected_sub_categories = []
     if  existing_profile:
-        entity_details = ProfilingSerializer(existing_profile).data
+        entity_details = SellerProfilingSerializer(existing_profile).data
         user_selected_sub_categories = existing_profile.operational_fields.all().values_list('id', flat=True)
 
     ### Category Information
@@ -43,7 +43,7 @@ class UserDetailsSerializer(serializers.ModelSerializer):
         Profiling data for people who are still filling the profiling form
         """
         if not user.is_approved:
-            return _get_profiling_data(user) 
+            return _get_seller_profiling_data(user) 
         return None
     
     profile = serializers.SerializerMethodField()
@@ -93,7 +93,7 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
             'sub_categories',
             ]
 
-class ProfilingSerializer(serializers.ModelSerializer):
+class SellerProfilingSerializer(serializers.ModelSerializer):
 
     # def validate(self, data):
     #     if data['gst_number'] == '123':
@@ -135,7 +135,7 @@ class ProfilingSerializer(serializers.ModelSerializer):
             },
         }
 
-class ProfilingDocumentsSerializer(serializers.ModelSerializer):
+class SellerProfilingDocumentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = SellerProfile
         fields = [
