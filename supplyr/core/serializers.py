@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import JWTSerializer
-from .models import SellerProfile, Category, SubCategory
+from .models import SellerProfile, Category, SubCategory, BuyerProfile
 from typing import Dict
 import json
 
@@ -36,6 +36,14 @@ def _get_seller_profiling_data(user: User) -> Dict:
     return profiling_data
 
 class UserDetailsSerializer(serializers.ModelSerializer):
+    def _get_api_source(self):
+        if 'request' in self.context:
+            # requests will only be available is passed in extra context. dj-rest-auth passes in default views
+            request = self.context['request']
+            kwargs = request.resolver_match.kwargs
+            if 'api_source' in kwargs:
+                return kwargs['api_source']
+        return None
 
     profiling_data = serializers.SerializerMethodField()
     def get_profiling_data(self, user):
@@ -51,23 +59,44 @@ class UserDetailsSerializer(serializers.ModelSerializer):
         """
         Profile details for people who are approved
         """
-        if user.is_approved:
+
+        if self._get_api_source() == 'buyer':
+            if profile := user.buyer_profiles.first():
+                return BuyerProfileSerializer(profile).data
+
+        elif user.is_approved: # seller profile
             profile = user.seller_profiles.first()
             return ShortEntityDetailsSerializer(profile).data
+            
         return None
+
+    seller_status = serializers.SerializerMethodField()
+    def get_seller_status(self, user):
+        if self._get_api_source() == 'buyer':
+            return None
+        return user.seller_status
+
+    buyer_status = serializers.SerializerMethodField()
+    def get_buyer_status(self, user):
+        if self._get_api_source() == 'seller':
+            return None
+        return user.buyer_status
 
     class Meta:
         model = User
-        fields = ['name', 'username', 'is_staff', 'status', 'profiling_data', 'profile']
+        fields = ['name', 'username', 'is_staff', 'seller_status', 'buyer_status', 'profiling_data', 'profile']
 
 
 class CustomRegisterSerializer(RegisterSerializer):
     
     def save(self, request):
-        name = request.data['name']
-
         user = super().save(request)
-        user.first_name = name
+        
+        first_name = request.data['first_name']
+        last_name = request.data['last_name']
+
+        user.first_name = first_name
+        user.last_name = last_name
         user.save()
         return user
 
@@ -77,6 +106,14 @@ class CustomJWTSerializer(JWTSerializer):
         ret['user_info'] = ret['user']
         del ret['user']
         return ret
+
+class BuyerProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BuyerProfile
+        fields = [
+            'id', 
+            'business_name'
+        ]
 
 class ShortEntityDetailsSerializer(serializers.ModelSerializer):
     sub_categories = serializers.SerializerMethodField()

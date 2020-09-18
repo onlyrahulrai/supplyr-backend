@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser
 from os.path import splitext
 from django_mysql.models import Model
 from django_mysql.models import EnumField
+from django.utils.functional import cached_property
 from supplyr.core.model_utils import generate_image_sizes
 
 class User(AbstractUser):
@@ -13,15 +14,15 @@ class User(AbstractUser):
     
     @property
     def name(self):
-        return self.first_name
+        return F"{self.first_name} {self.last_name}"
 
-    @name.setter
-    def name(self, value):
-        self.first_name = value
-        self.save()
+    # @name.setter
+    # def name(self, value):
+    #     self.first_name = value
+    #     self.save()
 
     @property
-    def status(self):
+    def seller_status(self):
         if self.seller_profiles.filter(is_approved=True).exists():
             return 'approved'
         elif self.seller_profiles.exclude(operational_fields = None).exists():
@@ -32,8 +33,15 @@ class User(AbstractUser):
             return 'verified'
 
     @property
+    def buyer_status(self):
+        if self.buyer_profiles.exists():
+            return 'ready'
+        else:
+            return 'verified'
+
+    @cached_property
     def is_approved(self):
-        return self.status == 'approved'
+        return self.seller_status == 'approved'
 
     @property
     def is_buyer(self):
@@ -131,6 +139,7 @@ class SellerProfile(Model):
 
 class BuyerProfile(models.Model):
 
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='buyer_profiles')
     business_name = models.CharField(max_length=100, blank=True, null=True)
 
     class Meta:

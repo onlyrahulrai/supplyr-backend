@@ -22,9 +22,13 @@ User = get_user_model()
 
 class UserInfoMixin():
 
-    @staticmethod
-    def get_user_info(user):
-        serializer = UserDetailsSerializer(user)
+    # @staticmethod
+    def get_user_info(self, user):
+        extra_context = {}
+        if hasattr(self, 'request'):
+            extra_context['request'] = self.request
+
+        serializer = UserDetailsSerializer(user, context=extra_context)
         return serializer.data
 
     def inject_user_info(self, data, user):
@@ -60,9 +64,8 @@ class ProfilingView(APIView, UserInfoMixin):
     permission_classes = [IsUnapproved]
 
     def post(self, request, *args, **kwargs):
-        if(request.user.status == 'approved'):
-            return Response("User Already Approved", status=status.HTTP_400_BAD_REQUEST)
-        
+        # if(request.user.is_approved):
+        #     return Response("User Already Approved", status=status.HTTP_400_BAD_REQUEST)
 
         data = request.data.copy()
         data['owner'] = request.user.pk
