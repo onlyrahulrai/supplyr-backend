@@ -27,7 +27,7 @@ models.TextField.register_lookup(Search)
 class Product(Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
-    owner = models.ForeignKey('core.Profile', related_name='products', on_delete=models.CASCADE)
+    owner = models.ForeignKey('core.SellerProfile', related_name='products', on_delete=models.CASCADE)
     sub_categories = models.ManyToManyField('core.SubCategory', related_name='products')
 
     is_active = models.BooleanField(default=True)
@@ -125,7 +125,7 @@ class ProductImage(Model):
     image_sm = models.ImageField(upload_to= get_image_sm_upload_path, blank=True, null=True)
     image_md = models.ImageField(upload_to= get_image_md_upload_path, blank=True, null=True)
     order = models.PositiveSmallIntegerField(blank=True, null=True)
-    uploaded_by = models.ForeignKey('core.Profile', on_delete=models.CASCADE)
+    uploaded_by = models.ForeignKey('core.SellerProfile', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     is_temp = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)

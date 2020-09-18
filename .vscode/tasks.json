@@ -6,7 +6,7 @@
         {
             "label": "api-run",
             "type": "shell",
-            "command": "source .venv/bin/activate && python manage.py runserver",
+            "command": "source .venv/bin/activate && python manage.py runserver 0:8000",
             "problemMatcher": [],
             "group": {
                 "kind": "build",

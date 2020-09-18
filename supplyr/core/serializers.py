@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import JWTSerializer
-from .models import Profile, Category, SubCategory
+from .models import SellerProfile, Category, SubCategory
 from typing import Dict
 import json
 
@@ -11,7 +11,7 @@ User = get_user_model()
 
 def _get_profiling_data(user: User) -> Dict:
 
-    existing_profile = user.profiles.first()
+    existing_profile = user.seller_profiles.first()
     entity_details = None
     user_selected_sub_categories = []
     if  existing_profile:
@@ -52,7 +52,7 @@ class UserDetailsSerializer(serializers.ModelSerializer):
         Profile details for people who are approved
         """
         if user.is_approved:
-            profile = user.profiles.first()
+            profile = user.seller_profiles.first()
             return ShortEntityDetailsSerializer(profile).data
         return None
 
@@ -86,7 +86,7 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
         return sub_categories_serializer.data
 
     class Meta:
-        model = Profile
+        model = SellerProfile
         fields = [
             'business_name',
             'id',
@@ -101,7 +101,7 @@ class ProfilingSerializer(serializers.ModelSerializer):
     #     return data
 
     class Meta:
-        model = Profile
+        model = SellerProfile
         fields = [
             'owner',
             'business_name',
@@ -137,7 +137,7 @@ class ProfilingSerializer(serializers.ModelSerializer):
 
 class ProfilingDocumentsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Profile
+        model = SellerProfile
         fields = [
             'owner',
             'gst_certificate'

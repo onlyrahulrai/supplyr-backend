@@ -13,7 +13,7 @@ from dj_rest_auth.views import LoginView
 
 from .serializers import UserDetailsSerializer, ProfilingSerializer, ProfilingDocumentsSerializer, CategoriesSerializer
 from .permissions import IsUnapproved
-from .models import Profile, Category
+from .models import SellerProfile, Category
 
 User = get_user_model()
   
@@ -65,7 +65,7 @@ class ProfilingView(APIView, UserInfoMixin):
         data = request.data.copy()
         data['owner'] = request.user.pk
         
-        existing_profile = Profile.objects.filter(owner=request.user).first()
+        existing_profile = SellerProfile.objects.filter(owner=request.user).first()
         if existing_profile:
             serializer = ProfilingSerializer(existing_profile, data = data)
         else:
@@ -88,7 +88,7 @@ class ProfilingDocumentsUploadView(APIView):
         data = request.data.copy()
         data['owner'] = request.user.pk
 
-        existing_profile = Profile.objects.filter(owner=request.user).first()
+        existing_profile = SellerProfile.objects.filter(owner=request.user).first()
         if existing_profile:
             serializer = ProfilingDocumentsSerializer(existing_profile, data = data)
         else:
@@ -107,7 +107,7 @@ class CategoriesView(APIView, UserInfoMixin):
     def post(self, request, *args, **kwargs):
 
         sub_categories = request.data['sub_categories']
-        profile = request.user.profiles.first()
+        profile = request.user.seller_profiles.first()
         profile.operational_fields.set(sub_categories)
         response = self.inject_user_info({'success': True}, request.user)
 

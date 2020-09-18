@@ -2,7 +2,7 @@ import os
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import Product, Variant, ProductImage
-from supplyr.core.models import Profile
+from supplyr.core.models import SellerProfile
 from django.conf import settings
 from django.db import transaction
 from supplyr.core.serializers import SubCategorySerializer2
@@ -85,7 +85,7 @@ class VariantSerializer(serializers.ModelSerializer):
 class ProductDetailsSerializer(serializers.ModelSerializer):
     class ProductOwnerSerializer(serializers.ModelSerializer):
         class Meta:
-            model = Profile
+            model = SellerProfile
             fields = ['business_name', 'id']
 
     class ProductImageReadOnlySerializer(serializers.ModelSerializer):

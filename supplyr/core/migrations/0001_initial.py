@@ -77,7 +77,7 @@ class Migration(migrations.Migration):
                 ('gst_number', models.CharField(blank=True, max_length=20, null=True)),
                 ('pan_number', models.CharField(blank=True, max_length=15, null=True)),
                 ('tan_number', models.CharField(blank=True, max_length=15, null=True)),
-                ('gst_certificate', models.FileField(blank=True, max_length=150, null=True, upload_to=supplyr.core.models.Profile.get_gst_upload_path)),
+                ('gst_certificate', models.FileField(blank=True, max_length=150, null=True, upload_to=supplyr.core.models.get_gst_upload_path)),
                 ('is_approved', models.BooleanField(default=False)),
                 ('operational_fields', models.ManyToManyField(blank=True, to='core.SubCategory')),
                 ('owner', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='profiles', to=settings.AUTH_USER_MODEL)),

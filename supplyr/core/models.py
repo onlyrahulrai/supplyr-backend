@@ -7,6 +7,9 @@ from django_mysql.models import EnumField
 from supplyr.core.model_utils import generate_image_sizes
 
 class User(AbstractUser):
+
+    BUYER_GROUP_NAME = 'buyer'
+    SELLER_GROUP_NAME = 'seller'
     
     @property
     def name(self):
@@ -19,11 +22,11 @@ class User(AbstractUser):
 
     @property
     def status(self):
-        if self.profiles.filter(is_approved=True).exists():
+        if self.seller_profiles.filter(is_approved=True).exists():
             return 'approved'
-        elif self.profiles.exclude(operational_fields = None).exists():
+        elif self.seller_profiles.exclude(operational_fields = None).exists():
             return 'categories_selected'
-        elif self.profiles.exists():
+        elif self.seller_profiles.exists():
             return 'form_filled'
         else:
             return 'verified'
@@ -31,6 +34,15 @@ class User(AbstractUser):
     @property
     def is_approved(self):
         return self.status == 'approved'
+
+    @property
+    def is_buyer(self):
+        return self.groups.filter(name=self.BUYER_GROUP_NAME).exists()
+    
+    @property
+    def is_seller(self):
+        return self.groups.filter(name=self.SELLER_GROUP_NAME).exists()
+    
 
     # @property
     # def status_int(self):
@@ -84,7 +96,10 @@ def get_document_upload_path(instance, filename, document_category):
     new_filename = document_category + ext
     return f"documents/{ instance.id }/{ new_filename }"
 
-class Profile(Model):
+def get_gst_upload_path(instance, filename):
+    return get_document_upload_path(instance, filename, 'gst')
+
+class SellerProfile(Model):
     class EntityTypes(models.TextChoices):
         PVTLTD = 'pvtltd', 'Private Limited'
         LLP = 'llp', 'Limited Liablity Partnership'
@@ -96,10 +111,8 @@ class Profile(Model):
         DISTRIBUTOR = 'D', 'Distributer'
         WHOLESELLER = 'W', 'Wholeseller'
 
-    def get_gst_upload_path(self, filename):
-        return get_document_upload_path(self, filename, 'gst')
 
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='profiles')
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='seller_profiles')
     business_name = models.CharField(max_length=100, blank=True, null=True)
     entity_category = EnumField(choices=EntityCategory.choices, blank=True, null=True) 
     entity_type = EnumField(choices=EntityTypes.choices, blank=True, null=True)
@@ -113,6 +126,4 @@ class Profile(Model):
 
 
     class Meta:
-        verbose_name_plural = 'Profiles'
-
-
+        verbose_name_plural = 'Seller Profiles'

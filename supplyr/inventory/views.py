@@ -17,7 +17,7 @@ class AddProduct(APIView):
     def post(self, request, *args, **kwargs):
         
         # print(request.data)
-        profile = request.user.profiles.first()
+        profile = request.user.seller_profiles.first()
         
         if product_id := request.data.get('id'):
             product = get_object_or_404(Product, pk=product_id, owner = profile)
@@ -35,7 +35,7 @@ class DeleteProduct(APIView):
     permission_classes = [IsApproved]
 
     def post(self, request, *args, **kwargs):
-        profile = request.user.profiles.first()
+        profile = request.user.seller_profiles.first()
         if product_id := request.data.get('id'):
             product = get_object_or_404(Product, pk=product_id, owner = profile)
             product.is_active = False
@@ -61,12 +61,12 @@ class ProductImageUpload(APIView):
     def post(self, request, *args, **kwargs):
         
         data = request.data
-        # data['uploaded_by'] = request.user.profiles.first().pk
+        # data['uploaded_by'] = request.user.seller_profiles.first().pk
 
         serializer = ProductImageSerializer(data = data)
 
         serializer.is_valid(raise_exception=True)
-        serializer.save(uploaded_by = request.user.profiles.first())
+        serializer.save(uploaded_by = request.user.seller_profiles.first())
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
@@ -75,7 +75,7 @@ class ProductListView(ListAPIView):
     serializer_class = ProductListSerializer
 
     def get_queryset(self):
-        profile = self.request.user.profiles.first()
+        profile = self.request.user.seller_profiles.first()
         print('RG', (self.request.query_params))
         filters = {}
         if search_query := self.request.GET.get('search'):
@@ -98,7 +98,7 @@ class ProductsBulkUpdateView(APIView):
 
     def post(self, request, *args, **kwargs):
         operation = request.data.get('operation')
-        profile = request.user.profiles.first()
+        profile = request.user.seller_profiles.first()
 
         if operation in ['add-subcategories', 'remove-subcategories']:
             product_ids = request.data.get('product_ids')
