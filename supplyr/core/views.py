@@ -11,9 +11,9 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from dj_rest_auth.views import LoginView
 
-from .serializers import UserDetailsSerializer, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, CategoriesSerializer
+from .serializers import UserDetailsSerializer, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, CategoriesSerializer, BuyerProfileSerializer
 from .permissions import IsUnapproved
-from .models import SellerProfile, Category
+from .models import SellerProfile, Category, BuyerProfile
 
 from supplyr.utils.api.mixins import APISourceMixin
 
@@ -60,7 +60,7 @@ class CustomLoginView(LoginView, APISourceMixin):
         return response
 
 
-class ProfilingView(APIView, UserInfoMixin):
+class SellerProfilingView(APIView, UserInfoMixin):
     permission_classes = [IsUnapproved]
 
     def post(self, request, *args, **kwargs):
@@ -75,6 +75,25 @@ class ProfilingView(APIView, UserInfoMixin):
             serializer = SellerProfilingSerializer(existing_profile, data = data)
         else:
             serializer = SellerProfilingSerializer(data = data)
+
+        if serializer.is_valid():
+            serializer.save()
+            serializer_data = self.inject_user_info(serializer.data, request.user)
+            return Response(serializer_data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class BuyerProfilingView(APIView, UserInfoMixin):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        data = request.data.copy()
+        data['owner'] = request.user.pk
+        
+        existing_profile = BuyerProfile.objects.filter(owner=request.user).first()
+        if existing_profile:
+            serializer = BuyerProfileSerializer(existing_profile, data = data)
+        else:
+            serializer = BuyerProfileSerializer(data = data)
 
         if serializer.is_valid():
             serializer.save()

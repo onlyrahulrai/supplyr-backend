@@ -84,7 +84,7 @@ class UserDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['name', 'username', 'is_staff', 'seller_status', 'buyer_status', 'profiling_data', 'profile']
+        fields = ['name', 'first_name', 'last_name', 'username', 'is_staff', 'seller_status', 'buyer_status', 'profiling_data', 'profile']
 
 
 class CustomRegisterSerializer(RegisterSerializer):
@@ -112,8 +112,14 @@ class BuyerProfileSerializer(serializers.ModelSerializer):
         model = BuyerProfile
         fields = [
             'id', 
-            'business_name'
+            'business_name',
+            'owner',
         ]
+        extra_kwargs = {
+            'owner': {
+                'write_only': True
+            }
+        }
 
 class ShortEntityDetailsSerializer(serializers.ModelSerializer):
     sub_categories = serializers.SerializerMethodField()
