@@ -5,10 +5,10 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status, mixins
 from rest_framework.generics import ListAPIView, GenericAPIView
 
-from supplyr.core.permissions import IsApproved
-from .serializers import ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer
+from supplyr.core.permissions import IsApproved, IsFromBuyerAPI
+from .serializers import ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer, SellerShortDetailsSerializer, VariantDetailsSerializer
 from supplyr.core.serializers import CategoriesSerializer2
-from supplyr.core.models import Category
+from supplyr.core.models import Category, SellerProfile
 from .models import Product, Variant, ProductImage
 from django.db.models import Prefetch, Q, Count
 
@@ -70,7 +70,10 @@ class ProductImageUpload(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-class ProductListView(ListAPIView):
+class SellerSelfProductListView(ListAPIView):
+    """
+    Products list of a seller when viewed by himself
+    """
     permission_classes = [IsApproved]
     serializer_class = ProductListSerializer
 
@@ -92,6 +95,47 @@ class ProductListView(ListAPIView):
                  )
                  # Didn't store annotations and prefetches into their natural names, as the model methods could fail if these has not been generated. 
                  # Hence, stored them with unique names which I am checking in models, to use if exists.
+
+class SellerProductListView(ListAPIView):
+    """
+    Products list of a seller, when viewed by a buyer
+    """
+    permission_classes = [IsFromBuyerAPI]
+    serializer_class = ProductListSerializer
+
+    def get_queryset(self):
+        seller_id = self.kwargs.get('seller_id')
+        profile = SellerProfile.objects.get(id=seller_id)
+        filters = {}
+        # if search_query := self.request.GET.get('search'):
+        #     filters['title__search'] = search_query
+        if sub_categories  := self.request.GET.get('sub_categories'):
+            filters['sub_categories__in'] = sub_categories.split(',')
+
+        # print('filters', filters)
+        return Product.objects.filter(owner = profile, is_active = True, **filters)\
+            .annotate(variants_count_annotated=Count('variants', filter=Q(variants__is_active=True)))\
+            .prefetch_related(
+                 Prefetch('images', queryset=ProductImage.objects.filter(is_active=True), to_attr='active_images_prefetched'),
+                 Prefetch('variants', queryset=Variant.objects.filter(is_active=True), to_attr='active_variants_prefetched'),
+                 )
+                 # Didn't store annotations and prefetches into their natural names, as the model methods could fail if these has not been generated. 
+                 # Hence, stored them with unique names which I am checking in models, to use if exists.
+
+class VariantDetailView(ListAPIView):
+    """
+    Passed a list of variant IDs, it will return a list of detailed variants information
+    Made for used in cart where list of variant IOs is maintained on frontend and details need to be fetched from backend.
+    """
+    permission_classes = [IsFromBuyerAPI]
+    serializer_class = VariantDetailsSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        variant_ids_str = self.request.GET.get('variant_ids').split(',')
+        variant_ids = list(map(int, variant_ids_str))
+        print("VR  ",variant_ids)
+        return Variant.objects.filter(id__in=variant_ids)
 
 class ProductsBulkUpdateView(APIView):
     permission_classes = [IsApproved]
@@ -135,3 +179,13 @@ class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModel
         if category_id := kwargs.get('pk'):
             category = Category.objects.filter(pk=category_id).update(is_active = False)
             return Response(None, status=204)
+
+
+class SellersListView(ListAPIView):
+    permission_classes = [IsFromBuyerAPI]
+    serializer_class = SellerShortDetailsSerializer
+    pagination_class = None
+    # queryset = SellerProfile.objects.all()
+    def get_queryset(self):
+        return SellerProfile.objects.filter(is_approved=True)
+

@@ -11,7 +11,7 @@ from supplyr.core.serializers import SubCategorySerializer2
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'featured_image', 'price', 'sale_price', 'has_multiple_variants', 'quantity', 'variants_count']
+        fields = ['id', 'title', 'featured_image', 'price', 'sale_price', 'has_multiple_variants', 'quantity', 'variants_count', 'default_variant_id']
 
 
     featured_image = serializers.SerializerMethodField()
@@ -30,11 +30,17 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     quantity = serializers.SerializerMethodField()
     def get_quantity(self, instance):
-        return instance.default_variant.quantity or instance.default_variant.quantity
+        return instance.default_variant.quantity
 
-        
+    default_variant_id = serializers.SerializerMethodField()
+    def get_default_variant_id(self, instance):
+        return instance.default_variant.id
+
 
 class VariantSerializer(serializers.ModelSerializer):
+    """
+    To be used in productDetailsSerializer
+    """
 
     def to_representation(self, instance):
         variant = super().to_representation(instance)
@@ -89,10 +95,19 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
             fields = ['business_name', 'id']
 
     class ProductImageReadOnlySerializer(serializers.ModelSerializer):
-        image = serializers.CharField(source = 'image_md.url')
+        image = serializers.CharField(source = 'image_md.url') #Remove and replace uses with url
+
+        url_md = serializers.SerializerMethodField()
+        def get_url_md(self, image):
+            return image.image_md.url
+
+        url_lg = serializers.SerializerMethodField()
+        def get_url_lg(self, image):
+            return image.image_lg.url
+
         class Meta:
             model = ProductImage
-            fields = ['id', 'image']
+            fields = ['id', 'image', 'url_md', 'url_lg']
 
     # variants = VariantSerializer(many=True)
     variants_data = serializers.SerializerMethodField('get_variants_data')
@@ -257,3 +272,48 @@ class ProductImageSerializer(serializers.ModelSerializer):
             'id'
             ]
         read_only_fields = ['id']
+
+
+class SellerShortDetailsSerializer(serializers.ModelSerializer):
+
+    sub_categories = serializers.SerializerMethodField()
+    def get_sub_categories(self, profile):
+        sub_categories = profile.operational_fields.filter(products__owner = profile, products__is_active=True).distinct()
+        sub_categories_serializer = SubCategorySerializer2(sub_categories, many=True)
+        return sub_categories_serializer.data
+
+    class Meta:
+        model = SellerProfile
+        fields = [
+            'business_name',
+            'sub_categories',
+            'id'
+            ]
+
+
+class VariantDetailsSerializer(serializers.ModelSerializer):
+
+    class ProductShortDetailsSerializer(serializers.ModelSerializer):
+        class Meta:
+            model = Product
+            fields = ['title', 'has_multiple_variants', 'id']
+
+    featured_image = serializers.SerializerMethodField()
+    def get_featured_image(self, variant):
+        if variant.featured_image:
+            return variant.featured_image.image_md.url
+        
+        if product_image := variant.product.images.first():
+            return product_image.image_md.url
+        
+        return None
+
+    product_title = serializers.SerializerMethodField()
+    def get_product_title(self, variant):
+        return variant.product.title
+
+    product = ProductShortDetailsSerializer()
+
+    class Meta:
+        model = Variant
+        exclude=['created_at']

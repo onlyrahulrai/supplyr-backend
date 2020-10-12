@@ -186,7 +186,7 @@ REST_AUTH_REGISTER_SERIALIZERS = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=2),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=5),
 }
 
 #Change ACCOUNT_EMAIL_VERIFICATION to 'optional' to setup verification mails. (After configuring SMTP)

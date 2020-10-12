@@ -103,6 +103,11 @@ class ProductImage(Model):
             'size': [800,800],
             'quality': 70,
         },
+        {
+            'field_name': 'image_lg',
+            'size': [1200,1200],
+            'quality': 70,
+        },
     ]
 
     def get_image_upload_path(self, filename, size = None):
@@ -124,6 +129,7 @@ class ProductImage(Model):
     image = models.ImageField(upload_to = get_image_upload_path)
     image_sm = models.ImageField(upload_to= get_image_sm_upload_path, blank=True, null=True)
     image_md = models.ImageField(upload_to= get_image_md_upload_path, blank=True, null=True)
+    image_lg = models.ImageField(upload_to= get_image_md_upload_path, blank=True, null=True)
     order = models.PositiveSmallIntegerField(blank=True, null=True)
     uploaded_by = models.ForeignKey('core.SellerProfile', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)

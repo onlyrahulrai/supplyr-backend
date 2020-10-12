@@ -1,6 +1,6 @@
 import os
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, Group
 from os.path import splitext
 from django_mysql.models import Model
 from django_mysql.models import EnumField
@@ -46,6 +46,12 @@ class User(AbstractUser):
     @property
     def is_buyer(self):
         return self.groups.filter(name=self.BUYER_GROUP_NAME).exists()
+
+    def add_to_buyers_group(self):
+        buyer_group = Group.objects.filter(name = self.BUYER_GROUP_NAME).first()
+        if buyer_group:
+            self.groups.add(buyer_group)
+            
     
     @property
     def is_seller(self):

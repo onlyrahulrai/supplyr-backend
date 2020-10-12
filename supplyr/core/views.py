@@ -98,6 +98,8 @@ class BuyerProfilingView(APIView, UserInfoMixin):
         if serializer.is_valid():
             serializer.save()
             serializer_data = self.inject_user_info(serializer.data, request.user)
+            
+            request.user.add_to_buyers_group()
             return Response(serializer_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
