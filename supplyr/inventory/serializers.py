@@ -114,6 +114,15 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     owner = ProductOwnerSerializer(read_only=True)
     images = serializers.SerializerMethodField(read_only=True)
     sub_categories = serializers.SerializerMethodField()
+    is_favourite = serializers.SerializerMethodField()
+
+    def get_is_favourite(self, product): 
+        if 'request' in self.context:
+            # requests will only be available is passed in extra context
+            request = self.context['request']
+            buyer_profile = request.user.buyer_profiles.first()
+            return buyer_profile and buyer_profile.favourite_products.filter(id= product.id).exists()
+        return None
 
     def get_sub_categories(self, product):
         sub_categories = product.sub_categories.all()
@@ -259,7 +268,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'title', 'description', 'owner', 'images', 'variants_data', 'sub_categories']
+        fields = ['id', 'title', 'description', 'owner', 'images', 'variants_data', 'sub_categories', 'is_favourite']
         # depth = 1
 
 

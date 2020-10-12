@@ -52,7 +52,7 @@ class ProductDetails(APIView):
     def get(self, request, *args, **kwargs):
         product_id = kwargs.get("id")
         product = get_object_or_404(Product, id=product_id, is_active = True)
-        product_serializer = ProductDetailsSerializer(product)
+        product_serializer = ProductDetailsSerializer(product, context={'request' : request})
         return Response(product_serializer.data)
 
 class ProductImageUpload(APIView):
@@ -205,9 +205,9 @@ class UpdateFavouritesView(APIView):
         product_id = request.data.get('product_id')
 
         try:
-
+            print(request.data, product_id, operation)
             profile = request.user.buyer_profiles.first()
-            product = Product.objects.get(id=product_id)
+            product = Product.objects.get(id=int(product_id))
 
             if operation == 'add':
                 profile.favourite_products.add(product)
