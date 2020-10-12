@@ -12,7 +12,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from dj_rest_auth.views import LoginView
 
 from .serializers import UserDetailsSerializer, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, CategoriesSerializer, BuyerProfileSerializer
-from .permissions import IsUnapproved
+from .permissions import IsUnapproved, IsFromBuyerAPI
 from .models import SellerProfile, Category, BuyerProfile
 
 from supplyr.utils.api.mixins import APISourceMixin

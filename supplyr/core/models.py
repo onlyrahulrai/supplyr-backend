@@ -147,6 +147,7 @@ class BuyerProfile(models.Model):
 
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='buyer_profiles')
     business_name = models.CharField(max_length=100, blank=True, null=True)
+    favourite_products = models.ManyToManyField('inventory.Product', related_name='marked_favourite_by')
 
     class Meta:
         """Meta definition for BuyerProfile."""

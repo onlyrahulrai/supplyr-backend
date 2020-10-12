@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import AddProduct, ProductDetails, ProductImageUpload, SellerSelfProductListView, SellerProductListView, DeleteProduct, CategoriesView, ProductsBulkUpdateView, SellersListView,\
-    VariantDetailView
+    VariantDetailView, UpdateFavouritesView
 
 urlpatterns = [
     path('add-product/', AddProduct.as_view(), name='add_product'),
@@ -15,4 +15,5 @@ urlpatterns = [
     
     path('cart-items-info/', VariantDetailView.as_view(), name='variants_details'),
     path('sellers-list/', SellersListView.as_view(), name='sellers_list'),
+    path('update-favourites/', UpdateFavouritesView.as_view()),
 ]

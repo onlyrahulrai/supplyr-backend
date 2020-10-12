@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status, mixins
 from rest_framework.generics import ListAPIView, GenericAPIView
+from rest_framework.permissions import IsAuthenticated
 
 from supplyr.core.permissions import IsApproved, IsFromBuyerAPI
 from .serializers import ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer, SellerShortDetailsSerializer, VariantDetailsSerializer
@@ -105,8 +106,13 @@ class SellerProductListView(ListAPIView):
 
     def get_queryset(self):
         seller_id = self.kwargs.get('seller_id')
+        is_favourites_required = self.request.GET.get('favourites')
         profile = SellerProfile.objects.get(id=seller_id)
         filters = {}
+
+        if is_favourites_required:
+            buyer_profile = self.request.user.buyer_profiles.first()
+            return buyer_profile.favourite_products.filter(owner = profile)
         # if search_query := self.request.GET.get('search'):
         #     filters['title__search'] = search_query
         if sub_categories  := self.request.GET.get('sub_categories'):
@@ -188,4 +194,30 @@ class SellersListView(ListAPIView):
     # queryset = SellerProfile.objects.all()
     def get_queryset(self):
         return SellerProfile.objects.filter(is_approved=True)
+
+
+
+class UpdateFavouritesView(APIView):
+    permission_classes = [IsAuthenticated, IsFromBuyerAPI]
+
+    def post(self, request, *args, **kwargs):
+        operation = request.data.get('operation')
+        product_id = request.data.get('product_id')
+
+        try:
+
+            profile = request.user.buyer_profiles.first()
+            product = Product.objects.get(id=product_id)
+
+            if operation == 'add':
+                profile.favourite_products.add(product)
+            elif operation == 'remove':
+                profile.favourite_products.remove(product)
+
+            return Response({'success': True})
+
+        except Exception as e:
+            print("Enterrd excepitopn", str(e))
+            return Response({'success': False, 'message': str(e)}, status=500)
+
 
