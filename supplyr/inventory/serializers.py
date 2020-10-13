@@ -6,12 +6,13 @@ from supplyr.core.models import SellerProfile
 from django.conf import settings
 from django.db import transaction
 from supplyr.core.serializers import SubCategorySerializer2
+from django.db.models.functions import Coalesce
 
 
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'featured_image', 'price', 'sale_price', 'has_multiple_variants', 'quantity', 'variants_count', 'default_variant_id']
+        fields = ['id', 'title', 'featured_image', 'price', 'sale_price', 'has_multiple_variants', 'quantity', 'variants_count', 'default_variant_id', 'sale_price_range', 'actual_price_range']
 
 
     featured_image = serializers.SerializerMethodField()
@@ -35,6 +36,20 @@ class ProductListSerializer(serializers.ModelSerializer):
     default_variant_id = serializers.SerializerMethodField()
     def get_default_variant_id(self, instance):
         return instance.default_variant.id
+
+    sale_price_range = serializers.SerializerMethodField()
+    def get_sale_price_range(self, instance):
+        if instance.has_multiple_variants():
+            variants = instance.variants.filter(is_active=True).annotate(price_or_sale_price=Coalesce('sale_price', 'price')).order_by('price_or_sale_price')
+            range = (variants.first().price_or_sale_price, variants.last().price_or_sale_price)
+            return range
+
+    actual_price_range = serializers.SerializerMethodField()
+    def get_actual_price_range(self, instance):
+        if instance.has_multiple_variants():
+            variants = instance.variants.filter(is_active=True).order_by('price')
+            range = (variants.first().price, variants.last().price)
+            return range
 
 
 class VariantSerializer(serializers.ModelSerializer):
