@@ -23,3 +23,8 @@ class BuyerAddress(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['owner'], condition=models.Q(is_default=True), name='unique_default_address'), # Not supported in MySQL
         ]
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.is_default:
+            BuyerAddress.objects.filter(is_active=True, owner_id=self.owner_id).exclude(pk=self.pk).update(is_default=False)

@@ -15,7 +15,7 @@ class AddressView(generics.ListCreateAPIView, generics.UpdateAPIView, generics.D
 
     def get_queryset(self):
         profile = self.request.user.buyer_profiles.first()
-        return BuyerAddress.objects.filter(is_active=True, owner = profile)
+        return BuyerAddress.objects.filter(is_active=True, owner = profile).order_by('-is_default')
 
     def perform_create(self, serializer):
         owner = self.request.user.buyer_profiles.first()
