@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'supplyr.core.apps.CoreConfig',
     'supplyr.inventory.apps.InventoryConfig',
     'supplyr.profiles.apps.ProfilesConfig',
+    'supplyr.orders.apps.OrdersConfig',
 ]
 
 MIDDLEWARE = [

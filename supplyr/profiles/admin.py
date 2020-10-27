@@ -19,3 +19,4 @@ class BuyerAddressAdmin(admin.ModelAdmin):
     )
     list_filter = ('is_default', 'owner', 'is_active')
     search_fields = ('name',)
+    list_editable = ('is_default', 'is_active')

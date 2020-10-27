@@ -51,6 +51,9 @@ class User(AbstractUser):
         buyer_group = Group.objects.filter(name = self.BUYER_GROUP_NAME).first()
         if buyer_group:
             self.groups.add(buyer_group)
+
+    def get_buyer_profile(self):
+        return self.buyer_profiles.first()
             
     
     @property

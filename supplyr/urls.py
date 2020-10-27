@@ -34,7 +34,7 @@ _urlpatterns = [
     path('inventory/', include('supplyr.inventory.urls')),
     path('profile/', include('supplyr.profiles.urls')),
     path('register/', include('dj_rest_auth.registration.urls')),
-
+    path('orders/', include('supplyr.orders.urls')),
 ]
 
 
