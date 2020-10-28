@@ -7,7 +7,7 @@ class Order(models.Model):
     class OrderStatusChoice(models.TextChoices):
         AWAITING_APPROVAL = 'awaiting_approval', 'Awaiting Approval'
         APPROVED = 'approved', 'Approved'
-        CANCELED = 'canceled', 'Canceled'
+        CANCELLED = 'cancelled', 'Cancelled'
         DISPATCHED = 'dispatched', 'Dispatched'
         DELIVERED = 'delivered', 'Delivered'
 
@@ -24,6 +24,12 @@ class Order(models.Model):
         )
     total_amount = models.DecimalField(max_digits=14, decimal_places=2)
     address = models.ForeignKey('profiles.BuyerAddress', on_delete=models.RESTRICT)
+    
+    @property
+    def featured_image(self):
+        for item in self.items.all():
+            if im := item.get_featured_image():
+                return im
 
 
     class Meta:
@@ -39,6 +45,11 @@ class OrderItem(models.Model):
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=12, decimal_places=2)
     sale_price = models.DecimalField(max_digits=12, decimal_places=2)
+
+    def get_featured_image(self):
+        if im := self.product_variant.featured_image:
+            return im
+        return None
 
     class Meta:
 

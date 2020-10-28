@@ -4,6 +4,7 @@ from django.db import transaction
 
 from .models import *
 from supplyr.inventory.models import Variant
+from supplyr.profiles.models import BuyerAddress
 
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta: 
@@ -34,7 +35,7 @@ class OrderSerializer(serializers.ModelSerializer):
             if not variant:
                 unhandled_errors =  True
             if variant.quantity < item['quantity']:
-                raise ValidationError({"Selcted quantities of some products no longer available.": ''})
+                raise ValidationError({"message": "Selcted quantities of some products no longer available."})
                 # handled_errors = "Selcted quantities of some products no longer available."
             
             if unhandled_errors:
@@ -63,6 +64,10 @@ class OrderSerializer(serializers.ModelSerializer):
         # validation TBA: check if buyer n seller are connected
         items = validated_data.pop('items')
         print("VDDDDD ", validated_data)
+        # address = BuyerAddress.objectaddressed_data)
+        if validated_data['address'].owner_id != validated_data['buyer'].id:
+            raise ValidationError({"message": "Invalid Address"})
+
         with transaction.atomic():
             order = Order.objects.create(**validated_data, buyer_id=6)
             for item in items:
@@ -72,6 +77,11 @@ class OrderSerializer(serializers.ModelSerializer):
             
 
 class OrderListSerializer(serializers.ModelSerializer):
+    featured_image = serializers.SerializerMethodField()
+    def get_featured_image(self, order):
+        if im := order.featured_image:
+            return order.featured_image.image_md.url
+
     order_date = serializers.SerializerMethodField()
     def get_order_date(self, order):
         return order.created_at.strftime("%b %I, %Y")
@@ -86,8 +96,8 @@ class OrderListSerializer(serializers.ModelSerializer):
 
     order_status = serializers.SerializerMethodField()
     def get_order_status(self, order):
-        return "approved"
+        return order.status
 
     class Meta:
         model = Order
-        fields = ['id', 'order_date', 'seller_name', 'items_count', 'order_status']
+        fields = ['id', 'order_date', 'seller_name', 'items_count', 'order_status', 'total_amount', 'featured_image',]
