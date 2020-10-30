@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.db import transaction
+from django.contrib.humanize.templatetags.humanize import naturaltime
+from django.utils import timezone
+from datetime import timedelta
 
 from .models import *
 from supplyr.inventory.models import Variant
@@ -94,6 +97,13 @@ class OrderListSerializer(serializers.ModelSerializer):
 
     order_date = serializers.SerializerMethodField()
     def get_order_date(self, order):
+        tdelta = timezone.now() - order.created_at 
+        if tdelta.days == 0:
+            return naturaltime(order.created_at)
+
+        elif tdelta.days == 1 and (timezone.now() - timedelta(days=1)).day == order.created_at.day:
+            return 'yesterday'
+
         return order.created_at.strftime("%b %d, %Y")
 
     seller_name = serializers.SerializerMethodField()

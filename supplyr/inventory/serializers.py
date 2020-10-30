@@ -306,21 +306,27 @@ class SellerShortDetailsSerializer(serializers.ModelSerializer):
         sub_categories_serializer = SubCategorySerializer2(sub_categories, many=True)
         return sub_categories_serializer.data
 
+    has_products_added = serializers.SerializerMethodField()
+    def get_has_products_added(self, seller):
+        return seller.products.filter(is_active=True).exists()
+
     class Meta:
         model = SellerProfile
         fields = [
             'business_name',
             'sub_categories',
-            'id'
+            'id',
+            'has_products_added',
             ]
 
 
 class VariantDetailsSerializer(serializers.ModelSerializer):
 
     class ProductShortDetailsSerializer(serializers.ModelSerializer):
+        seller_name = serializers.CharField(source='owner.business_name')
         class Meta:
             model = Product
-            fields = ['title', 'has_multiple_variants', 'id']
+            fields = ['title', 'has_multiple_variants', 'id', 'seller_name']
 
     featured_image = serializers.SerializerMethodField()
     def get_featured_image(self, variant):
