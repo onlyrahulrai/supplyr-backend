@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import generics, mixins
 from rest_framework.views import APIView
 from .models import Order
-from .serializers import OrderSerializer, OrderListSerializer
+from .serializers import OrderSerializer, OrderListSerializer, OrderDetailsSerializer
 from supplyr.core.permissions import IsFromBuyerAPI, IsApproved
 from rest_framework.permissions import IsAuthenticated
 
@@ -44,7 +44,12 @@ class OrderListView(mixins.ListModelMixin, generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Order.objects.filter()
+        return Order.objects.order_by('-created_at').filter()
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+class OrderDetailsView(generics.RetrieveAPIView):
+    serializer_class = OrderDetailsSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Order.objects.all()

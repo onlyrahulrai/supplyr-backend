@@ -5,11 +5,21 @@ from django.db import transaction
 from .models import *
 from supplyr.inventory.models import Variant
 from supplyr.profiles.models import BuyerAddress
+from supplyr.profiles.serializers import BuyerAddressSerializer
+from supplyr.inventory.serializers import VariantDetailsSerializer
 
 class OrderItemSerializer(serializers.ModelSerializer):
+    # featured_image = serializers.SerializerMethodField()
+    # def get_featured_image(self, order):
+    #     if im := order.featured_image:
+    #         return order.featured_image.image_md.url
+
+    # title = serializers.CharField(source='product_variant.product.title')
+    product_variant = VariantDetailsSerializer(read_only=True)
+    product_variant_id = serializers.PrimaryKeyRelatedField(queryset=Variant.objects.all(), source='product_variant', write_only=True)
     class Meta: 
         model = OrderItem
-        exclude = ['id', 'order']
+        fields = ['quantity', 'price', 'sale_price', 'product_variant', 'product_variant_id']
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
@@ -35,7 +45,7 @@ class OrderSerializer(serializers.ModelSerializer):
             if not variant:
                 unhandled_errors =  True
             if variant.quantity < item['quantity']:
-                raise ValidationError({"message": "Selcted quantities of some products no longer available."})
+                raise ValidationError({"cart": "Selcted quantities of some products no longer available."})
                 # handled_errors = "Selcted quantities of some products no longer available."
             
             if unhandled_errors:
@@ -43,9 +53,9 @@ class OrderSerializer(serializers.ModelSerializer):
             #Raise exxception
 
             item['price'] = variant.price
-            item['sale_price'] = variant.sale_price
-            item['product_variant'] = item['variant_id']
-            total_amount += (item['sale_price'] or item['price'])
+            item['sale_price'] = variant.sale_price or variant.price
+            item['product_variant_id'] = item['variant_id']
+            total_amount += (item['sale_price'] or item['price'])*item['quantity']
             if not seller_id:
                 seller_id = variant.product.owner_id
             elif seller_id != variant.product.owner_id:
@@ -84,7 +94,7 @@ class OrderListSerializer(serializers.ModelSerializer):
 
     order_date = serializers.SerializerMethodField()
     def get_order_date(self, order):
-        return order.created_at.strftime("%b %I, %Y")
+        return order.created_at.strftime("%b %d, %Y")
 
     seller_name = serializers.SerializerMethodField()
     def get_seller_name(self, order):
@@ -101,3 +111,13 @@ class OrderListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['id', 'order_date', 'seller_name', 'items_count', 'order_status', 'total_amount', 'featured_image',]
+
+
+class OrderDetailsSerializer(OrderListSerializer):
+
+    address = BuyerAddressSerializer()
+    items = OrderItemSerializer(many=True)
+
+    class Meta:
+        model = Order
+        fields=['order_date', 'seller_name', 'order_status', 'total_amount', 'items', 'address']

@@ -332,9 +332,9 @@ class VariantDetailsSerializer(serializers.ModelSerializer):
         
         return None
 
-    product_title = serializers.SerializerMethodField()
-    def get_product_title(self, variant):
-        return variant.product.title
+    # product_title = serializers.SerializerMethodField()
+    # def get_product_title(self, variant):
+    #     return variant.product.title
 
     product = ProductShortDetailsSerializer()
 

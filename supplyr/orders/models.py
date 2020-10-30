@@ -28,7 +28,7 @@ class Order(models.Model):
     @property
     def featured_image(self):
         for item in self.items.all():
-            if im := item.get_featured_image():
+            if im := item.featured_image:
                 return im
 
 
@@ -46,7 +46,8 @@ class OrderItem(models.Model):
     price = models.DecimalField(max_digits=12, decimal_places=2)
     sale_price = models.DecimalField(max_digits=12, decimal_places=2)
 
-    def get_featured_image(self):
+    @property
+    def featured_image(self):
         if im := self.product_variant.featured_image:
             return im
         return None
