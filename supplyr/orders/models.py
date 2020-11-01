@@ -50,6 +50,10 @@ class OrderItem(models.Model):
     def featured_image(self):
         if im := self.product_variant.featured_image:
             return im
+
+        elif im := self.product_variant.product.featured_image:
+            return im
+
         return None
 
     class Meta:

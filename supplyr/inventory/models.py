@@ -55,8 +55,9 @@ class Product(Model):
         else:
             image = self.images.filter(is_active = True).first()
         if image:
-            if image_sm := image.image_sm:
-                return image_sm
+            return image
+            # if image_sm := image.image_sm:
+            #     return image_sm
         return None
 
     @cached_property
@@ -79,6 +80,7 @@ class Variant(Model):
     option3_value = models.CharField(max_length=150, blank=True, null=True)
 
     quantity = models.PositiveIntegerField(default=0)
+    minimum_order_quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
     sale_price = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
     featured_image = models.ForeignKey('ProductImage', blank=True, null=True, on_delete=models.SET_NULL, related_name='featured_in_variants')

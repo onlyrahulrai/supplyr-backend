@@ -12,13 +12,14 @@ from django.db.models.functions import Coalesce
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'featured_image', 'price', 'sale_price', 'has_multiple_variants', 'quantity', 'variants_count', 'default_variant_id', 'sale_price_range', 'actual_price_range']
+        fields = ['id', 'title', 'featured_image', 'price', 'sale_price', 'has_multiple_variants', 'quantity', 'variants_count', 'default_variant_id', 'sale_price_range', 'actual_price_range', 'minimum_order_quantity']
 
 
     featured_image = serializers.SerializerMethodField()
     def get_featured_image(self, instance):
         if image := instance.featured_image:
-            return image.url
+            if image_sm := image.image_sm:
+                return image_sm.url
         return None
 
     price = serializers.SerializerMethodField()
@@ -32,6 +33,10 @@ class ProductListSerializer(serializers.ModelSerializer):
     quantity = serializers.SerializerMethodField()
     def get_quantity(self, instance):
         return instance.default_variant.quantity
+
+    minimum_order_quantity = serializers.SerializerMethodField()
+    def get_minimum_order_quantity(self, instance):
+        return instance.default_variant.minimum_order_quantity
 
     default_variant_id = serializers.SerializerMethodField()
     def get_default_variant_id(self, instance):
@@ -333,7 +338,7 @@ class VariantDetailsSerializer(serializers.ModelSerializer):
         if variant.featured_image:
             return variant.featured_image.image_md.url
         
-        if product_image := variant.product.images.first():
+        if product_image := variant.product.featured_image:
             return product_image.image_md.url
         
         return None

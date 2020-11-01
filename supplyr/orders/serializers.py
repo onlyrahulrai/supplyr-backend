@@ -128,6 +128,9 @@ class OrderDetailsSerializer(OrderListSerializer):
     address = BuyerAddressSerializer()
     items = OrderItemSerializer(many=True)
 
+    def get_order_date(self, order):
+        return order.created_at.strftime("%b %d, %Y")
+
     class Meta:
         model = Order
         fields=['order_date', 'seller_name', 'order_status', 'total_amount', 'items', 'address']
