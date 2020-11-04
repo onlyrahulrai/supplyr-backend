@@ -9,6 +9,8 @@ from supplyr.core.model_utils import generate_image_sizes
 
 class User(AbstractUser):
 
+    mobile_number = models.CharField(max_length=14)
+
     BUYER_GROUP_NAME = 'buyer'
     SELLER_GROUP_NAME = 'seller'
     
