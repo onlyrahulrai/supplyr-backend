@@ -28,3 +28,19 @@ class BuyerAddress(models.Model):
         super().save(*args, **kwargs)
         if self.is_default:
             BuyerAddress.objects.filter(is_active=True, owner_id=self.owner_id).exclude(pk=self.pk).update(is_default=False)
+
+class BuyerSellerConnection(models.Model):
+    """Model definition for BuyerSellerConnection."""
+
+    buyer = models.ForeignKey('core.BuyerProfile', on_delete=models.RESTRICT, related_name='connections')
+    seller = models.ForeignKey('core.SellerProfile', on_delete=models.RESTRICT, related_name='connections')
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+    deactivated_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        """Meta definition for BuyerSellerConnection."""
+
+        verbose_name = 'BuyerSellerConnection'
+        verbose_name_plural = 'BuyerSellerConnections'
+        unique_together = ('seller', 'buyer', 'is_active', 'deactivated_at')

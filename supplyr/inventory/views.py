@@ -187,16 +187,6 @@ class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModel
             return Response(None, status=204)
 
 
-class SellersListView(ListAPIView):
-    permission_classes = [IsFromBuyerAPI]
-    serializer_class = SellerShortDetailsSerializer
-    pagination_class = None
-    # queryset = SellerProfile.objects.all()
-    def get_queryset(self):
-        return SellerProfile.objects.filter(is_approved=True)
-
-
-
 class UpdateFavouritesView(APIView):
     permission_classes = [IsAuthenticated, IsFromBuyerAPI]
 

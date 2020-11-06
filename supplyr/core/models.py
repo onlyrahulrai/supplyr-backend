@@ -6,6 +6,9 @@ from django_mysql.models import Model
 from django_mysql.models import EnumField
 from django.utils.functional import cached_property
 from supplyr.core.model_utils import generate_image_sizes
+from django.utils.crypto import get_random_string
+import string
+import random
 
 class User(AbstractUser):
 
@@ -142,6 +145,19 @@ class SellerProfile(Model):
     gst_certificate = models.FileField(upload_to=get_gst_upload_path, max_length=150, blank=True, null=True)
     operational_fields = models.ManyToManyField(SubCategory, blank=True)
     is_approved = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    connection_code = models.CharField(max_length=15)
+
+    def generate_connection_code(self):
+        alpha = ''.join(random.choice(string.ascii_uppercase) for i in range(2))
+        numeric =  ''.join(random.choice(string.digits) for i in range(8))
+        code = alpha + numeric
+        self.connection_code = code
+        self.save()
+        return code
+
+    def __str__(self):
+        return self.business_name or '--seller--'
 
 
     class Meta:
@@ -153,6 +169,7 @@ class BuyerProfile(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='buyer_profiles')
     business_name = models.CharField(max_length=100, blank=True, null=True)
     favourite_products = models.ManyToManyField('inventory.Product', related_name='marked_favourite_by')
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         """Meta definition for BuyerProfile."""

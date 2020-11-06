@@ -79,6 +79,11 @@ class SellerProfilingView(APIView, UserInfoMixin):
         if serializer.is_valid():
             serializer.save()
             serializer_data = self.inject_user_info(serializer.data, request.user)
+
+            if not existing_profile:
+                profile = SellerProfile.objects.filter(owner=request.user).first()
+                profile.generate_connection_code()
+                
             return Response(serializer_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

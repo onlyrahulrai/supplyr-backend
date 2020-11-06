@@ -148,6 +148,7 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
             'business_name',
             'id',
             'sub_categories',
+            'connection_code',
             ]
 
 class SellerProfilingSerializer(serializers.ModelSerializer):
