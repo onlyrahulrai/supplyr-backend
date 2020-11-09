@@ -12,8 +12,8 @@ class Order(models.Model):
         DELIVERED = 'delivered', 'Delivered'
 
 
-    buyer = models.ForeignKey('core.BuyerProfile', related_name='orders', on_delete=models.RESTRICT)
-    seller = models.ForeignKey('core.SellerProfile', related_name='received_orders', on_delete=models.RESTRICT)
+    buyer = models.ForeignKey('profiles.BuyerProfile', related_name='orders', on_delete=models.RESTRICT)
+    seller = models.ForeignKey('profiles.SellerProfile', related_name='received_orders', on_delete=models.RESTRICT)
     status = EnumField(choices=OrderStatusChoice.choices, default=OrderStatusChoice.AWAITING_APPROVAL)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)

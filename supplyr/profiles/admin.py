@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import BuyerAddress, BuyerSellerConnection
+from .models import BuyerAddress, BuyerSellerConnection, BuyerProfile, SellerProfile
 
 
 @admin.register(BuyerAddress)
@@ -21,4 +21,6 @@ class BuyerAddressAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     list_editable = ('is_default', 'is_active')
 
+admin.site.register(SellerProfile)
+admin.site.register(BuyerProfile)
 admin.site.register(BuyerSellerConnection)

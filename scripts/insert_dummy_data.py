@@ -2,7 +2,7 @@ from django.utils.lorem_ipsum import words
 from django.template.defaultfilters import capfirst
 from random import randint
 
-from supplyr.core.models import Category, SubCategory
+from supplyr.inventory.models import Category, SubCategory
 
 
 camel_case = lambda value:' '.join(list(map(lambda x:capfirst(x), value.split(' '))))

@@ -180,7 +180,7 @@ REST_USE_JWT = True
 # JWT_AUTH_SAMESITE = False
 
 REST_AUTH_SERIALIZERS = {
-    'USER_DETAILS_SERIALIZER': 'supplyr.core.serializers.UserDetailsSerializer',
+    'USER_DETAILS_SERIALIZER': 'supplyr.profiles.serializers.UserDetailsSerializer',
     'JWT_SERIALIZER': 'supplyr.core.serializers.CustomJWTSerializer'
 }
 REST_AUTH_REGISTER_SERIALIZERS = {

@@ -33,9 +33,6 @@ class OrderSerializer(serializers.ModelSerializer):
         read_only_fields = ['cancelled_at']
 
     def to_internal_value(self, data):
-        print('xAMEEE', data)
-        # internal_value = super().to_internal_value(data)
-        print('xAMEEEa')
         unhandled_errors = False
         # handled_errors = False
         total_amount = 0
@@ -82,7 +79,7 @@ class OrderSerializer(serializers.ModelSerializer):
             raise ValidationError({"message": "Invalid Address"})
 
         with transaction.atomic():
-            order = Order.objects.create(**validated_data, buyer_id=6)
+            order = Order.objects.create(**validated_data)
             for item in items:
                 OrderItem.objects.create(**item, order = order)
         

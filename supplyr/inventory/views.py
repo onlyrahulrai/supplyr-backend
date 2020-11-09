@@ -7,9 +7,9 @@ from rest_framework.generics import ListAPIView, GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from supplyr.core.permissions import IsApproved, IsFromBuyerAPI
-from .serializers import ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer, SellerShortDetailsSerializer, VariantDetailsSerializer
-from supplyr.core.serializers import CategoriesSerializer2
-from supplyr.core.models import Category, SellerProfile
+from .serializers import ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer, VariantDetailsSerializer, CategoriesSerializer2
+from supplyr.inventory.models import Category
+from supplyr.profiles.models import SellerProfile
 from .models import Product, Variant, ProductImage
 from django.db.models import Prefetch, Q, Count
 
@@ -164,6 +164,9 @@ class ProductsBulkUpdateView(APIView):
 
 
 class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.CreateModelMixin):
+    """
+    View for viewing, adding, updating, and deleting categories and subcategories
+    """
     queryset = Category.objects.filter(is_active =True)
     serializer_class = CategoriesSerializer2
     permission_classes = [IsApproved]

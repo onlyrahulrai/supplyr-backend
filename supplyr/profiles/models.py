@@ -1,7 +1,77 @@
 from django.db import models
 from django_mysql.models import EnumField
+import random
+import string
+from os.path import splitext
 
-# Create your models here.
+def get_document_upload_path(instance, filename, document_category):
+    file, ext = splitext(filename)
+    new_filename = document_category + ext
+    return f"documents/{ instance.id }/{ new_filename }"
+
+def get_gst_upload_path(instance, filename):
+    return get_document_upload_path(instance, filename, 'gst')
+
+
+class SellerProfile(models.Model):
+    class EntityTypes(models.TextChoices):
+        PVTLTD = 'pvtltd', 'Private Limited'
+        LLP = 'llp', 'Limited Liablity Partnership'
+        PARTNER = 'part', 'Partnership'
+        PROPRIETERSHIP = 'prop', 'Propertieship'
+
+    class EntityCategory(models.TextChoices):
+        MANUFACTURER = 'M', 'Manufacturer'
+        DISTRIBUTOR = 'D', 'Distributer'
+        WHOLESELLER = 'W', 'Wholeseller'
+
+
+    owner = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='seller_profiles')
+    business_name = models.CharField(max_length=100, blank=True, null=True)
+    entity_category = EnumField(choices=EntityCategory.choices, blank=True, null=True) 
+    entity_type = EnumField(choices=EntityTypes.choices, blank=True, null=True)
+    is_gst_enrolled = models.BooleanField(default=False, blank=True, null=True)
+    gst_number = models.CharField(max_length=20, blank=True, null=True)
+    pan_number = models.CharField(max_length=15, blank=True, null=True)
+    tan_number = models.CharField(max_length=15, blank=True, null=True)
+    gst_certificate = models.FileField(upload_to=get_gst_upload_path, max_length=150, blank=True, null=True)
+    operational_fields = models.ManyToManyField('inventory.SubCategory', blank=True)
+    is_approved = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    connection_code = models.CharField(max_length=15)
+
+    def generate_connection_code(self):
+        if self.connection_code:
+            return self.connection_code
+            
+        alpha = ''.join(random.choice(string.ascii_uppercase) for i in range(2))
+        numeric =  ''.join(random.choice(string.digits) for i in range(8))
+        code = alpha + numeric
+        self.connection_code = code
+        self.save()
+        return code
+
+    def __str__(self):
+        return self.business_name or '--seller--'
+
+
+    class Meta:
+        verbose_name_plural = 'Seller Profiles'
+
+
+class BuyerProfile(models.Model):
+
+    owner = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='buyer_profiles')
+    business_name = models.CharField(max_length=100, blank=True, null=True)
+    favourite_products = models.ManyToManyField('inventory.Product', related_name='marked_favourite_by')
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        """Meta definition for BuyerProfile."""
+
+        verbose_name = 'BuyerProfile'
+        verbose_name_plural = 'BuyerProfiles'
+
 
 class BuyerAddress(models.Model):
     STATE_CHOICES = (('KA', 'Karnataka'), ('AP', 'Andhra Pradesh'), ('KL', 'Kerala'), ('TN', 'Tamil Nadu'), ('MH', 'Maharashtra'), ('UP', 'Uttar Pradesh'), ('GA', 'Goa'), ('GJ', 'Gujarat'), ('RJ', 'Rajasthan'), ('HP', 'Himachal Pradesh'), ('JK', 'Jammu and Kashmir'), ('TG', 'Telangana'), ('AR', 'Arunachal Pradesh'), ('AS', 'Assam'), ('BR', 'Bihar'), ('CG', 'Chattisgarh'), ('HR', 'Haryana'), ('JH', 'Jharkhand'), ('MP', 'Madhya Pradesh'), ('MN', 'Manipur'), ('ML', 'Meghalaya'), ('MZ', 'Mizoram'), ('NL', 'Nagaland'), ('OR', 'Orissa'), ('PB', 'Punjab'), ('SK', 'Sikkim'), ('TR', 'Tripura'), ('UA', 'Uttarakhand'), ('WB', 'West Bengal'), ('AN', 'Andaman and Nicobar'), ('CH', 'Chandigarh'), ('DN', 'Dadra and Nagar Haveli'), ('DD', 'Daman and Diu'), ('DL', 'Delhi'), ('LD', 'Lakshadweep'), ('PY', 'Pondicherry'))
@@ -16,7 +86,7 @@ class BuyerAddress(models.Model):
 
     is_default = models.BooleanField(default=False)
 
-    owner = models.ForeignKey('core.BuyerProfile', on_delete=models.CASCADE)
+    owner = models.ForeignKey('profiles.BuyerProfile', on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -32,8 +102,8 @@ class BuyerAddress(models.Model):
 class BuyerSellerConnection(models.Model):
     """Model definition for BuyerSellerConnection."""
 
-    buyer = models.ForeignKey('core.BuyerProfile', on_delete=models.RESTRICT, related_name='connections')
-    seller = models.ForeignKey('core.SellerProfile', on_delete=models.RESTRICT, related_name='connections')
+    buyer = models.ForeignKey('profiles.BuyerProfile', on_delete=models.RESTRICT, related_name='connections')
+    seller = models.ForeignKey('profiles.SellerProfile', on_delete=models.RESTRICT, related_name='connections')
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     deactivated_at = models.DateTimeField(blank=True, null=True)

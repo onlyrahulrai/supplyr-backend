@@ -5,6 +5,7 @@ from io import BytesIO
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.db import models
+from django.template.defaultfilters import slugify
 from django_mysql.models import Model
 from PIL import Image
 from supplyr.core.model_utils import generate_image_sizes
@@ -24,11 +25,57 @@ class Search(models.Lookup):
 models.CharField.register_lookup(Search)
 models.TextField.register_lookup(Search)
 
+
+class Category(models.Model):
+    image_sizes = [
+        {
+            'field_name': 'image_sm',
+            'size': [200,200],
+            'quality': 60,
+        },
+    ]
+
+    def get_image_upload_path(self, filename, size = None):
+        file, ext = os.path.splitext(filename)
+        base_directory = 'category-images'
+        new_filename = os.path.join(base_directory, str(self.id or slugify(self.name)) + (('_'+ size) if size else '') + ext)
+        return new_filename
+
+    def get_image_sm_upload_path(self, filename):
+        return self.get_image_upload_path(filename, size="sm")
+    
+
+    name = models.CharField(max_length=50)
+    serial = models.PositiveSmallIntegerField(null=True, blank=True)
+    image = models.ImageField(upload_to=get_image_upload_path, blank=True, null=True)
+    image_sm = models.ImageField(upload_to=get_image_sm_upload_path, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._existing_image = self.image
+
+    def save(self, *args, **kwargs):
+        if self.image != self._existing_image or not self.id: #image is changed, or it's a new category
+            generate_image_sizes(self, 'image', self.image_sizes, save = False) # Save is omitted here to prevent recursion
+        return super().save(*args, **kwargs)
+
+    class Meta:
+        ordering = ['serial']
+
+
+class SubCategory(models.Model):
+    name = models.CharField(max_length=50)
+    serial = models.PositiveSmallIntegerField(null= True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='sub_categories')
+    is_active = models.BooleanField(default=True)
+
+
 class Product(Model):
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
-    owner = models.ForeignKey('core.SellerProfile', related_name='products', on_delete=models.CASCADE)
-    sub_categories = models.ManyToManyField('core.SubCategory', related_name='products')
+    owner = models.ForeignKey('profiles.SellerProfile', related_name='products', on_delete=models.CASCADE)
+    sub_categories = models.ManyToManyField('inventory.SubCategory', related_name='products')
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -133,7 +180,7 @@ class ProductImage(Model):
     image_md = models.ImageField(upload_to= get_image_md_upload_path, blank=True, null=True)
     image_lg = models.ImageField(upload_to= get_image_md_upload_path, blank=True, null=True)
     order = models.PositiveSmallIntegerField(blank=True, null=True)
-    uploaded_by = models.ForeignKey('core.SellerProfile', on_delete=models.CASCADE)
+    uploaded_by = models.ForeignKey('profiles.SellerProfile', on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     is_temp = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True)

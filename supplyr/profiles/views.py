@@ -1,14 +1,89 @@
 from django.shortcuts import render
 from django.utils import timezone
 from rest_framework import generics, mixins, views
-from .models import BuyerAddress, BuyerSellerConnection
-from .serializers import BuyerAddressSerializer
-from supplyr.core.permissions import IsFromBuyerAPI, IsApproved
+from .models import BuyerAddress, BuyerSellerConnection, SellerProfile, BuyerProfile
+from .serializers import BuyerAddressSerializer, BuyerProfileSerializer, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, SellerShortDetailsSerializer
+from supplyr.core.permissions import IsFromBuyerAPI, IsApproved, IsUnapproved
 from supplyr.utils.api.mixins import APISourceMixin
-from supplyr.inventory.serializers import SellerShortDetailsSerializer
-from supplyr.core.models import SellerProfile
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework import status
+from supplyr.utils.api.mixins import UserInfoMixin
+
+
+class BuyerProfilingView(views.APIView, UserInfoMixin):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        data = request.data.copy()
+        data['owner'] = request.user.pk
+        
+        existing_profile = BuyerProfile.objects.filter(owner=request.user).first()
+        if existing_profile:
+            serializer = BuyerProfileSerializer(existing_profile, data = data)
+        else:
+            serializer = BuyerProfileSerializer(data = data)
+
+        if serializer.is_valid():
+            serializer.save()
+            serializer_data = self.inject_user_info(serializer.data, request.user)
+            
+            request.user.add_to_buyers_group()
+            return Response(serializer_data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SellerProfilingView(views.APIView, UserInfoMixin):
+    permission_classes = [IsUnapproved]
+
+    def post(self, request, *args, **kwargs):
+        # if(request.user.is_approved):
+        #     return Response("User Already Approved", status=status.HTTP_400_BAD_REQUEST)
+
+        data = request.data.copy()
+        data['owner'] = request.user.pk
+        
+        existing_profile = SellerProfile.objects.filter(owner=request.user).first()
+        if existing_profile:
+            serializer = SellerProfilingSerializer(existing_profile, data = data)
+        else:
+            serializer = SellerProfilingSerializer(data = data)
+
+        if serializer.is_valid():
+            serializer.save()
+            serializer_data = self.inject_user_info(serializer.data, request.user)
+
+            if not existing_profile:
+                profile = SellerProfile.objects.filter(owner=request.user).first()
+                profile.generate_connection_code()
+                
+            return Response(serializer_data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProfilingDocumentsUploadView(views.APIView):    #Seller
+    
+    permission_classes = [IsUnapproved]
+    parser_classes = [FormParser, MultiPartParser]
+
+    def post(self, request, *args, **kwargs):
+        
+        data = request.data.copy()
+        data['owner'] = request.user.pk
+
+        existing_profile = SellerProfile.objects.filter(owner=request.user).first()
+        if existing_profile:
+            serializer = SellerProfilingDocumentsSerializer(existing_profile, data = data)
+        else:
+            serializer = SellerProfilingDocumentsSerializer(data = data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
 
 class AddressView(generics.ListCreateAPIView, generics.UpdateAPIView, generics.DestroyAPIView):
     """
@@ -65,3 +140,21 @@ class SellersListView(generics.ListAPIView):
     def get_queryset(self):
         buyer_profile = self.request.user.get_buyer_profile()
         return SellerProfile.objects.filter(connections__buyer=buyer_profile, is_active=True, connections__is_active=True)
+
+
+
+class ProfilingCategoriesView(views.APIView, UserInfoMixin):
+    """
+    Filling seller operational categories while profiling
+    """
+
+    permission_classes = [IsUnapproved]
+
+    def post(self, request, *args, **kwargs):
+
+        sub_categories = request.data['sub_categories']
+        profile = request.user.seller_profiles.first()
+        profile.operational_fields.set(sub_categories)
+        response = self.inject_user_info({'success': True}, request.user)
+
+        return Response(response)
