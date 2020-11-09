@@ -201,16 +201,23 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        product = Product.objects.create(title=validated_data['title'], description=validated_data.get('description'), owner=validated_data['owner'])
-        variants_data = validated_data['variants_data']
+
+        images = validated_data['images']
+        del validated_data['images']    #Otherwise saving will break, as there are just image IDs in this field instead of instances
+        sub_categories = validated_data.pop('sub_categories')
+        variants_data = validated_data.pop('variants_data')
+
+        product = Product.objects.create(**validated_data)
+
+        product.sub_categories.set(sub_categories)
         is_multi_variant = variants_data['multiple']
 
         variants_serializer = VariantSerializer(data = variants_data['data'], many=is_multi_variant)
         if variants_serializer.is_valid(raise_exception=True):
             variants = variants_serializer.save(product = product)
-        if validated_data['images']:
+        if images:
             image_order = 1
-            for image_id in validated_data['images']:
+            for image_id in images:
                 if image := ProductImage.objects.filter(id=image_id).first():
                     if image.uploaded_by != product.owner or image.product or not image.is_temp:
                         continue
