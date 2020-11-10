@@ -56,7 +56,7 @@ class Category(models.Model):
         self._existing_image = self.image
 
     def save(self, *args, **kwargs):
-        if self.image != self._existing_image or not self.id: #image is changed, or it's a new category
+        if self.image != self._existing_image or (self.image and not self.id): #image is changed, or it's a new category
             generate_image_sizes(self, 'image', self.image_sizes, save = False) # Save is omitted here to prevent recursion
         return super().save(*args, **kwargs)
 
