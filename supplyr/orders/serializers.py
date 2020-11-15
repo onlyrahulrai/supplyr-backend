@@ -119,8 +119,19 @@ class OrderListSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['id', 'order_date', 'seller_name', 'items_count', 'order_status', 'total_amount', 'featured_image',]
 
+class SellerOrderListSerializer(OrderListSerializer):
 
-class OrderDetailsSerializer(OrderListSerializer):
+    buyer_name = serializers.SerializerMethodField()
+    def get_buyer_name(self, order):
+        return order.buyer.business_name
+
+    class Meta:
+        model = Order
+        fields = ['id', 'order_date', 'buyer_name', 'order_status', 'total_amount', 'featured_image',]
+
+
+
+class OrderDetailsSerializer(SellerOrderListSerializer):
 
     address = BuyerAddressSerializer()
     items = OrderItemSerializer(many=True)
@@ -130,4 +141,4 @@ class OrderDetailsSerializer(OrderListSerializer):
 
     class Meta:
         model = Order
-        fields=['order_date', 'seller_name', 'order_status', 'total_amount', 'items', 'address']
+        fields=['order_date', 'seller_name', 'buyer_name', 'order_status', 'total_amount', 'items', 'address']
