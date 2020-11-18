@@ -3,6 +3,7 @@ from rest_framework.exceptions import ValidationError
 from django.db import transaction
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.utils import timezone
+from django.db.models import F
 from datetime import timedelta
 
 from .models import *
@@ -81,7 +82,11 @@ class OrderSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             order = Order.objects.create(**validated_data)
             for item in items:
-                OrderItem.objects.create(**item, order = order)
+                _item = OrderItem.objects.create(**item, order = order)
+
+                product_variant = _item.product_variant
+                product_variant.quantity = F('quantity') - _item.quantity
+                product_variant.save()
         
         return order
             

@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.shortcuts import render
 from rest_framework import generics, mixins
 from rest_framework.views import APIView
@@ -7,6 +8,7 @@ from supplyr.core.permissions import IsFromBuyerAPI, IsApproved, IsFromSellerAPI
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from supplyr.utils.api.mixins import APISourceMixin
+from django.db.models import F
 
 class OrderView(mixins.ListModelMixin,
                   mixins.CreateModelMixin,
@@ -55,6 +57,11 @@ class OrderListView(mixins.ListModelMixin, generics.GenericAPIView, APISourceMix
         if status_filter := self.request.GET.get('order_status'):
             filters['status'] = status_filter
 
+        if self.api_source == 'seller':
+            filters['seller'] = self.request.user.get_seller_profile()
+        elif self.api_source == 'buyer':
+            filters['buyer'] = self.request.user.get_buyer_profile()
+
         return Order.objects.order_by('-created_at').filter(**filters)
 
     def get(self, request, *args, **kwargs):
@@ -80,14 +87,42 @@ class OrdersBulkUpdateView(APIView):
             Order.objects.filter(pk__in = order_ids, seller=profile, is_active=True).exclude(status=Order.OrderStatusChoice.CANCELLED)\
                             .update(status = new_status)
 
-        # if operation in ['add-subcategories', 'remove-subcategories']:
-        #     product_ids = request.data.get('product_ids')
-        #     sub_categories_list = request.data.get('data')
-
-        #     for product in Product.objects.filter(pk__in = product_ids, owner=profile, is_active = True):
-        #         if operation == 'add-subcategories':
-        #             product.sub_categories.add(*sub_categories_list)
-        #         else:
-        #             product.sub_categories.remove(*sub_categories_list)
-        
         return Response({'success': True})
+
+class OrderCancellationView(APIView, APISourceMixin):
+    
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        order_id = request.data.get('order_id')
+
+
+        order = Order.objects.filter(id=order_id).exclude(Q(status=Order.OrderStatusChoice.CANCELLED) | Q(status=Order.OrderStatusChoice.DELIVERED) | Q(is_active=False))
+        if self.api_source == 'buyer':
+            buyer_profile = self.request.user.get_buyer_profile()
+            order = order.filter(buyer = buyer_profile).first()
+        elif self.api_source == 'seller':
+            seller_profile = self.request.user.get_seller_profile()
+            order = order.filter(seller =seller_profile).first()
+
+        if order:
+            order.status = Order.OrderStatusChoice.CANCELLED
+            if self.api_source in ['seller', 'buyer']:
+                order.cancelled_by = self.api_source
+            order.save()
+
+            for item in order.items.all():
+                product_variant = item.product_variant
+                product_variant.quantity = F('quantity') + item.quantity
+                product_variant.save()
+                
+        else:
+            return Response({'success': False}, status=404)
+
+            # TODO: Increase quantity in inventory
+
+        order_data = OrderDetailsSerializer(order).data
+
+        return Response({'success': True, 'order_data': order_data})
+
+

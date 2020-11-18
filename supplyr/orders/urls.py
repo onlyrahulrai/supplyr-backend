@@ -23,4 +23,8 @@ urlpatterns = [
         OrdersBulkUpdateView.as_view(), 
         name='orders_bulk_update'
     ),
+    path('cancel/',
+        OrderCancellationView.as_view(),
+        name='orders_cancel'
+    ),
 ]
