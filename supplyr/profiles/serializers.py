@@ -148,9 +148,17 @@ class UserDetailsSerializer(serializers.ModelSerializer):
             return None
         return user.buyer_status
 
+    user_role = serializers.SerializerMethodField()
+    def get_user_role(self, user):
+        if user.is_superuser:
+            return "admin"
+        elif user.is_staff:
+            return "staff"
+        return None
+
     class Meta:
         model = User
-        fields = ['name', 'first_name', 'last_name', 'username', 'is_staff', 'seller_status', 'buyer_status', 'profiling_data', 'profile']
+        fields = ['name', 'first_name', 'last_name', 'username', 'seller_status', 'buyer_status', 'profiling_data', 'profile', 'user_role']
 
 
 class BuyerAddressSerializer(serializers.ModelSerializer):
