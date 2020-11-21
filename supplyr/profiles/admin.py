@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import BuyerAddress, BuyerSellerConnection, BuyerProfile, SellerProfile
+from .models import BuyerAddress, BuyerSellerConnection, BuyerProfile, SellerProfile, SalespersonProfile
 
 
 @admin.register(BuyerAddress)
@@ -24,3 +24,4 @@ class BuyerAddressAdmin(admin.ModelAdmin):
 admin.site.register(SellerProfile)
 admin.site.register(BuyerProfile)
 admin.site.register(BuyerSellerConnection)
+admin.site.register(SalespersonProfile)

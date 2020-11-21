@@ -42,7 +42,13 @@ class User(AbstractUser):
         if self.buyer_profiles.exists():
             return 'ready'
         else:
-            return 'verified'
+            return None
+
+    @property
+    def salesperson_status(self):
+        if self.salesperson_profiles.exists():
+            return 'ready'
+        return None
 
     @cached_property
     def is_approved(self):

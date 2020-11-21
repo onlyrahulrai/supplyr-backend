@@ -6,7 +6,7 @@ from rest_framework import status, mixins
 from rest_framework.generics import ListAPIView, GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
-from supplyr.core.permissions import IsApproved, IsFromBuyerAPI
+from supplyr.core.permissions import IsApproved, IsFromBuyerAPI, IsFromBuyerOrSalesAPI
 from .serializers import ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer, VariantDetailsSerializer, CategoriesSerializer2
 from supplyr.inventory.models import Category
 from supplyr.profiles.models import SellerProfile
@@ -101,7 +101,7 @@ class SellerProductListView(ListAPIView):
     """
     Products list of a seller, when viewed by a buyer
     """
-    permission_classes = [IsFromBuyerAPI]
+    permission_classes = [IsFromBuyerOrSalesAPI]
     serializer_class = ProductListSerializer
 
     def get_queryset(self):
@@ -133,7 +133,7 @@ class VariantDetailView(ListAPIView):
     Passed a list of variant IDs, it will return a list of detailed variants information
     Made for used in cart where list of variant IOs is maintained on frontend and details need to be fetched from backend.
     """
-    permission_classes = [IsFromBuyerAPI]
+    permission_classes = [IsFromBuyerOrSalesAPI]
     serializer_class = VariantDetailsSerializer
     pagination_class = None
 

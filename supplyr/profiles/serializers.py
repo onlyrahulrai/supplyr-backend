@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import BuyerAddress, BuyerProfile, SellerProfile
+from .models import BuyerAddress, BuyerProfile, SellerProfile, SalespersonProfile
 from django.contrib.auth import get_user_model
 from typing import Dict
 from supplyr.inventory.models import Category, SubCategory
@@ -130,23 +130,27 @@ class UserDetailsSerializer(serializers.ModelSerializer):
             if profile := user.buyer_profiles.first():
                 return BuyerProfileSerializer(profile).data
 
+        elif self._get_api_source() == 'sales':
+            if profile := user.salesperson_profiles.first():
+                return SalespersonProfileSerializer(profile).data
+
         elif user.is_approved: # seller profile
             profile = user.seller_profiles.first()
             return ShortEntityDetailsSerializer(profile).data
             
         return None
 
-    seller_status = serializers.SerializerMethodField()
-    def get_seller_status(self, user):
+    user_status = serializers.SerializerMethodField()
+    def get_user_status(self, user):
         if self._get_api_source() == 'buyer':
-            return None
-        return user.seller_status
+            return user.buyer_status
+        elif self._get_api_source() == 'seller':
+            return user.seller_status
+        elif self._get_api_source() == 'sales':
+            return user.salesperson_status
+        
+        return None
 
-    buyer_status = serializers.SerializerMethodField()
-    def get_buyer_status(self, user):
-        if self._get_api_source() == 'seller':
-            return None
-        return user.buyer_status
 
     user_role = serializers.SerializerMethodField()
     def get_user_role(self, user):
@@ -158,7 +162,7 @@ class UserDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['name', 'first_name', 'last_name', 'username', 'seller_status', 'buyer_status', 'profiling_data', 'profile', 'user_role']
+        fields = ['name', 'first_name', 'last_name', 'username', 'is_staff', 'user_status', 'profiling_data', 'profile', 'user_role']
 
 
 class BuyerAddressSerializer(serializers.ModelSerializer):
@@ -240,4 +244,16 @@ class SellerShortDetailsSerializer(serializers.ModelSerializer):
             'sub_categories',
             'id',
             'has_products_added',
+            ]
+
+
+class SalespersonProfileSerializer(serializers.ModelSerializer):
+
+    seller = SellerShortDetailsSerializer()
+
+    class Meta:
+        model = SalespersonProfile
+        fields = [
+            'id',
+            'seller'
             ]

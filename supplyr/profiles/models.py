@@ -114,3 +114,9 @@ class BuyerSellerConnection(models.Model):
         verbose_name = 'BuyerSellerConnection'
         verbose_name_plural = 'BuyerSellerConnections'
         unique_together = ('seller', 'buyer', 'is_active', 'deactivated_at')
+
+
+class SalespersonProfile(models.Model):
+    owner = models.ForeignKey('core.User', on_delete=models.RESTRICT, related_name='salesperson_profiles')
+    seller = models.ForeignKey('profiles.SellerProfile', on_delete=models.RESTRICT, related_name='salespersons')
+    is_active = models.BooleanField(default=True)
