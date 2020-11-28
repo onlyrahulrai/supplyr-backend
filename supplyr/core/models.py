@@ -68,6 +68,9 @@ class User(AbstractUser):
 
     def get_seller_profile(self):
         return self.seller_profiles.first()
+
+    def get_sales_profile(self):
+        return self.salesperson_profiles.first()
             
     
     @property

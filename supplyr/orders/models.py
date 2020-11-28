@@ -19,11 +19,13 @@ class Order(models.Model):
     is_active = models.BooleanField(default=True)
     cancelled_at = models.DateTimeField(blank=True, null=True)
     cancelled_by = EnumField(
-        choices=('buyer', 'seller', 'staff'),
+        choices=('buyer', 'seller', 'staff', 'sales'),
         blank=True, null=True
         )
     total_amount = models.DecimalField(max_digits=14, decimal_places=2)
     address = models.ForeignKey('profiles.BuyerAddress', on_delete=models.RESTRICT)
+
+    salesperson = models.ForeignKey('profiles.SalespersonProfile', on_delete=models.RESTRICT, blank=True, null=True, related_name='orders') # Populated when order is placed by a salesperson
     
     @property
     def featured_image(self):
@@ -36,6 +38,7 @@ class Order(models.Model):
 
         verbose_name = 'Order'
         verbose_name_plural = 'Orders'
+        ordering = ['-created_at']
 
 
 class OrderItem(models.Model):

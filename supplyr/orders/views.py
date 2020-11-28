@@ -3,7 +3,7 @@ from django.shortcuts import render
 from rest_framework import generics, mixins
 from rest_framework.views import APIView
 from .models import Order
-from .serializers import OrderSerializer, OrderListSerializer, OrderDetailsSerializer, SellerOrderListSerializer
+from .serializers import OrderSerializer, OrderListSerializer, OrderDetailsSerializer, SalespersonOrderListSerializer, SellerOrderListSerializer
 from supplyr.core.permissions import IsFromBuyerAPI, IsApproved, IsFromSellerAPI
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -28,6 +28,7 @@ class OrderView(mixins.ListModelMixin,
         return self.list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        print("OOO ", args, kwargs)
         return self.create(request, *args, **kwargs)
 
     # def get_queryset(self):
@@ -50,6 +51,8 @@ class OrderListView(mixins.ListModelMixin, generics.GenericAPIView, APISourceMix
     def get_serializer_class(self):
         if self.api_source == 'seller':
             return SellerOrderListSerializer
+        elif self.api_source == 'sales':
+            return SalespersonOrderListSerializer
         return OrderListSerializer
 
     def get_queryset(self):
@@ -61,6 +64,8 @@ class OrderListView(mixins.ListModelMixin, generics.GenericAPIView, APISourceMix
             filters['seller'] = self.request.user.get_seller_profile()
         elif self.api_source == 'buyer':
             filters['buyer'] = self.request.user.get_buyer_profile()
+        elif self.api_source == 'sales':
+            filters['salesperson'] = self.request.user.get_sales_profile()
 
         return Order.objects.order_by('-created_at').filter(**filters)
 
@@ -104,10 +109,13 @@ class OrderCancellationView(APIView, APISourceMixin):
         elif self.api_source == 'seller':
             seller_profile = self.request.user.get_seller_profile()
             order = order.filter(seller =seller_profile).first()
+        elif self.api_source == 'sales':
+            salesperson_profile = self.request.user.get_sales_profile()
+            order = order.filter(salesperson = salesperson_profile).first()
 
         if order:
             order.status = Order.OrderStatusChoice.CANCELLED
-            if self.api_source in ['seller', 'buyer']:
+            if self.api_source in ['seller', 'buyer', 'sales']:
                 order.cancelled_by = self.api_source
             order.save()
 

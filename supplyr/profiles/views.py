@@ -1,15 +1,19 @@
+from django.db.models.query_utils import Q
 from django.shortcuts import render
 from django.utils import timezone
 from rest_framework import generics, mixins, views
 from .models import BuyerAddress, BuyerSellerConnection, SellerProfile, BuyerProfile
+from supplyr.orders.models import Order
 from .serializers import BuyerAddressSerializer, BuyerProfileSerializer, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, SellerShortDetailsSerializer
-from supplyr.core.permissions import IsFromBuyerAPI, IsApproved, IsUnapproved
+from supplyr.core.permissions import IsFromBuyerAPI, IsFromSalesAPI, IsApproved, IsUnapproved, IsFromBuyerOrSalesAPI
 from supplyr.utils.api.mixins import APISourceMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
 from supplyr.utils.api.mixins import UserInfoMixin
+
+from collections import OrderedDict
 
 
 class BuyerProfilingView(views.APIView, UserInfoMixin):
@@ -85,22 +89,29 @@ class ProfilingDocumentsUploadView(views.APIView):    #Seller
 
 
 
-class AddressView(generics.ListCreateAPIView, generics.UpdateAPIView, generics.DestroyAPIView):
+class AddressView(generics.ListCreateAPIView, generics.UpdateAPIView, generics.DestroyAPIView, APISourceMixin):
     """
     List, add and edit addresses from buyer app
     """
     # queryset = BuyerAddress.objects.all()
     serializer_class = BuyerAddressSerializer
-    permission_classes = [IsFromBuyerAPI]
+    permission_classes = [IsFromBuyerOrSalesAPI]
     pagination_class = None
 
     def get_queryset(self):
-        profile = self.request.user.buyer_profiles.first()
-        return BuyerAddress.objects.filter(is_active=True, owner = profile).order_by('-is_default')
+        if self.api_source == 'sales':
+            profile_id = self.request.GET.get('buyer_id')
+        else:
+            profile_id = self.request.user.buyer_profiles.first().id
+        return BuyerAddress.objects.filter(is_active=True, owner_id = profile_id).order_by('-is_default')
 
     def perform_create(self, serializer):
-        owner = self.request.user.buyer_profiles.first()
-        serializer.save(owner = owner)
+        if self.api_source == 'sales':
+            owner_id = self.request.GET.get('buyer_id')
+        else:
+            owner_id = self.request.user.buyer_profiles.first().id
+        # owner = self.request.user.buyer_profiles.first()
+        serializer.save(owner_id = owner_id)
     
     def perform_destroy(self, instance):
         instance.is_active = False
@@ -140,6 +151,41 @@ class SellersListView(generics.ListAPIView):
     def get_queryset(self):
         buyer_profile = self.request.user.get_buyer_profile()
         return SellerProfile.objects.filter(connections__buyer=buyer_profile, is_active=True, connections__is_active=True)
+
+class BuyerSearchView(generics.ListAPIView):
+    permission_classes = [IsFromSalesAPI]
+    serializer_class = BuyerProfileSerializer
+    pagination_class = None
+    # queryset = SellerProfile.objects.all()
+    def get_queryset(self):
+        # buyer_profile = self.request.user.get_buyer_profile()
+        query = self.request.query_params.get('q')
+        return BuyerProfile.objects.filter(
+                Q(business_name__istartswith=query) | Q(business_name__icontains= ' ' + query),
+                is_active=True
+            )
+
+class RecentBuyersView(generics.ListAPIView):
+    permission_classes = [IsFromSalesAPI]
+    serializer_class = BuyerProfileSerializer
+    pagination_class = None
+    # queryset = SellerProfile.objects.all()
+    def get_queryset(self):
+        sales_profile = self.request.user.get_sales_profile()
+        # return BuyerProfile.objects.filter(
+        #             orders__salesperson_id = sales_profile.id
+        #         ).distinct().order_by('-orders__created_at')
+        # NOTE: Above query doesn't work and enhanced query like this is only possible in postgresql
+
+        max_recent_shown = 5
+        
+        buyer_ids_ordered = list(Order.objects.filter(salesperson = 1).order_by('-created_at').values_list('buyer_id', flat=True))  # May contain duplicates
+        buyer_ids_ordered = list(OrderedDict.fromkeys(buyer_ids_ordered)) # Duplicates pruned
+        buyer_objects = BuyerProfile.objects.filter(pk__in=buyer_ids_ordered) # may be in some other (default) order
+        buyer_objects = dict([(obj.id, obj) for obj in buyer_objects])
+        buyer_objects_ordered = [buyer_objects[_id] for _id in buyer_ids_ordered[:max_recent_shown]] # ordered by id
+        return buyer_objects_ordered
+
 
 
 

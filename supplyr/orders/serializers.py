@@ -33,12 +33,25 @@ class OrderSerializer(serializers.ModelSerializer):
         exclude = ['is_active']
         read_only_fields = ['cancelled_at']
 
+    def _get_api_source(self):
+        if 'request' in self.context:
+            # requests will only be available is passed in extra context. dj-rest-auth passes in default views
+            request = self.context['request']
+            kwargs = request.resolver_match.kwargs
+            if 'api_source' in kwargs:
+                return kwargs['api_source']
+        return None
+
     def to_internal_value(self, data):
         unhandled_errors = False
         # handled_errors = False
         total_amount = 0
         seller_id = None
-        buyer_profile = self.context['request'].user.get_buyer_profile()
+        if 'buyer_id' in data and self.context['request'].user.salesperson_status == 'ready':
+            buyer_id = data.pop('buyer_id')
+            buyer_profile_id =  buyer_id
+        else:
+            buyer_profile_id = self.context['request'].user.get_buyer_profile().id
         print(data['items'])
         for item in data['items']:
             error = None
@@ -67,7 +80,7 @@ class OrderSerializer(serializers.ModelSerializer):
         data['seller'] = seller_id
             
 
-        data['buyer'] = buyer_profile.id
+        data['buyer'] = buyer_profile_id
         return super().to_internal_value(data)
 
     def create(self, validated_data): 
@@ -76,8 +89,11 @@ class OrderSerializer(serializers.ModelSerializer):
         items = validated_data.pop('items')
         print("VDDDDD ", validated_data)
         # address = BuyerAddress.objectaddressed_data)
-        if validated_data['address'].owner_id != validated_data['buyer'].id:
+        if self._get_api_source() != 'sales' and validated_data['address'].owner_id != validated_data['buyer'].id:
             raise ValidationError({"message": "Invalid Address"})
+        if self._get_api_source() == 'sales':
+            validated_data['salesperson'] = self.context['request'].user.get_sales_profile()
+
 
         with transaction.atomic():
             order = Order.objects.create(**validated_data)
@@ -125,6 +141,16 @@ class OrderListSerializer(serializers.ModelSerializer):
         fields = ['id', 'order_date', 'seller_name', 'items_count', 'order_status', 'total_amount', 'featured_image',]
 
 class SellerOrderListSerializer(OrderListSerializer):
+
+    buyer_name = serializers.SerializerMethodField()
+    def get_buyer_name(self, order):
+        return order.buyer.business_name
+
+    class Meta:
+        model = Order
+        fields = ['id', 'order_date', 'buyer_name', 'order_status', 'total_amount', 'featured_image',]
+
+class SalespersonOrderListSerializer(OrderListSerializer):
 
     buyer_name = serializers.SerializerMethodField()
     def get_buyer_name(self, order):
