@@ -1,8 +1,10 @@
 from django.db.models.query_utils import Q
+from django.http.response import HttpResponse
 from django.shortcuts import render
 from django.utils import timezone
+from django.contrib.auth import get_user_model
 from rest_framework import generics, mixins, views
-from .models import BuyerAddress, BuyerSellerConnection, SellerProfile, BuyerProfile
+from .models import BuyerAddress, BuyerSellerConnection, ManuallyCreatedBuyer, SellerProfile, BuyerProfile
 from supplyr.orders.models import Order
 from .serializers import BuyerAddressSerializer, BuyerProfileSerializer, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, SellerShortDetailsSerializer
 from supplyr.core.permissions import IsFromBuyerAPI, IsFromSalesAPI, IsApproved, IsUnapproved, IsFromBuyerOrSalesAPI
@@ -12,9 +14,10 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
 from supplyr.utils.api.mixins import UserInfoMixin
-
+from django.db import transaction
 from collections import OrderedDict
 
+User = get_user_model()
 
 class BuyerProfilingView(views.APIView, UserInfoMixin):
     permission_classes = [IsAuthenticated]
@@ -186,6 +189,45 @@ class RecentBuyersView(generics.ListAPIView):
         buyer_objects_ordered = [buyer_objects[_id] for _id in buyer_ids_ordered[:max_recent_shown]] # ordered by id
         return buyer_objects_ordered
 
+class CreateBuyerView(views.APIView):
+    """
+    For salesperson, who wishes to add a non existant buyer
+    """
+    permission_classes = [IsFromSalesAPI]
+
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        email = request.data.get('email')
+        business_name = request.data.get('business_name')
+        mobile_number = request.data.get('mobile_number')
+
+        errors = {}
+        if User.objects.filter(email__iexact=email).exists():
+            errors['email'] = 'User already exist with this email ID'
+        elif ManuallyCreatedBuyer.objects.filter(email__iexact=email).exists():
+            errors['email'] = 'A buyer is already created with this email ID'
+        
+        if User.objects.filter(mobile_number=mobile_number).exists():
+            errors['mobile_number'] = 'User Already exist with this mobile number'
+        elif ManuallyCreatedBuyer.objects.filter(mobile_number=mobile_number):
+            errors['mobile_number'] = 'A buyer is already created with this mobile number'
+        
+        if errors:
+            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+        buyer_profile = BuyerProfile.objects.create(
+            business_name=business_name,
+            )
+        ManuallyCreatedBuyer.objects.create(
+            buyer_profile = buyer_profile,
+            email=email,
+            mobile_number=mobile_number,
+            created_by_id=request.user.get_sales_profile().id
+        )
+
+        buyer_profile_data = BuyerProfileSerializer(buyer_profile).data
+        return Response(buyer_profile_data)
 
 
 

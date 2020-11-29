@@ -61,7 +61,7 @@ class SellerProfile(models.Model):
 
 class BuyerProfile(models.Model):
 
-    owner = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='buyer_profiles')
+    owner = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='buyer_profiles', null=True)
     business_name = models.CharField(max_length=100, blank=True, null=True)
     favourite_products = models.ManyToManyField('inventory.Product', related_name='marked_favourite_by')
     is_active = models.BooleanField(default=True)
@@ -71,6 +71,18 @@ class BuyerProfile(models.Model):
 
         verbose_name = 'BuyerProfile'
         verbose_name_plural = 'BuyerProfiles'
+
+
+class ManuallyCreatedBuyer(models.Model):
+    """
+    This model is used to store information of a buyer who is created by a salesperson, and his user is not created yet.
+    We will enter his credentials in this table, and if the user joins in future, we will ask the user to claim the corresponding profile.
+    """
+    buyer_profile = models.ForeignKey('profiles.BuyerProfile', on_delete = models.CASCADE)
+    email = models.CharField(max_length=100)
+    mobile_number = models.CharField(max_length=14)
+    created_by = models.ForeignKey('profiles.SalespersonProfile', on_delete=models.RESTRICT, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 
 class BuyerAddress(models.Model):
