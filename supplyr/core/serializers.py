@@ -6,10 +6,21 @@ from supplyr.profiles.models import SellerProfile, BuyerProfile
 from supplyr.inventory.models import Category, SubCategory
 import json
 import re
+from django.db.models import Q
 from rest_framework.exceptions import ValidationError
+from supplyr.profiles.models import ManuallyCreatedBuyer
 
 
 class CustomRegisterSerializer(RegisterSerializer):
+
+    def _get_api_source(self):
+        if 'request' in self.context:
+            # requests will only be available is passed in extra context. dj-rest-auth passes in default views
+            request = self.context['request']
+            kwargs = request.resolver_match.kwargs
+            if 'api_source' in kwargs:
+                return kwargs['api_source']
+        return None
     
     def save(self, request):
         
@@ -32,6 +43,15 @@ class CustomRegisterSerializer(RegisterSerializer):
         user.last_name = last_name
         user.mobile_number = mobile_number
         user.save()
+
+        if self._get_api_source() == 'buyer':
+            if manual_buyer := ManuallyCreatedBuyer.objects.filter(Q(mobile_number=mobile_number) | Q(email=user.email)).first():
+                manual_buyer.buyer_profile.owner = user
+                manual_buyer.buyer_profile.save()
+                manual_buyer.is_settled = True
+                manual_buyer.save()
+
+
         return user
 
 class CustomJWTSerializer(JWTSerializer):
