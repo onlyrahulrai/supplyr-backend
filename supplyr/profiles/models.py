@@ -66,6 +66,9 @@ class BuyerProfile(models.Model):
     favourite_products = models.ManyToManyField('inventory.Product', related_name='marked_favourite_by')
     is_active = models.BooleanField(default=True)
 
+    def __str__(self):
+        return f'{self.business_name} ({self.id})'
+
     class Meta:
         """Meta definition for BuyerProfile."""
 

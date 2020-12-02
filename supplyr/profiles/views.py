@@ -4,10 +4,10 @@ from django.shortcuts import render
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from rest_framework import generics, mixins, views
-from .models import BuyerAddress, BuyerSellerConnection, ManuallyCreatedBuyer, SellerProfile, BuyerProfile
+from .models import BuyerAddress, BuyerSellerConnection, ManuallyCreatedBuyer, SalespersonProfile, SellerProfile, BuyerProfile
 from supplyr.orders.models import Order
-from .serializers import BuyerAddressSerializer, BuyerProfileSerializer, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, SellerShortDetailsSerializer
-from supplyr.core.permissions import IsFromBuyerAPI, IsFromSalesAPI, IsApproved, IsUnapproved, IsFromBuyerOrSalesAPI
+from .serializers import BuyerAddressSerializer, BuyerProfileSerializer, SalespersonProfileSerializer2, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, SellerShortDetailsSerializer
+from supplyr.core.permissions import IsFromBuyerAPI, IsFromSalesAPI, IsApproved, IsFromSellerAPI, IsUnapproved, IsFromBuyerOrSalesAPI
 from supplyr.utils.api.mixins import APISourceMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -228,6 +228,50 @@ class CreateBuyerView(views.APIView):
 
         buyer_profile_data = BuyerProfileSerializer(buyer_profile).data
         return Response(buyer_profile_data)
+
+class SalespersonView(generics.ListCreateAPIView, generics.DestroyAPIView):
+    """
+    For sellers to list, add or delete salespersons
+    """
+    serializer_class = SalespersonProfileSerializer2
+    permission_classes = [IsFromSellerAPI]
+    pagination_class = None
+
+    def get_queryset(self):
+        seller_profile = self.request.user.get_seller_profile()
+        return SalespersonProfile.objects.filter(seller = seller_profile, is_active = True)
+
+    def post(self, request, *args, **kwargs):
+        seller_profile = self.request.user.get_seller_profile()
+        salesperson_email = request.data.get('email')
+        salesperson_user = User.objects.filter(email=salesperson_email).first()
+        if not salesperson_user:
+            return Response({'success': False, 'message': 'User with this email does not exist.'}, status=400)
+
+        if existing_salesperson := SalespersonProfile.objects.filter(owner=salesperson_user, is_active = True).first():
+            if existing_salesperson.seller == seller_profile:
+                message = "This salesperson is already added."
+            else: 
+                message = "This salesperson is already added by another seller."
+            return Response({'success': False, 'message': message}, status=400)
+
+        else:
+            seller_profile.salespersons.create(owner=salesperson_user)
+            return self.get(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        seller_profile = self.request.user.get_seller_profile()
+        salesperson_id = kwargs.get('pk')
+
+        salesperson_profile = SalespersonProfile.objects.filter(pk=salesperson_id, seller_id=seller_profile.id, is_active = True).first()
+
+        if not salesperson_profile:
+            return Response({'success': False, 'message': 'Salesperson is not associated to you.'}, status=400)
+
+        else:
+            salesperson_profile.is_active = False
+            salesperson_profile.save()
+            return self.get(request, *args, **kwargs)
 
 
 

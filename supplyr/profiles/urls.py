@@ -14,5 +14,7 @@ urlpatterns = [
     path('buyer-create/', CreateBuyerView.as_view(), name='buyer_create'),
     path('sellers/', SellerView.as_view(), name='sellers'),
     path('seller/<int:pk>/', SellerView.as_view(), name='seller'),
-    path('categories/', ProfilingCategoriesView.as_view())
+    path('categories/', ProfilingCategoriesView.as_view()),
+    path('salespersons/', SalespersonView.as_view(), name='salespersons'),
+    path('salespersons/<int:pk>/', SalespersonView.as_view(), name='salesperson'),
 ]

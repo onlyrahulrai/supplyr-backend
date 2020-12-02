@@ -248,6 +248,9 @@ class SellerShortDetailsSerializer(serializers.ModelSerializer):
 
 
 class SalespersonProfileSerializer(serializers.ModelSerializer):
+    """
+    To be used in fetching user details in case of request from salesperson api.
+    """
 
     seller = SellerShortDetailsSerializer()
 
@@ -256,4 +259,20 @@ class SalespersonProfileSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'seller'
+            ]
+
+class SalespersonProfileSerializer2(serializers.ModelSerializer):
+    """
+    To be used in fetching salespersons list in case of request from  seller api
+    """
+
+    name = serializers.CharField(source='owner.name')
+    email = serializers.CharField(source='owner.email')
+
+    class Meta:
+        model = SalespersonProfile
+        fields = [
+            'id',
+            'name',
+            'email'
             ]
