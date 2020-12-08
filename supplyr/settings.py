@@ -26,7 +26,7 @@ SECRET_KEY = 'bomxq7-xhspd_u1%y4(hcwfszd(-eaw1o^m3#j&$g!drk@e%an'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['.supplyr.tk']
 
 
 # Application definition
@@ -134,7 +134,8 @@ AUTH_USER_MODEL = 'core.User'
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Calcutta'
+# TIME_ZONE = 'UTC'
 
 USE_I18N = True
 

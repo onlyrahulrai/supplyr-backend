@@ -72,12 +72,17 @@ v. Configure mysql fulltext search index by running the following command in mys
 ALTER TABLE `inventory_product` ADD FULLTEXT(`title`);
 ```
 
-vi. Run server to start the backend.
+vi. Configure timezone support
+```sql
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root -p mysql
+```
+
+vii. Run server to start the backend.
 ```shell
 python manage.py runserver
 ```
 
-vii. Create a user using the following command:
+viii. Create a user using the following command:
 
 ```shell
 python manage.py createsuperuser
