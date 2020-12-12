@@ -55,6 +55,9 @@ class Category(models.Model):
         super().__init__(*args, **kwargs)
         self._existing_image = self.image
 
+    def __str__(self):
+        return f'[{self.id}] {self.name}'
+
     def save(self, *args, **kwargs):
         if self.image != self._existing_image or (self.image and not self.id): #image is changed, or it's a new category
             generate_image_sizes(self, 'image', self.image_sizes, save = False) # Save is omitted here to prevent recursion
@@ -69,6 +72,9 @@ class SubCategory(models.Model):
     serial = models.PositiveSmallIntegerField(null= True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='sub_categories')
     is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f'[{self.id}] {self.name} ({self.category.name})'
 
 
 class Product(Model):

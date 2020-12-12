@@ -47,7 +47,7 @@ class DeleteProduct(APIView):
         return Response({"success": False}, status=400)
 
 class ProductDetails(APIView):
-    permission_classes = [IsApproved]
+    permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
         product_id = kwargs.get("id")
