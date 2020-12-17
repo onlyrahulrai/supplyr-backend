@@ -95,6 +95,9 @@ class Product(Model):
         
         return False
 
+    def __str__(self):
+        return f'[{self.id}] {self.title[:20]}'
+
     @cached_property
     def variants_count(self):
         if hasattr(self, 'variants_count_annotated'):

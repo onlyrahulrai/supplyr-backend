@@ -11,7 +11,7 @@ from .serializers import ProductDetailsSerializer, ProductImageSerializer, Produ
 from supplyr.inventory.models import Category
 from supplyr.profiles.models import SellerProfile
 from .models import Product, Variant, ProductImage
-from django.db.models import Prefetch, Q, Count
+from django.db.models import Prefetch, Q, Count, Sum
 
 class AddProduct(APIView):
     permission_classes = [IsApproved]
@@ -89,7 +89,10 @@ class SellerSelfProductListView(ListAPIView):
 
         print('filters', filters)
         return Product.objects.filter(owner = profile, is_active = True, **filters)\
-            .annotate(variants_count_annotated=Count('variants', filter=Q(variants__is_active=True)))\
+            .annotate(
+                variants_count_annotated=Count('variants', filter=Q(variants__is_active=True)),
+                quantity_all_variants=Sum('variants__quantity', filter=Q(variants__is_active=True))
+                )\
             .prefetch_related(
                  Prefetch('images', queryset=ProductImage.objects.filter(is_active=True), to_attr='active_images_prefetched'),
                  Prefetch('variants', queryset=Variant.objects.filter(is_active=True), to_attr='active_variants_prefetched'),

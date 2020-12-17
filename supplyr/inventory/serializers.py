@@ -12,7 +12,7 @@ from django.db.models.functions import Coalesce
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'featured_image', 'price', 'sale_price', 'has_multiple_variants', 'quantity', 'variants_count', 'default_variant_id', 'sale_price_range', 'actual_price_range', 'minimum_order_quantity']
+        fields = ['id', 'title', 'featured_image', 'price', 'sale_price', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count', 'default_variant_id', 'sale_price_range', 'actual_price_range', 'minimum_order_quantity']
 
 
     featured_image = serializers.SerializerMethodField()
@@ -33,6 +33,12 @@ class ProductListSerializer(serializers.ModelSerializer):
     quantity = serializers.SerializerMethodField()
     def get_quantity(self, instance):
         return instance.default_variant.quantity
+
+    quantity_all_variants = serializers.SerializerMethodField()
+    def get_quantity_all_variants(self, instance):
+        if hasattr(instance, 'quantity_all_variants'):
+            return instance.quantity_all_variants
+        return None
 
     minimum_order_quantity = serializers.SerializerMethodField()
     def get_minimum_order_quantity(self, instance):
