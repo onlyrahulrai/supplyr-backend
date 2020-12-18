@@ -12,7 +12,7 @@ from django.db.models.functions import Coalesce
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'featured_image', 'price', 'sale_price', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count', 'default_variant_id', 'sale_price_range', 'actual_price_range', 'minimum_order_quantity']
+        fields = ['id', 'title', 'featured_image', 'price', 'sale_price', 'sale_price_minimum', 'sale_price_maximum', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count', 'default_variant_id', 'sale_price_range', 'actual_price_range', 'minimum_order_quantity']
 
 
     featured_image = serializers.SerializerMethodField()
@@ -29,6 +29,19 @@ class ProductListSerializer(serializers.ModelSerializer):
     sale_price = serializers.SerializerMethodField()
     def get_sale_price(self, instance):
         return instance.default_variant.sale_price or instance.default_variant.price
+
+    sale_price_minimum = serializers.SerializerMethodField()
+    def get_sale_price_minimum(self, instance):
+        if hasattr(instance, 'sale_price_minimum'):
+            return instance.sale_price_minimum
+        return None
+
+    sale_price_maximum = serializers.SerializerMethodField()
+    def get_sale_price_maximum(self, instance):
+        if hasattr(instance, 'sale_price_maximum'):
+            return instance.sale_price_maximum
+        return None
+
 
     quantity = serializers.SerializerMethodField()
     def get_quantity(self, instance):
