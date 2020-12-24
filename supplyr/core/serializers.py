@@ -1,6 +1,7 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
-from dj_rest_auth.serializers import JWTSerializer
+from dj_rest_auth.serializers import JWTSerializer, LoginSerializer
 # from .models import SellerProfile, Category, SubCategory, BuyerProfile
 from supplyr.profiles.models import SellerProfile, BuyerProfile
 from supplyr.inventory.models import Category, SubCategory
@@ -9,6 +10,9 @@ import re
 from django.db.models import Q
 from rest_framework.exceptions import ValidationError
 from supplyr.profiles.models import ManuallyCreatedBuyer
+
+
+User = get_user_model()
 
 
 class CustomRegisterSerializer(RegisterSerializer):
@@ -53,6 +57,22 @@ class CustomRegisterSerializer(RegisterSerializer):
 
 
         return user
+
+
+class CustomLoginSerializer(LoginSerializer):
+    
+    email = serializers.CharField(required=False, allow_blank=True)
+
+    def get_auth_user_using_allauth(self, username, email, password):
+        """
+        If user has entered mobile number as username, convert that to corresponding email address to make it compatible with authentication backend
+        """
+        _email = email.strip()
+        if _email.isdigit():
+            if user := User.objects.filter(mobile_number = _email).first():
+                _email = user.email
+        return super().get_auth_user_using_allauth(username, _email, password)
+        
 
 class CustomJWTSerializer(JWTSerializer):
     def to_representation(self, instance):
