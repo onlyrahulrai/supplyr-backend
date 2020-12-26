@@ -78,6 +78,10 @@ class OrderSerializer(serializers.ModelSerializer):
         
         data['total_amount'] = total_amount
         data['seller'] = seller_id
+
+        if 'request' in self.context:
+            request = self.context['request']
+            data['created_by'] = request.user.id
             
 
         data['buyer'] = buyer_profile_id
@@ -161,15 +165,57 @@ class SalespersonOrderListSerializer(OrderListSerializer):
         fields = ['id', 'order_date', 'buyer_name', 'order_status', 'total_amount', 'featured_image',]
 
 
+class OrderHistorySerializer(serializers.ModelSerializer):
+
+    created_by_user = serializers.SerializerMethodField()
+    def get_created_by_user(self, instance):
+        return instance.created_by.name
+
+    created_by_entity = serializers.SerializerMethodField()
+    def get_created_by_entity(self, instance):
+        if instance.seller:
+            return instance.seller.business_name
+        elif instance.buyer:
+            return instance.buyer.business_name
+        elif instance.salesperson:
+            return instance.salesperson.business_name
+
+    time = serializers.SerializerMethodField()
+    def get_time(self, instance):
+        return instance.created_at.astimezone().strftime('%H:%M %p')
+
+    date = serializers.SerializerMethodField()
+    def get_date(self, instance):
+        return instance.created_at.astimezone().strftime('%h %d, %Y')
+
+    class Meta:
+        model = OrderHistory
+        fields = ['status', 'created_by_user', 'created_by_entity', 'time', 'date']
 
 class OrderDetailsSerializer(SellerOrderListSerializer):
 
     address = BuyerAddressSerializer()
     items = OrderItemSerializer(many=True)
+    history = OrderHistorySerializer(many=True)
+    order_time = serializers.SerializerMethodField()
+    created_by_user = serializers.SerializerMethodField()
+    created_by_entity = serializers.SerializerMethodField()
 
     def get_order_date(self, order):
-        return order.created_at.strftime("%b %d, %Y")
+        return order.created_at.astimezone().strftime("%b %d, %Y")
+    
+    def get_order_time(self, order):
+        return order.created_at.astimezone().strftime('%H:%M %p')
+
+    def get_created_by_user(self, order):
+        return order.created_by.name
+    
+    def get_created_by_entity(self, order):
+        if order.salesperson:
+            return order.salesperson.seller.business_name
+        else:
+            return order.buyer.business_name
 
     class Meta:
         model = Order
-        fields=['order_date', 'seller_name', 'buyer_name', 'order_status', 'total_amount', 'items', 'address']
+        fields=['order_date', 'order_time', 'seller_name', 'buyer_name', 'order_status', 'total_amount', 'items', 'address', 'history', 'created_by_user', 'created_by_entity']

@@ -18,6 +18,7 @@ class Order(models.Model):
     status = EnumField(choices=OrderStatusChoice.choices, default=OrderStatusChoice.AWAITING_APPROVAL)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    created_by = models.ForeignKey('core.User', related_name='orders_created', on_delete=models.RESTRICT)
     cancelled_at = models.DateTimeField(blank=True, null=True)
     cancelled_by = EnumField(
         choices=('buyer', 'seller', 'staff', 'sales'),
@@ -66,7 +67,7 @@ class OrderItem(models.Model):
         verbose_name_plural = 'OrderItems'
 
 class OrderHistory(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.RESTRICT)
+    order = models.ForeignKey(Order, on_delete=models.RESTRICT, related_name='history')
     status = EnumField(choices=Order.OrderStatusChoice.choices)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey('core.User', on_delete=models.RESTRICT)
@@ -76,5 +77,6 @@ class OrderHistory(models.Model):
 
     class Meta:
         verbose_name_plural = 'Order Histories'
+        ordering = ('-created_at',)
 
 

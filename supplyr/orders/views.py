@@ -91,8 +91,8 @@ class OrdersBulkUpdateView(APIView):
         if operation == 'change_status':
             new_status = request.data.get('data')
 
-            if new_status not in Order.OrderStatusChoice.choices:
-                return Response({'success': False, 'message': 'Invalid Status'})
+            # if new_status not in Order.OrderStatusChoice.choices:
+            #     return Response({'success': False, 'message': 'Invalid Status'})
 
             orders = Order.objects.filter(pk__in = order_ids, seller=profile, is_active=True).exclude(status__in=[Order.OrderStatusChoice.CANCELLED, new_status])
 
