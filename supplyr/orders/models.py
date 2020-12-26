@@ -1,3 +1,4 @@
+from re import T
 from django.db import models
 from django_mysql.models import EnumField
 
@@ -63,4 +64,17 @@ class OrderItem(models.Model):
 
         verbose_name = 'OrderItem'
         verbose_name_plural = 'OrderItems'
+
+class OrderHistory(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.RESTRICT)
+    status = EnumField(choices=Order.OrderStatusChoice.choices)
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey('core.User', on_delete=models.RESTRICT)
+    salesperson = models.ForeignKey('profiles.SalespersonProfile', on_delete=models.RESTRICT, blank=True, null=True)
+    seller = models.ForeignKey('profiles.SellerProfile', on_delete=models.RESTRICT, blank=True, null=True)
+    buyer = models.ForeignKey('profiles.BuyerProfile', on_delete=models.RESTRICT, blank=True, null=True)
+
+    class Meta:
+        verbose_name_plural = 'Order Histories'
+
 

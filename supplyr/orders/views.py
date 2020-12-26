@@ -1,8 +1,9 @@
 from django.db.models import Q
+from django.db import transaction
 from django.shortcuts import render
 from rest_framework import generics, mixins
 from rest_framework.views import APIView
-from .models import Order
+from .models import Order, OrderHistory
 from .serializers import OrderSerializer, OrderListSerializer, OrderDetailsSerializer, SalespersonOrderListSerializer, SellerOrderListSerializer
 from supplyr.core.permissions import IsFromBuyerAPI, IsApproved, IsFromSellerAPI
 from rest_framework.permissions import IsAuthenticated
@@ -89,8 +90,17 @@ class OrdersBulkUpdateView(APIView):
 
         if operation == 'change_status':
             new_status = request.data.get('data')
-            Order.objects.filter(pk__in = order_ids, seller=profile, is_active=True).exclude(status=Order.OrderStatusChoice.CANCELLED)\
-                            .update(status = new_status)
+
+            if new_status not in Order.OrderStatusChoice.choices:
+                return Response({'success': False, 'message': 'Invalid Status'})
+
+            orders = Order.objects.filter(pk__in = order_ids, seller=profile, is_active=True).exclude(status__in=[Order.OrderStatusChoice.CANCELLED, new_status])
+
+            with transaction.atomic():
+                _orders = list(orders)  # As the 'orders' queryset will remove the current orders after getting updated below, and no orders will be there because of status=new_status exclusion. Hence made a list to retain fetched orders list, to add history entry
+                orders.update(status = new_status)
+                for order in _orders:
+                    OrderHistory.objects.create(order = order, status = new_status, created_by = request.user, seller = profile)
 
         return Response({'success': True})
 
@@ -103,26 +113,31 @@ class OrderCancellationView(APIView, APISourceMixin):
 
 
         order = Order.objects.filter(id=order_id).exclude(Q(status=Order.OrderStatusChoice.CANCELLED) | Q(status=Order.OrderStatusChoice.DELIVERED) | Q(is_active=False))
+        order_history_kwargs = {}
         if self.api_source == 'buyer':
             buyer_profile = self.request.user.get_buyer_profile()
             order = order.filter(buyer = buyer_profile).first()
+            order_history_kwargs['buyer'] = buyer_profile
         elif self.api_source == 'seller':
             seller_profile = self.request.user.get_seller_profile()
             order = order.filter(seller =seller_profile).first()
+            order_history_kwargs['seller'] = seller_profile
         elif self.api_source == 'sales':
             salesperson_profile = self.request.user.get_sales_profile()
             order = order.filter(salesperson = salesperson_profile).first()
+            order_history_kwargs['sales'] = salesperson_profile
 
         if order:
-            order.status = Order.OrderStatusChoice.CANCELLED
-            if self.api_source in ['seller', 'buyer', 'sales']:
+            with transaction.atomic():
+                order.status = Order.OrderStatusChoice.CANCELLED
                 order.cancelled_by = self.api_source
-            order.save()
+                order.save()
+                OrderHistory.objects.create(order = order, status = Order.OrderStatusChoice.CANCELLED, created_by = request.user, **order_history_kwargs)
 
-            for item in order.items.all():
-                product_variant = item.product_variant
-                product_variant.quantity = F('quantity') + item.quantity
-                product_variant.save()
+                for item in order.items.all():
+                    product_variant = item.product_variant
+                    product_variant.quantity = F('quantity') + item.quantity
+                    product_variant.save()
                 
         else:
             return Response({'success': False}, status=404)

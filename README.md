@@ -76,6 +76,7 @@ vi. Configure timezone support
 ```sql
 mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root -p mysql
 ```
+(https://stackoverflow.com/a/17175353)
 
 vii. Run server to start the backend.
 ```shell

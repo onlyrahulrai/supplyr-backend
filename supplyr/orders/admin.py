@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
 
-from .models import Order, OrderItem
+from .models import Order, OrderItem, OrderHistory
 
 
 @admin.register(Order)
@@ -37,3 +37,5 @@ class OrderItemAdmin(admin.ModelAdmin):
         'sale_price',
     )
     list_filter = ('order', 'product_variant')
+
+admin.site.register(OrderHistory)
