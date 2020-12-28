@@ -1,3 +1,4 @@
+from supplyr.utils.api.mixins import SerializerAPISourceMixin
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from django.db import transaction
@@ -111,7 +112,7 @@ class OrderSerializer(serializers.ModelSerializer):
         return order
             
 
-class OrderListSerializer(serializers.ModelSerializer):
+class OrderListSerializer(serializers.ModelSerializer, SerializerAPISourceMixin):
     featured_image = serializers.SerializerMethodField()
     def get_featured_image(self, order):
         if im := order.featured_image:
@@ -138,6 +139,8 @@ class OrderListSerializer(serializers.ModelSerializer):
 
     order_status = serializers.SerializerMethodField()
     def get_order_status(self, order):
+        if all([self.api_source == 'buyer', order.status == Order.OrderStatusChoice.CANCELLED, order.cancelled_by == 'seller']):
+            return 'cancelled_by_seller'
         return order.status
 
     class Meta:

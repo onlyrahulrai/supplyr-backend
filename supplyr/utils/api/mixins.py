@@ -5,6 +5,18 @@ class APISourceMixin():
     def api_source(self):
         return self.kwargs.get('api_source')
 
+class SerializerAPISourceMixin():
+
+    @property
+    def api_source(self):
+        if 'request' in self.context:
+            # requests will only be available is passed in extra context. dj-rest-auth passes in default views
+            request = self.context['request']
+            kwargs = request.resolver_match.kwargs
+            if 'api_source' in kwargs:
+                return kwargs['api_source']
+        return None
+
 
 class UserInfoMixin():
 
