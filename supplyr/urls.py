@@ -39,6 +39,6 @@ _urlpatterns = [
 
 
 urlpatterns = [
-    re_path('^(?P<api_source>(buyer|seller|sales))/', include(_urlpatterns)),
+    re_path('^v1/(?P<api_source>(buyer|seller|sales))/', include(_urlpatterns)),
     path('admin/', admin.site.urls),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
