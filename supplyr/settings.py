@@ -194,10 +194,11 @@ SIMPLE_JWT = {
 }
 
 #Change ACCOUNT_EMAIL_VERIFICATION to 'optional' to setup verification mails. (After configuring SMTP)
-ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_EMAIL_VERIFICATION = "optional"
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_ADAPTER='supplyr.core.auth.CustomAccountAdapter'
 
 
 AUTHENTICATION_BACKENDS = [
