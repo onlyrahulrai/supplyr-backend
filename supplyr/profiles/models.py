@@ -133,6 +133,14 @@ class BuyerSellerConnection(models.Model):
 
 
 class SalespersonProfile(models.Model):
-    owner = models.ForeignKey('core.User', on_delete=models.RESTRICT, related_name='salesperson_profiles')
+    owner = models.ForeignKey('core.User', on_delete=models.RESTRICT, related_name='salesperson_profiles', blank=True, null=True)
     seller = models.ForeignKey('profiles.SellerProfile', on_delete=models.RESTRICT, related_name='salespersons')
     is_active = models.BooleanField(default=True)
+
+class SalespersonPreregisteredUser(models.Model):
+    """
+    When a seller adds a salesperson email, it will be added here. WHen the salesperson signs up, he will be linked to the profile
+    """
+    salesperson_profile = models.ForeignKey(SalespersonProfile, on_delete=models.CASCADE, related_name='preregistrations')
+    email = models.CharField(max_length=150)
+    is_settled = models.BooleanField(default=False)
