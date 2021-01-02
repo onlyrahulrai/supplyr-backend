@@ -182,7 +182,7 @@ class RecentBuyersView(generics.ListAPIView):
 
         max_recent_shown = 5
         
-        buyer_ids_ordered = list(Order.objects.filter(salesperson = 1).order_by('-created_at').values_list('buyer_id', flat=True))  # May contain duplicates
+        buyer_ids_ordered = list(Order.objects.filter(salesperson = sales_profile).order_by('-created_at').values_list('buyer_id', flat=True))  # May contain duplicates
         buyer_ids_ordered = list(OrderedDict.fromkeys(buyer_ids_ordered)) # Duplicates pruned
         buyer_objects = BuyerProfile.objects.filter(pk__in=buyer_ids_ordered) # may be in some other (default) order
         buyer_objects = dict([(obj.id, obj) for obj in buyer_objects])
