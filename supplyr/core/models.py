@@ -1,4 +1,5 @@
 import os
+import re
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group
 from os.path import splitext
@@ -7,6 +8,7 @@ from django_mysql.models import EnumField
 from django.utils.functional import cached_property
 from supplyr.core.model_utils import generate_image_sizes
 from django.utils.crypto import get_random_string
+from allauth.account.models import EmailAddress
 import string
 import random
 
@@ -34,8 +36,10 @@ class User(AbstractUser):
             return 'categories_selected'
         elif self.seller_profiles.exists():
             return 'form_filled'
-        else:
+        elif self.is_email_verified and self.is_mobile_verified:
             return 'verified'
+        else:
+            return 'unverified'
 
     @property
     def buyer_status(self):
@@ -71,6 +75,14 @@ class User(AbstractUser):
 
     def get_sales_profile(self):
         return self.salesperson_profiles.first()
+
+    @property
+    def is_email_verified(self):
+        return EmailAddress.objects.filter(user_id=self.id, verified=True).exists()
+
+    @property
+    def is_mobile_verified(self):
+        return False
             
     
     @property

@@ -44,11 +44,6 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
 
-    'allauth',
-    'allauth.account',
-    'dj_rest_auth',
-    'dj_rest_auth.registration',
-
     'django_extensions',
     'django_mysql',
 
@@ -56,6 +51,11 @@ INSTALLED_APPS = [
     'supplyr.inventory.apps.InventoryConfig',
     'supplyr.profiles.apps.ProfilesConfig',
     'supplyr.orders.apps.OrdersConfig',
+
+    'allauth',
+    'allauth.account',
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
 ]
 
 MIDDLEWARE = [
@@ -75,7 +75,7 @@ ROOT_URLCONF = 'supplyr.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -199,6 +199,9 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_ADAPTER='supplyr.core.auth.CustomAccountAdapter'
+ACCOUNT_USER_DISPLAY= lambda user: user.name
+
+URL_FRONTEND = 'https://supplyr.tk/'
 
 
 AUTHENTICATION_BACKENDS = [
