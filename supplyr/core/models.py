@@ -82,7 +82,7 @@ class User(AbstractUser):
 
     @property
     def is_mobile_verified(self):
-        return False
+        return True
             
     
     @property
