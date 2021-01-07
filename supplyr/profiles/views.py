@@ -9,6 +9,9 @@ from supplyr.orders.models import Order
 from .serializers import BuyerAddressSerializer, BuyerProfileSerializer, SalespersonProfileSerializer2, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, SellerShortDetailsSerializer
 from supplyr.core.permissions import IsFromBuyerAPI, IsFromSalesAPI, IsApproved, IsFromSellerAPI, IsUnapproved, IsFromBuyerOrSalesAPI
 from supplyr.utils.api.mixins import APISourceMixin
+
+from allauth.account.utils import send_email_confirmation
+from allauth.account.admin import EmailAddress
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -67,6 +70,24 @@ class SellerProfilingView(views.APIView, UserInfoMixin):
                 
             return Response(serializer_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ResendEmailConfirmation(views.APIView):
+    permission_classes = [IsUnapproved] 
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        print('userrr ', user.email)
+        is_already_verified = EmailAddress.objects.filter(user=user, verified=True).exists()
+
+        if is_already_verified:
+            return Response({'message': 'This email is already verified'}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            try:
+                send_email_confirmation(request, user=user)
+                return Response({'message': 'Email confirmation sent'}, status=status.HTTP_201_CREATED)
+            except:
+                return Response({'message': 'An unexpected error occurred'}, status=status.HTTP_403_FORBIDDEN)
 
 
 class ProfilingDocumentsUploadView(views.APIView):    #Seller

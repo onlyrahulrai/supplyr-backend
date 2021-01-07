@@ -3,6 +3,7 @@ from django.urls import path
 from .views import *
 
 urlpatterns = [
+    path('resend-verification-email/', ResendEmailConfirmation.as_view(), name='resend-email-confirmation'),
     path('user-profiling/', SellerProfilingView.as_view()),
     path('user-profiling-documents/', ProfilingDocumentsUploadView.as_view()),
     path('buyer-profiling/', BuyerProfilingView.as_view()),
