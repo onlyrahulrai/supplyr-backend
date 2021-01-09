@@ -1,8 +1,10 @@
 from supplyr.orders.models import Order
 from django.shortcuts import render
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from django.db.models import Count, Sum
 from django.utils import timezone
+from datetime import timedelta
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
@@ -114,3 +116,60 @@ class SellerDashboardStats(APIView):
 
 
         return Response(response)
+
+
+def generate_and_send_mobile_verification_otp(user):
+    error_message = None
+
+    if user.is_mobile_verified:
+        error_message = "User's number already verified"
+
+    otp = user.verification_otps.filter(mobile_number = user.mobile_number, created_at__gt = timezone.now() - timedelta(minutes=settings.MOBILE_VERIFICATION_OTP_EXPIRY_MINUTES -1 )).first()
+    if not otp:
+        otp = user.verification_otps.create(mobile_number = user.mobile_number)
+    
+    res = otp.send()
+    if res:
+        return Response({
+            'success': True,
+            'otp_id': otp.id
+        })
+    else:
+        error_message = "Unknown Error"
+    
+    if error_message:
+        return Response({
+            'success': False, 'message': error_message
+        })
+    
+    
+
+
+class SendMobileVerificationOTP(APIView):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        return generate_and_send_mobile_verification_otp(request.user)
+
+class VerifyMobileVerificationOTP(APIView, UserInfoMixin):
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        code = request.data.get('code')
+        otp_id = request.data.get('otp_id')
+        user = request.user
+
+        if otp := user.verification_otps.filter(mobile_number = user.mobile_number, code=code, id=otp_id, created_at__gt = timezone.now() - timedelta(minutes=settings.MOBILE_VERIFICATION_OTP_EXPIRY_MINUTES)).first():
+            user.is_mobile_verified = True
+            user.save()
+
+            response_data = self.inject_user_info({'success': True}, user)
+
+            return Response(response_data)
+        
+        else:
+            return Response({
+                'success': False, 'message': 'Invalid or expired OTP'
+            })

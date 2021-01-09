@@ -201,6 +201,8 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_ADAPTER='supplyr.core.auth.CustomAccountAdapter'
 ACCOUNT_USER_DISPLAY= lambda user: user.name
 
+MOBILE_VERIFICATION_OTP_EXPIRY_MINUTES = 10
+
 URL_FRONTEND = 'https://supplyr.tk/'
 
 

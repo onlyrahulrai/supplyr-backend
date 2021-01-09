@@ -7,6 +7,7 @@ from django_mysql.models import Model
 from django_mysql.models import EnumField
 from django.utils.functional import cached_property
 from supplyr.core.model_utils import generate_image_sizes
+from supplyr.utils.otp import send_otp, generate_otp
 from django.utils.crypto import get_random_string
 from allauth.account.models import EmailAddress
 import string
@@ -15,6 +16,7 @@ import random
 class User(AbstractUser):
 
     mobile_number = models.CharField(max_length=14)
+    is_mobile_verified = models.BooleanField(default=False)
 
     BUYER_GROUP_NAME = 'buyer'
     SELLER_GROUP_NAME = 'seller'
@@ -80,9 +82,9 @@ class User(AbstractUser):
     def is_email_verified(self):
         return EmailAddress.objects.filter(user_id=self.id, verified=True).exists()
 
-    @property
-    def is_mobile_verified(self):
-        return True
+    # @property
+    # def is_mobile_verified(self):
+    #     return True
             
     
     @property
@@ -94,4 +96,22 @@ class User(AbstractUser):
     # def status_int(self):
     #     return 3
 
+
+class MobileVerificationOTP(models.Model):
+    code = models.CharField(max_length=10, default=generate_otp)
+    user = models.ForeignKey(User, on_delete = models.CASCADE, related_name = 'verification_otps')
+    mobile_number = models.CharField(max_length=14)
+    # otp_id = models.CharField(max_length=128, blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    send_count = models.SmallIntegerField(default=0)
+    # is_expired = models.BooleanField(default=False)
+    # is_verified = models.BooleanField(default=False)
+
+    def send(self):
+        res = send_otp(self.mobile_number, self.code)
+        if res:
+            self.send_count += 1
+            self.save()
+        return res
 
