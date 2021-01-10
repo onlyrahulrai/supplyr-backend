@@ -6,7 +6,7 @@ from dj_rest_auth.serializers import JWTSerializer, LoginSerializer
 from supplyr.profiles.models import SellerProfile, BuyerProfile
 from supplyr.inventory.models import Category, SubCategory
 import json
-import re
+from supplyr.utils.general import validate_mobile_number
 from django.db.models import Q
 from rest_framework.exceptions import ValidationError
 from supplyr.profiles.models import ManuallyCreatedBuyer
@@ -35,8 +35,7 @@ class CustomRegisterSerializer(RegisterSerializer):
         if not first_name:
             raise ValidationError({'first_name': 'First name is required'})
 
-        mobile_pattern = re.compile("(0|91|\+91)?[6-9][0-9]{9}$") 
-        if not mobile_pattern.match(mobile_number):
+        if not validate_mobile_number(mobile_number):
             raise ValidationError({'mobile_number': 'Please enter a valid mobile number'})
 
         

@@ -82,9 +82,6 @@ class User(AbstractUser):
     def is_email_verified(self):
         return EmailAddress.objects.filter(user_id=self.id, verified=True).exists()
 
-    # @property
-    # def is_mobile_verified(self):
-    #     return True
             
     
     @property

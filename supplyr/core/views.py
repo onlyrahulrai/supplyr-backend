@@ -21,6 +21,7 @@ from supplyr.inventory.models import Category, Product
 
 from supplyr.utils.api.mixins import APISourceMixin
 from supplyr.utils.api.mixins import UserInfoMixin
+from supplyr.utils.general import validate_mobile_number
 
 User = get_user_model()
 
@@ -173,3 +174,55 @@ class VerifyMobileVerificationOTP(APIView, UserInfoMixin):
             return Response({
                 'success': False, 'message': 'Invalid or expired OTP'
             })
+
+class ChangeEmailView(APIView, UserInfoMixin):
+
+    permission_classes = [IsUnapproved]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        new_email = request.data.get('new_email')
+        if user.is_email_verified:
+            return Response({'success': False, 'message': "Email is verified, can't change"}, status=400)
+
+        if User.objects.exclude(id=user.id).filter(email = new_email).exists():
+            return Response({
+                'success': False, 'message': 'Email already added by some other user'
+            }, status=400)
+        
+        if email := user.emailaddress_set.filter(email = user.email).first():
+            try: 
+                email.change(request, new_email)
+                return Response(self.inject_user_info({
+                    'success': True
+                }, user))
+            except Exception as e:
+                return Response({
+                    'success': False, 'message': str(e)
+                }, status=500)
+
+class ChangeMobileNumberView(APIView, UserInfoMixin):
+
+    permission_classes = [IsUnapproved]
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        new_mobile = request.data.get('new_mobile')
+
+        if not validate_mobile_number(new_mobile):
+            return Response({'success': False, 'message': 'Please enter a valid mobile number'}, status=400)
+
+        if user.is_mobile_verified:
+            return Response({'success': False, 'message': "Mobile number is verified, can't change"}, status=400)
+
+        if User.objects.exclude(id=user.id).filter(mobile_number = new_mobile).exists():
+            return Response({
+                'success': False, 'message': 'Mobile Number already added by some other user'
+            }, status=400)
+        
+        
+        user.mobile_number = new_mobile
+        user.save()
+        return Response(self.inject_user_info({
+            'success': True
+        }, user))
