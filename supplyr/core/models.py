@@ -39,16 +39,18 @@ class User(AbstractUser):
         elif self.seller_profiles.exists():
             return 'form_filled'
         elif self.is_email_verified and self.is_mobile_verified:
-            return 'verified'
+            return 'verified' # unprofiled
         else:
             return 'unverified'
 
     @property
     def buyer_status(self):
+        if not all([self.is_email_verified, self.is_mobile_verified]):
+            return 'unverified'
         if self.buyer_profiles.exists():
             return 'ready'
         else:
-            return None
+            return 'unprofiled'
 
     @property
     def salesperson_status(self):

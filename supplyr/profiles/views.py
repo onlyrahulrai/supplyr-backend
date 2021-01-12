@@ -73,7 +73,7 @@ class SellerProfilingView(views.APIView, UserInfoMixin):
 
 
 class ResendEmailConfirmation(views.APIView):
-    permission_classes = [IsUnapproved] 
+    permission_classes = [IsAuthenticated] 
 
     def post(self, request, *args, **kwargs):
         user = request.user
