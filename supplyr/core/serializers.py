@@ -3,7 +3,7 @@ from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import JWTSerializer, LoginSerializer
 # from .models import SellerProfile, Category, SubCategory, BuyerProfile
-from supplyr.profiles.models import SellerProfile, BuyerProfile
+from supplyr.profiles.models import SalespersonPreregisteredUser, SellerProfile, BuyerProfile
 from supplyr.inventory.models import Category, SubCategory
 import json
 from supplyr.utils.general import validate_mobile_number
@@ -31,12 +31,17 @@ class CustomRegisterSerializer(RegisterSerializer):
         first_name = request.data['first_name'].strip()
         last_name = request.data['last_name'].strip()
         mobile_number = request.data['mobile_number'].strip()
+        email = request.data['email'].strip()
 
         if not first_name:
             raise ValidationError({'first_name': 'First name is required'})
 
         if not validate_mobile_number(mobile_number):
             raise ValidationError({'mobile_number': 'Please enter a valid mobile number'})
+
+        if self._get_api_source() == 'sales':
+            if not SalespersonPreregisteredUser.objects.filter(email = email).exists():
+                raise ValidationError({'email': 'This email is not linked to any seller yet'})
 
         
 
@@ -53,6 +58,13 @@ class CustomRegisterSerializer(RegisterSerializer):
                 manual_buyer.buyer_profile.save()
                 manual_buyer.is_settled = True
                 manual_buyer.save()
+
+        elif self._get_api_source() == 'sales':
+            preregistered_user = SalespersonPreregisteredUser.objects.filter(email = email).first()
+            preregistered_user.salesperson_profile.owner = user
+            preregistered_user.salesperson_profile.save()
+            preregistered_user.is_settled = True
+            preregistered_user.save()
 
 
         return user

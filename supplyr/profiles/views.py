@@ -203,7 +203,7 @@ class RecentBuyersView(generics.ListAPIView):
 
         max_recent_shown = 5
         
-        buyer_ids_ordered = list(Order.objects.filter(salesperson = 1).order_by('-created_at').values_list('buyer_id', flat=True))  # May contain duplicates
+        buyer_ids_ordered = list(Order.objects.filter(salesperson = sales_profile).order_by('-created_at').values_list('buyer_id', flat=True))  # May contain duplicates
         buyer_ids_ordered = list(OrderedDict.fromkeys(buyer_ids_ordered)) # Duplicates pruned
         buyer_objects = BuyerProfile.objects.filter(pk__in=buyer_ids_ordered) # may be in some other (default) order
         buyer_objects = dict([(obj.id, obj) for obj in buyer_objects])
@@ -265,11 +265,22 @@ class SalespersonView(generics.ListCreateAPIView, generics.DestroyAPIView):
     def post(self, request, *args, **kwargs):
         seller_profile = self.request.user.get_seller_profile()
         salesperson_email = request.data.get('email')
-        salesperson_user = User.objects.filter(email=salesperson_email).first()
-        if not salesperson_user:
-            return Response({'success': False, 'message': 'User with this email does not exist.'}, status=400)
+        # salesperson_user = User.objects.filter(email=salesperson_email).first()
+        # if not salesperson_user:
+        #     return Response({'success': False, 'message': 'User with this email does not exist.'}, status=400)
 
-        if existing_salesperson := SalespersonProfile.objects.filter(owner=salesperson_user, is_active = True).first():
+        # if existing_salesperson := SalespersonProfile.objects.filter(owner=salesperson_user, is_active = True).first():
+        #     if existing_salesperson.seller == seller_profile:
+        #         message = "This salesperson is already added."
+        #     else: 
+        #         message = "This salesperson is already added by another seller."
+        #     return Response({'success': False, 'message': message}, status=400)
+
+        # else:
+        #     seller_profile.salespersons.create(owner=salesperson_user)
+        #     return self.get(request, *args, **kwargs)
+
+        if existing_salesperson := (SalespersonProfile.objects.filter(owner__email=salesperson_email, is_active = True).first() or SalespersonProfile.objects.filter(preregistrations__email=salesperson_email, preregistrations__is_settled=False, is_active = True).first()):
             if existing_salesperson.seller == seller_profile:
                 message = "This salesperson is already added."
             else: 
@@ -277,8 +288,12 @@ class SalespersonView(generics.ListCreateAPIView, generics.DestroyAPIView):
             return Response({'success': False, 'message': message}, status=400)
 
         else:
-            seller_profile.salespersons.create(owner=salesperson_user)
+            # seller_profile.salespersons.create(owner=None)
+            salesperson_profile = SalespersonProfile.objects.create(owner=None, seller=seller_profile)
+            salesperson_profile.preregistrations.create(email=salesperson_email)
+
             return self.get(request, *args, **kwargs)
+
 
     def delete(self, request, *args, **kwargs):
         seller_profile = self.request.user.get_seller_profile()

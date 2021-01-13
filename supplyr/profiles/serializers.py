@@ -266,13 +266,31 @@ class SalespersonProfileSerializer2(serializers.ModelSerializer):
     To be used in fetching salespersons list in case of request from  seller api
     """
 
-    name = serializers.CharField(source='owner.name')
-    email = serializers.CharField(source='owner.email')
+    name = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    is_joined = serializers.SerializerMethodField()
+
+    def get_name(self, instance):
+        if owner := instance.owner:
+            return owner.name
+
+    def get_is_joined(self, instance):
+        if instance.owner:
+            return True
+
+    def get_email(self, instance):
+        if owner := instance.owner:
+            return owner.email
+        if preregistered_user := instance.preregistrations.first():
+            return preregistered_user.email
+
+
 
     class Meta:
         model = SalespersonProfile
         fields = [
             'id',
             'name',
-            'email'
+            'email',
+            'is_joined'
             ]
