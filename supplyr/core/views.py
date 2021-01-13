@@ -1,3 +1,4 @@
+from supplyr.core.functions import check_and_link_manually_created_buyer
 from supplyr.orders.models import Order
 from django.shortcuts import render
 from django.contrib.auth import get_user_model
@@ -166,8 +167,15 @@ class VerifyMobileVerificationOTP(APIView, UserInfoMixin):
             user.is_mobile_verified = True
             user.save()
 
-            response_data = self.inject_user_info({'success': True}, user)
 
+            try:
+                if user.is_credentials_verified:
+                    check_and_link_manually_created_buyer(user)
+            except Exception as e:
+                print(e)
+                #TODO: raise exception
+
+            response_data = self.inject_user_info({'success': True}, user)
             return Response(response_data)
         
         else:

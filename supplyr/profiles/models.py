@@ -61,9 +61,9 @@ class SellerProfile(models.Model):
 
 class BuyerProfile(models.Model):
 
-    owner = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='buyer_profiles', null=True)
+    owner = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='buyer_profiles', null=True, blank=True)
     business_name = models.CharField(max_length=100, blank=True, null=True)
-    favourite_products = models.ManyToManyField('inventory.Product', related_name='marked_favourite_by')
+    favourite_products = models.ManyToManyField('inventory.Product', related_name='marked_favourite_by', blank=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):

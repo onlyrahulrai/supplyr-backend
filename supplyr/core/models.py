@@ -52,6 +52,13 @@ class User(AbstractUser):
         else:
             return 'unprofiled'
 
+
+    @property
+    def is_credentials_verified(self):
+        if all([self.is_email_verified, self.is_mobile_verified]):
+            return True
+        return False
+
     @property
     def salesperson_status(self):
         if self.salesperson_profiles.exists():
@@ -114,3 +121,6 @@ class MobileVerificationOTP(models.Model):
             self.save()
         return res
 
+
+
+from .signals import *
