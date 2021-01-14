@@ -37,7 +37,7 @@ class CustomRegisterSerializer(RegisterSerializer):
             raise ValidationError({'first_name': 'First name is required'})
 
         if not validate_mobile_number(mobile_number):
-            raise ValidationError({'mobile_number': 'Please enter a valid mobile number'})
+            raise ValidationError({'mobile_number': 'Please enter a valid 10-digit mobile number'})
 
         if self._get_api_source() == 'sales':
             if not SalespersonPreregisteredUser.objects.filter(email = email).exists():

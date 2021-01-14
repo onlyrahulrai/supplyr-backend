@@ -185,7 +185,7 @@ class VerifyMobileVerificationOTP(APIView, UserInfoMixin):
 
 class ChangeEmailView(APIView, UserInfoMixin):
 
-    permission_classes = [IsUnapproved]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         user = request.user
@@ -211,14 +211,14 @@ class ChangeEmailView(APIView, UserInfoMixin):
 
 class ChangeMobileNumberView(APIView, UserInfoMixin):
 
-    permission_classes = [IsUnapproved]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         user = request.user
         new_mobile = request.data.get('new_mobile')
 
         if not validate_mobile_number(new_mobile):
-            return Response({'success': False, 'message': 'Please enter a valid mobile number'}, status=400)
+            return Response({'success': False, 'message': 'Please enter a valid 10-digit mobile number'}, status=400)
 
         if user.is_mobile_verified:
             return Response({'success': False, 'message': "Mobile number is verified, can't change"}, status=400)

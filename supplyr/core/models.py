@@ -61,9 +61,11 @@ class User(AbstractUser):
 
     @property
     def salesperson_status(self):
+        if not all([self.is_email_verified, self.is_mobile_verified]):
+            return 'unverified'
         if self.salesperson_profiles.exists():
             return 'ready'
-        return None
+        return 'unverified'
 
     @cached_property
     def is_approved(self):
