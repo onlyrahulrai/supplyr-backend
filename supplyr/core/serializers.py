@@ -59,12 +59,12 @@ class CustomRegisterSerializer(RegisterSerializer):
         #         manual_buyer.is_settled = True
         #         manual_buyer.save()
 
-        if self._get_api_source() == 'sales':
-            preregistered_user = SalespersonPreregisteredUser.objects.filter(email = email).first()
-            preregistered_user.salesperson_profile.owner = user
-            preregistered_user.salesperson_profile.save()
-            preregistered_user.is_settled = True
-            preregistered_user.save()
+        # if self._get_api_source() == 'sales':
+        #     preregistered_user = SalespersonPreregisteredUser.objects.filter(email = email).first()
+        #     preregistered_user.salesperson_profile.owner = user
+        #     preregistered_user.salesperson_profile.save()
+        #     preregistered_user.is_settled = True
+        #     preregistered_user.save()
 
 
         return user
