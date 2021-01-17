@@ -10,6 +10,7 @@ from django_mysql.models import Model
 from PIL import Image
 from supplyr.core.model_utils import generate_image_sizes
 from django.utils.functional import cached_property
+from django_extensions.db.fields import AutoSlugField
 
 User = get_user_model()
 
@@ -79,6 +80,7 @@ class SubCategory(models.Model):
 
 class Product(Model):
     title = models.CharField(max_length=200)
+    slug = AutoSlugField(max_length=100, populate_from=['title'], unique=True)
     description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey('profiles.SellerProfile', related_name='products', on_delete=models.CASCADE)
     sub_categories = models.ManyToManyField('inventory.SubCategory', related_name='products')

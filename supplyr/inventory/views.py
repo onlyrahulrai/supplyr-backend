@@ -50,8 +50,15 @@ class ProductDetails(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        product_id = kwargs.get("id")
-        product = get_object_or_404(Product, id=product_id, is_active = True)
+        if slug:=kwargs.get('slug'):
+            product = get_object_or_404(Product, slug=slug, is_active = True)
+        elif product_id := kwargs.get('id'):
+            product = Product.objects.filter(slug=product_id, is_active = True).first() # In case slug/product title is numeric
+            if not product:
+                product = get_object_or_404(Product, id=product_id, is_active = True)
+
+
+        # product_id = kwargs.get("id")
         product_serializer = ProductDetailsSerializer(product, context={'request' : request})
         return Response(product_serializer.data)
 

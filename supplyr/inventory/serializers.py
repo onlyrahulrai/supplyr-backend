@@ -12,7 +12,7 @@ from django.db.models.functions import Coalesce
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'featured_image', 'price', 'sale_price', 'sale_price_minimum', 'sale_price_maximum', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count', 'default_variant_id', 'sale_price_range', 'actual_price_range', 'minimum_order_quantity']
+        fields = ['id', 'title', 'slug', 'featured_image', 'price', 'sale_price', 'sale_price_minimum', 'sale_price_maximum', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count', 'default_variant_id', 'sale_price_range', 'actual_price_range', 'minimum_order_quantity']
 
 
     featured_image = serializers.SerializerMethodField()
@@ -313,7 +313,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'title', 'description', 'owner', 'images', 'variants_data', 'sub_categories', 'is_favourite']
+        fields = ['id', 'title', 'slug', 'description', 'owner', 'images', 'variants_data', 'sub_categories', 'is_favourite']
         # depth = 1
 
 
