@@ -57,8 +57,6 @@ class ProductDetails(APIView):
             if not product:
                 product = get_object_or_404(Product, id=product_id, is_active = True)
 
-
-        # product_id = kwargs.get("id")
         product_serializer = ProductDetailsSerializer(product, context={'request' : request})
         return Response(product_serializer.data)
 

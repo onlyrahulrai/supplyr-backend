@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
+from django.conf import settings
 from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
-from dj_rest_auth.serializers import JWTSerializer, LoginSerializer
+from dj_rest_auth.serializers import JWTSerializer, LoginSerializer, PasswordResetSerializer
 # from .models import SellerProfile, Category, SubCategory, BuyerProfile
 from supplyr.profiles.models import SalespersonPreregisteredUser, SellerProfile, BuyerProfile
 from supplyr.inventory.models import Category, SubCategory
@@ -70,6 +71,22 @@ class CustomRegisterSerializer(RegisterSerializer):
         return user
 
 
+class CustomPasswordResetSerializer(PasswordResetSerializer):
+    def get_email_options(self):
+
+        print("selff ", vars(self))
+
+        password_reset_url_base = settings.URL_FRONTEND + 'password-reset/'
+
+        """Override this method to change default e-mail options"""
+        return {
+            'html_email_template_name':'registration/password_reset_email.html',
+            'extra_email_context': {
+                'password_reset_url_base': password_reset_url_base
+            }
+        }
+
+        
 class CustomLoginSerializer(LoginSerializer):
     
     email = serializers.CharField(required=False, allow_blank=True)

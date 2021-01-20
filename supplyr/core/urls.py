@@ -1,6 +1,8 @@
 
 from django.contrib import admin
 from django.urls import path, include
+from django.urls.conf import re_path
+from django.views.generic.base import TemplateView
 from rest_framework import routers
 # from rest_framework_simplejwt.views import TokenRefreshView
 # from rest_framework.authtoken.views import obtain_auth_token
@@ -19,7 +21,7 @@ urlpatterns = [
     path('change-email/', ChangeEmailView.as_view(), name='change-email'),
     path('change-mobile/', ChangeMobileNumberView.as_view(), name='change-mobile'),
     # path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    # path('dj-rest-auth/', include('dj_rest_auth.urls')),
+    path('auth/', include('dj_rest_auth.urls')),
     path('user-details/', UserDetailsView.as_view()),
     path('seller-dashboard-stats/', SellerDashboardStats.as_view(), name='seller_dashboard_stats')
 ]

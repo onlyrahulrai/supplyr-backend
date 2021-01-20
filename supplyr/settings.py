@@ -184,6 +184,7 @@ REST_AUTH_SERIALIZERS = {
     'USER_DETAILS_SERIALIZER': 'supplyr.profiles.serializers.UserDetailsSerializer',
     'JWT_SERIALIZER': 'supplyr.core.serializers.CustomJWTSerializer',
     'LOGIN_SERIALIZER': 'supplyr.core.serializers.CustomLoginSerializer',
+    'PASSWORD_RESET_SERIALIZER': 'supplyr.core.serializers.CustomPasswordResetSerializer',
 }
 REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'supplyr.core.serializers.CustomRegisterSerializer'

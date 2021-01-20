@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, re_path, include
+from django.views.generic.base import TemplateView
 from rest_framework import routers
 from django.conf.urls.static import static
 from django.conf import settings
@@ -42,4 +43,9 @@ urlpatterns = [
     re_path('^v1/(?P<api_source>(buyer|seller|sales))/', include(_urlpatterns)),
     path('admin/', admin.site.urls),
     path('register/', include('dj_rest_auth.registration.urls')),
+
+    # The below url is required for password reset mail to be sent, otherwise it raises exception (UPDATE: It started working without this after custom email template)
+    # re_path(r'^password-reset/confirm/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,50})/$',
+    #     TemplateView.as_view(template_name="password_reset_confirm.html"),
+    #     name='password_reset_confirm'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
