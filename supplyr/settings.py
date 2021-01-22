@@ -182,6 +182,7 @@ REST_USE_JWT = True
 # JWT_AUTH_COOKIE = 'sauth'
 # JWT_AUTH_HTTPONLY = True
 # JWT_AUTH_SAMESITE = False
+OLD_PASSWORD_FIELD_ENABLED = True
 
 REST_AUTH_SERIALIZERS = {
     'USER_DETAILS_SERIALIZER': 'supplyr.profiles.serializers.UserDetailsSerializer',
