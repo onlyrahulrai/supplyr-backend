@@ -97,8 +97,8 @@ class SellerSelfProductListView(ListAPIView):
             .annotate(
                 variants_count_annotated=Count('variants', filter=Q(variants__is_active=True)),
                 quantity_all_variants=Sum('variants__quantity', filter=Q(variants__is_active=True)),
-                sale_price_minimum=Min('variants__sale_price', filter=Q(variants__is_active=True)),
-                sale_price_maximum=Max('variants__sale_price', filter=Q(variants__is_active=True))
+                sale_price_minimum=Min('variants__price', filter=Q(variants__is_active=True)),
+                sale_price_maximum=Max('variants__price', filter=Q(variants__is_active=True))
                 )\
             .prefetch_related(
                  Prefetch('images', queryset=ProductImage.objects.filter(is_active=True), to_attr='active_images_prefetched'),

@@ -49,7 +49,7 @@ class OrderItem(models.Model):
     product_variant = models.ForeignKey('inventory.Variant', on_delete=models.RESTRICT)
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=12, decimal_places=2)
-    sale_price = models.DecimalField(max_digits=12, decimal_places=2)
+    actual_price = models.DecimalField(max_digits=12, decimal_places=2)
 
     @property
     def featured_image(self):

@@ -140,7 +140,7 @@ class Variant(Model):
     quantity = models.PositiveIntegerField(default=0)
     minimum_order_quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
-    sale_price = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
+    actual_price = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
     featured_image = models.ForeignKey('ProductImage', blank=True, null=True, on_delete=models.SET_NULL, related_name='featured_in_variants')
 
     is_active = models.BooleanField(default=True)

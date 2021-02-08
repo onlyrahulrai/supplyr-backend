@@ -12,7 +12,7 @@ from django.db.models.functions import Coalesce
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'slug', 'featured_image', 'price', 'sale_price', 'sale_price_minimum', 'sale_price_maximum', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count', 'default_variant_id', 'sale_price_range', 'actual_price_range', 'minimum_order_quantity']
+        fields = ['id', 'title', 'slug', 'featured_image', 'price', 'actual_price', 'sale_price_minimum', 'sale_price_maximum', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count', 'default_variant_id', 'sale_price_range', 'actual_price_range', 'minimum_order_quantity']
 
 
     featured_image = serializers.SerializerMethodField()
@@ -22,13 +22,13 @@ class ProductListSerializer(serializers.ModelSerializer):
                 return image_sm.url
         return None
 
+    actual_price = serializers.SerializerMethodField()
+    def get_actual_price(self, instance):
+        return instance.default_variant.actual_price
+
     price = serializers.SerializerMethodField()
     def get_price(self, instance):
-        return instance.default_variant.price
-
-    sale_price = serializers.SerializerMethodField()
-    def get_sale_price(self, instance):
-        return instance.default_variant.sale_price or instance.default_variant.price
+        return instance.default_variant.price or instance.default_variant.actual_price
 
     sale_price_minimum = serializers.SerializerMethodField()
     def get_sale_price_minimum(self, instance):
@@ -64,7 +64,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     sale_price_range = serializers.SerializerMethodField()
     def get_sale_price_range(self, instance):
         if instance.has_multiple_variants():
-            variants = instance.variants.filter(is_active=True).annotate(price_or_sale_price=Coalesce('sale_price', 'price')).order_by('price_or_sale_price')
+            variants = instance.variants.filter(is_active=True).annotate(price_or_sale_price=Coalesce('price', 'actual_price')).order_by('price_or_sale_price')
             range = (variants.first().price_or_sale_price, variants.last().price_or_sale_price)
             return range
 

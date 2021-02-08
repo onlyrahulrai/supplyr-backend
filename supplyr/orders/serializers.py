@@ -24,7 +24,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     product_variant_id = serializers.PrimaryKeyRelatedField(queryset=Variant.objects.all(), source='product_variant', write_only=True)
     class Meta: 
         model = OrderItem
-        fields = ['quantity', 'price', 'sale_price', 'product_variant', 'product_variant_id']
+        fields = ['quantity', 'price', 'actual_price', 'product_variant', 'product_variant_id']
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
@@ -67,10 +67,10 @@ class OrderSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"Data not validated.": ''})
             #Raise exxception
 
-            item['price'] = variant.price
-            item['sale_price'] = variant.sale_price or variant.price
+            item['actual_price'] = variant.actual_price
+            item['price'] = variant.price or variant.actual_price
             item['product_variant_id'] = item['variant_id']
-            total_amount += (item['sale_price'] or item['price'])*item['quantity']
+            total_amount += (item['price'] or item['actual_price'])*item['quantity'] #TODO: Remove the later part after 'or', as it might never get executed
             if not seller_id:
                 seller_id = variant.product.owner_id
             elif seller_id != variant.product.owner_id:

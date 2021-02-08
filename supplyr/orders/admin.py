@@ -34,7 +34,7 @@ class OrderItemAdmin(admin.ModelAdmin):
         'product_variant',
         'quantity',
         'price',
-        'sale_price',
+        'actual_price',
     )
     list_filter = ('order', 'product_variant')
 
