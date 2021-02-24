@@ -12,7 +12,7 @@ from django.db.models.functions import Coalesce
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'slug', 'featured_image', 'price', 'actual_price', 'sale_price_minimum', 'sale_price_maximum', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count', 'default_variant_id', 'sale_price_range', 'actual_price_range', 'minimum_order_quantity']
+        fields = ['id', 'title', 'slug', 'featured_image', 'price', 'actual_price', 'sale_price_minimum', 'sale_price_maximum', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count', 'default_variant_id', 'price_range', 'actual_price_range', 'minimum_order_quantity']
 
 
     featured_image = serializers.SerializerMethodField()
@@ -61,8 +61,8 @@ class ProductListSerializer(serializers.ModelSerializer):
     def get_default_variant_id(self, instance):
         return instance.default_variant.id
 
-    sale_price_range = serializers.SerializerMethodField()
-    def get_sale_price_range(self, instance):
+    price_range = serializers.SerializerMethodField()
+    def get_price_range(self, instance):
         if instance.has_multiple_variants():
             variants = instance.variants.filter(is_active=True).annotate(price_or_sale_price=Coalesce('price', 'actual_price')).order_by('price_or_sale_price')
             range = (variants.first().price_or_sale_price, variants.last().price_or_sale_price)
@@ -72,7 +72,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     def get_actual_price_range(self, instance):
         if instance.has_multiple_variants():
             variants = instance.variants.filter(is_active=True).order_by('price')
-            range = (variants.first().price, variants.last().price)
+            range = (variants.first().actual_price, variants.last().actual_price)
             return range
 
 
