@@ -1,7 +1,7 @@
 # Project Setup
 
-## 1. Setup pyenv for python version management & install python 3.8.3
-(You can skip this step if python 3.8.x is already installed in your system)
+## 1. Setup pyenv for python version management & install python 3.9.5
+(You can skip this step if python 3.9.x is already installed in your system)
 
 i. Install Prerequisites packages for Ubuntu:
 ```shell
@@ -20,10 +20,10 @@ export PATH="/home/coderbaby/.pyenv/bin:$PATH"
 eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
 ```
-iv. Install python 3.8.3
+iv. Install python 3.9.5
 ```shell
-pyenv install 3.8.3
-pyenv global 3.8.3
+pyenv install 3.9.5
+pyenv global 3.9.5
 ```
 
 ## 2. Project Setup
@@ -53,8 +53,10 @@ CORS_ORIGIN_WHITELIST = [
     'http://localhost:3000',
 ]
 
-DATABASE['default']['USER'] = 'dbuser'
-DATABASE['default']['PASSWORD'] = 'dbpasss'
+ALLOWED_HOSTS = ['127.0.0.1']
+
+DATABASES['default']['USER'] = 'dbuser'
+DATABASES['default']['PASSWORD'] = 'dbpasss'
 ```
 (replace `dbuser` and `dbpass` with your actual database username and password)
 
@@ -67,6 +69,26 @@ iv. Run in shell to create tables
 ```shell
 python manage.py migrate
 ```
+
+---
+***NOTE:***
+If above steps does not run in MacOS, try installing PyMySQL as an alternative to mysqlclient:
+
+a) Run in shell:
+```shell
+pip install PyMySQL
+```
+b) Add this to settings_local.py:
+```python
+import pymysql
+# pymysql.version_info = (1, 4, 2, "final", 0)
+pymysql.install_as_MySQLdb()
+```
+(Source: https://adamj.eu/tech/2020/02/04/how-to-use-pymysql-with-django/)
+
+---
+
+
 v. Configure mysql fulltext search index by running the following command in mysql shell:
 ```sql
 ALTER TABLE `inventory_product` ADD FULLTEXT(`title`);
