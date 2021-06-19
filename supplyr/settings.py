@@ -189,6 +189,7 @@ REST_AUTH_SERIALIZERS = {
     'JWT_SERIALIZER': 'supplyr.core.serializers.CustomJWTSerializer',
     'LOGIN_SERIALIZER': 'supplyr.core.serializers.CustomLoginSerializer',
     'PASSWORD_RESET_SERIALIZER': 'supplyr.core.serializers.CustomPasswordResetSerializer',
+    "PASSWORD_RESET_CONFIRM_SERIALIZER":"supplyr.core.serializers.PasswordResetConfirmSerializer"
 }
 REST_AUTH_REGISTER_SERIALIZERS = {
     'REGISTER_SERIALIZER': 'supplyr.core.serializers.CustomRegisterSerializer'
@@ -208,8 +209,8 @@ ACCOUNT_USER_DISPLAY= lambda user: user.name
 
 MOBILE_VERIFICATION_OTP_EXPIRY_MINUTES = 10
 
-URL_FRONTEND = 'https://supplyr.tk/'
 
+URL_FRONTEND = 'https://supplyr.tk/'
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`

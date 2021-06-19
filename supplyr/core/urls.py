@@ -7,7 +7,11 @@ from rest_framework import routers
 # from rest_framework_simplejwt.views import TokenRefreshView
 # from rest_framework.authtoken.views import obtain_auth_token
 
-from supplyr.core.views import SellerDashboardStats, UserDetailsView, CustomLoginView, SendMobileVerificationOTP, VerifyMobileVerificationOTP, ChangeEmailView, ChangeMobileNumberView
+from supplyr.core.views import SellerDashboardStats, UserDetailsView, CustomLoginView, SendMobileVerificationOTP, VerifyMobileVerificationOTP, ChangeEmailView, ChangeMobileNumberView,RequestForgetPassword,PasswordResetEmailConfirmView, PasswordResetMobileConfirmView
+# ForgetPasswordConfirm
+
+
+
 
 # router = routers.DefaultRouter()
 # router.register(r'users', UserDetailsViewSet)
@@ -23,5 +27,11 @@ urlpatterns = [
     # path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/', include('dj_rest_auth.urls')),
     path('user-details/', UserDetailsView.as_view()),
-    path('seller-dashboard-stats/', SellerDashboardStats.as_view(), name='seller_dashboard_stats')
+    path('seller-dashboard-stats/', SellerDashboardStats.as_view(), name='seller_dashboard_stats'),
+    path("request-forget-password/",RequestForgetPassword.as_view(),name="request-forget-password"),
+    # path("request-forget-password-confirm/",ForgetPasswordConfirm.as_view(),name="forget-password-confirm"),
+    path('password-reset-email-confirm/', PasswordResetEmailConfirmView.as_view(),
+        name='password-reset-email-confirm'),
+    path('password-reset-mobile-confirm/', PasswordResetMobileConfirmView.as_view(),
+        name='password-reset-mobile-confirm'),
 ]
