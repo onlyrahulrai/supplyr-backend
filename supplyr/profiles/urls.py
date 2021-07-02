@@ -18,4 +18,5 @@ urlpatterns = [
     path('categories/', ProfilingCategoriesView.as_view()),
     path('salespersons/', SalespersonView.as_view(), name='salespersons'),
     path('salespersons/<int:pk>/', SalespersonView.as_view(), name='salesperson'),
+    path('apply-for-approval/', ApplyForApproval.as_view(), name='apply-for-approval'),
 ]

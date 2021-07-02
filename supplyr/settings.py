@@ -51,6 +51,9 @@ INSTALLED_APPS = [
     'supplyr.inventory.apps.InventoryConfig',
     'supplyr.profiles.apps.ProfilesConfig',
     'supplyr.orders.apps.OrdersConfig',
+    
+    
+    
 
     'allauth',
     'allauth.account',
@@ -137,7 +140,7 @@ AUTH_USER_MODEL = 'core.User'
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Calcutta'
+TIME_ZONE = 'Asia/Kolkata'
 # TIME_ZONE = 'UTC'
 
 USE_I18N = True

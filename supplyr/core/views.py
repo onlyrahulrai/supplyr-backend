@@ -184,16 +184,9 @@ class RequestForgetPassword(GenericAPIView):
             serializer.save()
             # Return the success message with OK HTTP status
             return Response(
-                {"message": _("Password reset e-mail has been sent."),"email":email},
+                {"message": _("Password reset e-mail has been sent."),"email":email,"success":True},
                 status=status.HTTP_200_OK
             )
-
-
-# class ForgetPasswordConfirm(GenericAPIView, UserInfoMixin):
-#     permission_classes = [AllowAny]
-#     serializer_class = PasswordResetConfirmSerializer
-
-    # def post(self, request, *args, **kwargs):
 
 
 class PasswordResetEmailConfirmView(GenericAPIView, UserInfoMixin):

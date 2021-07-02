@@ -1,0 +1,259 @@
+{%  extends 'main.html' %}
+
+{% block content %}
+<br>
+<div class="row">
+	<div class="col-8 mx-auto">
+		<div class="card card-body">
+			<div class="d-flex justify-content-between align-items-center">
+				<h4>Update Customer "{{user.name|title}}"</h4>
+
+					<a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-info">
+						<i class="fas fa-arrow-left mr-2"></i>
+						Back
+					</a>
+			</div>
+			<hr>
+		    <div class="row mb-3">
+				<div class="col-sm-3">
+					<h6 class="mb-0">Owner</h6>
+				</div>
+				<div class="col-sm-9 text-secondary">
+					{{seller_profile.owner|title}}
+				</div>
+			</div>
+		    <div class="row mb-3">
+				<div class="col-sm-3">
+					<h6 class="mb-0">Business name</h6>
+				</div>
+				<div class="col-sm-9 text-secondary">
+					{{seller_profile.business_name|title}}
+				</div>
+			</div>
+		    <div class="row mb-3">
+				<div class="col-sm-3">
+					<h6 class="mb-0">Entity category
+					</h6>
+				</div>
+				<div class="col-sm-9 text-secondary">
+					{{seller_profile.entity_category|title}}
+				</div>
+			</div>
+		    <div class="row mb-3">
+				<div class="col-sm-3">
+					<h6 class="mb-0">Entity type
+					</h6>
+				</div>
+				<div class="col-sm-9 text-secondary">
+					{{seller_profile.entity_type|title}}
+				</div>
+			</div>
+		    <div class="row mb-3">
+				<div class="col-sm-3">
+					<h6 class="mb-0">Gst enrolled
+					</h6>
+				</div>
+				<div class="col-sm-9 text-secondary">
+					{{seller_profile.is_gst_enrolled|title}}
+				</div>
+			</div>
+			{% if seller_profile.gst_number %}
+		    <div class="row mb-3">
+				<div class="col-sm-3">
+					<h6 class="mb-0">Gst Number
+					</h6>
+				</div>
+				<div class="col-sm-9 text-secondary">
+					{{seller_profile.gst_number|title}}
+				</div>
+			</div>
+			{% endif %}
+			<div class="row mb-3">
+				<div class="col-sm-3">
+					<h6 class="mb-0">Pan number
+					</h6>
+				</div>
+				<div class="col-sm-9 text-secondary">
+					{{seller_profile.pan_number|title}}
+				</div>
+			</div>
+			<div class="row mb-3">
+				<div class="col-sm-3">
+					<h6 class="mb-0">Tan number
+					</h6>
+				</div>
+				<div class="col-sm-9 text-secondary">
+					{{seller_profile.tan_number|title}}
+				</div>
+			</div>
+			{% if seller_profile.is_gst_enrolled %}
+			<div class="row mb-3">
+				<div class="col-sm-3">
+					<h6 class="mb-0">Gst certificate
+					</h6>
+				</div>
+				<div class="col-sm-9 text-secondary">
+					<a href="{{'127.0.0.1:8000'}}{{seller_profile.gst_certificate_url}}" class="btn btn-sm btn-info" download>Get Certificate</a>
+				</div>
+			</div>
+			{% endif %}
+			<div class="row mb-3">
+				<div class="col-sm-3">
+					<h6 class="mb-0">Operational fields
+					</h6>
+				</div>
+				<div class="col-sm-9 text-secondary">
+					{% with subcategories=seller_profile.operational_fields.all%}
+					{% regroup subcategories by category as subcategories_list %}
+					<ul>
+						{% for category in subcategories_list %}
+							<li>{{ category.grouper.name }}
+							<ul>
+								{% for subcategory in category.list %}
+									<li>{{ subcategory.name }}</li>
+								{% endfor %}
+							</ul>
+							</li>
+						{% endfor %}
+						</ul>
+					{% endwith %}
+				</div>
+			</div>
+			<div class="row mb-3">
+				<div class="col-sm-3">
+					<h6 class="mb-0">Approvel Status
+					</h6>
+				</div>
+				<div class="col-sm-9 text-secondary">
+					{% if seller_profile.status == 'approved' %}
+						<span class="badge badge-success">Approved</span>
+					{% elif seller_profile.status == 'rejected' %}
+						<span class="badge badge-danger">Unapproved</span>
+					{% elif seller_profile.status == 'need_more_info' %}
+						<span class="badge badge-warning">Need More Info</span>
+					{% elif seller_profile.status == 'pending_approval' %}
+						<span class="badge badge-info">Pending Approval</span>
+					{% elif seller_profile.status == 'permanently_rejected' %}
+						<span class="badge badge-secondary">Permanently Rejected</span>
+					{% endif %}
+				</div>
+			</div>
+			<div class="row mb-3">
+				<div class="col-sm-3">
+					<h6 class="mb-0">Account Status
+					</h6>
+				</div>
+				<div class="col-sm-9 text-secondary">
+					{% if seller_profile.is_active %}
+						Active
+					{% else %}
+						Shutdown
+					{% endif %}
+				</div>
+			</div>
+			<div class="row mb-3">
+				<div class="col-sm-3">
+					<h6 class="mb-0">Connection code
+					</h6>
+				</div>
+				<div class="col-sm-9 text-secondary">
+					{{seller_profile.connection_code}}
+				</div>
+			</div>
+			<div class="row mb-3">
+				<div class="col-sm-3">
+					<h6 class="mb-0">Created at
+					</h6>
+				</div>
+				<div class="col-sm-9 text-secondary">
+					{{seller_profile.created_at}}
+				</div>
+			</div>
+		</div>
+
+		<div class="card-footer bg-light d-flex justify-content-between">
+			{% comment %} {% if seller_profile.status == 'approved' %}
+			<button type="button"    data-action="unapproved" data-id="{{seller_profile.id}}" class="btn btn-sm btn-danger approvalbutton" data-toggle="modal" data-target=".unapproved">unapproved</button>
+			{% elif seller_profile.status == "rejected" %}
+			<button type="button" data-action="approved" data-id="{{seller_profile.id}}" class="btn btn-sm btn-success approvalbutton" data-toggle="modal" data-target=".approved">approved</button>
+			{% elif seller_profile.status == "pending_approval" %}
+			<div>
+				<button type="button" data-action="approved" data-id="{{seller_profile.id}}" class="btn btn-sm btn-success approvalbutton" data-toggle="modal" data-target=".approved">approved</button>
+				<button type="button"    data-action="unapproved" data-id="{{seller_profile.id}}" class="btn btn-sm btn-danger approvalbutton" data-toggle="modal" data-target=".unapproved">unapproved</button>
+				<button type="button" data-action="need_more_info" data-id="{{seller_profile.id}}" class="btn btn-sm btn-warning approvalbutton" data-toggle="modal" data-target=".need_more_info">need more info</button>
+				<button type="button" data-action="permanently_rejected" data-id="{{seller_profile.id}}" class="btn btn-sm btn-info approvalbutton" data-toggle="modal" data-target=".permanently_rejected">permanently rejected</button>
+			</div>
+			{% elif seller_profile.status == "need_more_info" %}
+			<div>
+				<button type="button" data-action="approved" data-id="{{seller_profile.id}}" class="btn btn-sm btn-success approvalbutton" data-toggle="modal" data-target=".approved">approved</button>
+				<button type="button" data-action="need_more_info" data-id="{{seller_profile.id}}" class="btn btn-sm btn-warning approvalbutton" data-toggle="modal" data-target=".need_more_info">need more info</button>
+				<button type="button" data-action="permanently_rejected" data-id="{{seller_profile.id}}" class="btn btn-sm btn-info approvalbutton" data-toggle="modal" data-target=".permanently_rejected">permanently rejected</button>
+			</div>
+			{% endif %} {% endcomment %}
+			<div>
+			{% if seller_profile.status == 'pending_approval' or seller_profile.status == 'rejected' or seller_profile.status == 'need_more_info'  %}
+				<button type="button" data-action="approved" data-id="{{seller_profile.id}}" class="btn btn-sm btn-success approvalbutton" data-toggle="modal" data-target=".approved">Approved</button>
+			{% endif %}
+			{% if seller_profile.status == 'need_more_info' or seller_profile.status == 'pending_approval' or seller_profile.status == 'rejected'  %}
+				<button type="button" data-action="need_more_info" data-id="{{seller_profile.id}}" class="btn btn-sm btn-warning approvalbutton" data-toggle="modal" data-target=".need_more_info">Need more info</button>
+			{% endif %}
+			{% if seller_profile.status == 'approved'   %}
+				<button type="button" data-action="unapproved" data-id="{{seller_profile.id}}" class="btn btn-sm btn-danger approvalbutton" data-toggle="modal" data-target=".unapproved">Unapproved</button>
+			{% endif %}
+			{% if seller_profile.status == 'pending_approval' or seller_profile.status == 'need_more_info' or seller_profile.status == 'rejected' %}
+					<button type="button" data-action="permanently_rejected" data-id="{{seller_profile.id}}" class="btn btn-sm btn-info approvalbutton" data-toggle="modal" data-target=".permanently_rejected">Permanently Rejected</button>
+			{% endif %}
+			
+			
+			
+			</div>
+			<a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-info">
+				<i class="fas fa-arrow-left mr-2"></i>
+				Back
+			</a>
+		</div>
+
+		<!-- Button trigger modal -->
+  
+  <!-- Modal -->
+  <div class="modal fade" id="seller_profile_approve" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+	<div class="modal-dialog modal-dialog-centered" role="document">
+	  <div class="modal-content">
+		<div class="modal-header">
+		  <h5 class="modal-title" id="exampleModalLabel">Approval Form</h5>
+		  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+			<span aria-hidden="true">&times;</span>
+		  </button>
+		</div>
+		<form id="approve_form">
+		<div class="modal-body">
+			<div class="form-group">
+				<label for="exampleInputEmail1">Comments</label>
+				<input type="text" class="form-control"  id="comments" aria-describedby="emailHelp" placeholder="Enter the comments">
+			  </div>
+		</div>
+		<div class="modal-footer">
+			<button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+        	<button type="submit" class="btn btn-info btn-sm" id="approve_button">Approved</button>
+		</div>
+		</form>
+	  </div>
+	</div>
+  </div>
+	</div>
+	<div class="col-4">
+		<div class="card card-body bg-secondary">
+				<div class="d-flex justify-content-between mb-4">
+					<h4 class="text-light">
+						History
+					</h4>
+				</div>
+				{% include "history.html" %}
+		</div>
+	</div>
+</div>	
+<!-- Modal -->
+
+
+
+{% endblock %}

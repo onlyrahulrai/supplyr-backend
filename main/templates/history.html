@@ -1,0 +1,44 @@
+<div class="timeline">
+    {% for review in reviews %}
+        <div class="history-container left">
+            <div class="content">
+                <h6>{{review.created_at}}</h6>
+                <p class="m-0">{{review.comments|truncatewords:10}}</p>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    {% if review.is_approved %}
+                        <strong>Verified</strong>
+                    {% else %}
+                        <strong>Rejected</strong>
+                    {% endif %}
+                    <span>by, {{review.reviewer.name}}</span>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    
+</div>
+<hr>
+<!-- History pagination end -->
+<div class="d-flex justify-content-center ml-2 mr-2">
+    {% if reviews.has_other_pages %}
+        {% if reviews.has_previous %}
+            <a class="btn btn-outline-light btn-sm mr-2" href="?history=1">First</a>
+            <a class="btn btn-outline-light btn-sm mr-2" href="?history={{ reviews.previous_page_number }}">Previous</a>
+        {% endif %}
+
+        {% for num in reviews.paginator.page_range %}
+            {% if reviews.number == num %}
+                  <a class="btn btn-outline-light btn-sm rounded-circle mr-2" href="?history={{ num }}">{{ num }}</a>
+            {% elif num > reviews.number|add:'-3' and num < reviews.number|add:'3' %}
+                  <a class="btn btn-outline-light btn-sm rounded-circle mr-2" href="?history={{ num }}">{{ num }}</a>
+            {% endif %}
+          {% endfor %}
+
+          {% if reviews.has_next %}
+          <a class="btn btn-outline-light btn-sm mr-2" href="?history={{ reviews.next_page_number }}">Next</a>
+          <a class="btn btn-outline-light btn-sm mr-2" href="?history={{ reviews.paginator.num_pages }}">Last</a>
+        {% endif %}
+    {% endif %}
+</div>
+<!-- History pagination start -->

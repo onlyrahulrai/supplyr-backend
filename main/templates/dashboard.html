@@ -1,0 +1,169 @@
+{%  extends 'main.html' %}
+{% load crispy_forms_tags %}
+{% block content %}
+
+{%  include 'status.html' %}
+
+<br>
+
+<div class="row">
+	<div class="col-md-5">
+		<h5>Last 4 Verified Seller</h5>
+		<hr>
+		<div class="card card-body">
+			<a class="btn btn-primary  btn-sm btn-block" href="">Create Customer</a>
+			<table class="table table-sm mb-0">
+				<tr>
+					<th></th>
+					<th>Seller</th>
+					<th>Status</th>
+				</tr>
+
+				{% for verified_seller in verified_sellers %}
+					<tr>
+						<td>
+							<a href="{% url "customer" verified_seller.seller_profiles.first.id %}" class="btn btn-sm btn-info">View</a>
+						</td>
+						<td>{{verified_seller.name|title}}</td>
+						<td>
+							{% if verified_seller.seller_profiles.first.status %}
+								Verified
+							{% endif %}
+						</td>
+					</tr>
+				{% endfor %}
+
+			</table>
+			<hr>
+			<!-- Verified seller pagination end -->
+			<div class="d-flex justify-content-center">
+				{% if verified_sellers.has_other_pages %}
+					{% if verified_sellers.has_previous %}
+						<a class="btn btn-outline-info btn-sm mr-2" href="?verified=1">First</a>
+						<a class="btn btn-outline-info btn-sm mr-2" href="?verified={{ verified_sellers.previous_page_number }}">Previous</a>
+					{% endif %}
+			
+					{% for num in verified_sellers.paginator.page_range %}
+						{% if verified_sellers.number == num %}
+							  <a class="btn btn-outline-info btn-sm rounded-circle mr-2" href="?verified={{ num }}">{{ num }}</a>
+						{% elif num > verified_sellers.number|add:'-3' and num < verified_sellers.number|add:'3' %}
+							  <a class="btn btn-outline-info btn-sm rounded-circle mr-2" href="?verified={{ num }}">{{ num }}</a>
+						{% endif %}
+					  {% endfor %}
+
+					  {% if verified_sellers.has_next %}
+					  <a class="btn btn-outline-info btn-sm mr-2" href="?verified={{ verified_sellers.next_page_number }}">Next</a>
+					  <a class="btn btn-outline-info btn-sm mr-2" href="?verified={{ verified_sellers.paginator.num_pages }}">Last</a>
+					{% endif %}
+				{% endif %}
+			</div>
+			<!-- Verified seller pagination start -->
+		</div>
+	</div>
+
+	<div class="col-md-7">
+		<h5>Last 4 Unverified Seller</h5>
+		<hr>
+		<div class="card card-body">
+			<table class="table table-sm mb-0">
+				<tr>
+					<th>Seller</th>
+					<th>Status</th>
+					<th>Date Created</th>
+					<th>View</th>
+				</tr>
+				{% for unverified_seller in unverified_sellers %}
+					<tr>
+						<td>{{unverified_seller.name|title}}</td>
+						<td>
+							{% if not unverified_seller.seller_profiles.first.is_approved %}
+								Unverified
+							{% endif %}
+						</td>
+						<td>{{unverified_seller.seller_profiles.first.created_at}}
+						<td>
+							<a href="{% url "customer" unverified_seller.seller_profiles.first.id %}" class="btn btn-sm btn-info">View</button>
+						</td>
+					</tr>
+				{% endfor %}
+
+			</table>
+				<hr>
+				<!-- Unvarified Seller paginations start -->
+				<div class="d-flex justify-content-center">
+					{% if unverified_sellers.has_other_pages %}
+						{% if unverified_sellers.has_previous %}
+							<a class="btn btn-outline-info btn-sm mr-2" href="?unverified=1">First</a>
+							<a class="btn btn-outline-info btn-sm mr-2" href="?unverified={{ unverified_sellers.previous_page_number }}">Previous</a>
+						{% endif %}
+				
+						{% for num in unverified_sellers.paginator.page_range %}
+        					{% if unverified_sellers.number == num %}
+          						<a class="btn btn-outline-info btn-sm rounded-circle mr-2" href="?unverified={{ num }}">{{ num }}</a>
+        					{% elif num > unverified_sellers.number|add:'-3' and num < unverified_sellers.number|add:'3' %}
+          						<a class="btn btn-outline-info btn-sm rounded-circle mr-2" href="?unverified={{ num }}">{{ num }}</a>
+        					{% endif %}
+      					{% endfor %}
+
+						  {% if unverified_sellers.has_next %}
+						  <a class="btn btn-outline-info btn-sm mr-2" href="?unverified={{ unverified_sellers.next_page_number }}">Next</a>
+						  <a class="btn btn-outline-info btn-sm mr-2" href="?unverified={{ unverified_sellers.paginator.num_pages }}">Last</a>
+						{% endif %}
+					{% endif %}
+				</div>
+				<!-- Unvarified Seller paginations end -->
+				
+		</div>
+	</div>
+
+</div>
+
+<br>
+<div class="row">
+	<div class="col mx-auto">
+		<div class="card card-body align-items-center">
+			<form method="get">
+		    {% for field in filter.form %}
+		    	{{field.label}}
+		    	{{field}}
+		    {% endfor %}
+		    <button class="btn btn-primary btn-sm" style="margin-bottom: 0.5rem;" type="submit">Search</button>
+		  </form>
+		</div>
+	</div>
+</div>
+<div class="row">
+	<div class="col-md">
+		<div class="card card-body">
+			<table class="table table-sm">
+				<tr>
+					<th>Owner</th>
+					<th>Business Name</th>
+					<th>Category</th>
+					<th>Type</th>
+					<th>Gst Enrolled</th>
+					<th>Active</th>
+					<th>Status</th>
+					<th>View</th>
+				</tr>
+				{% for profile in profiles %}
+					<tr>
+						<td>{{profile.owner|title}}</td>
+						<td>{{profile.business_name}}</td>
+						<td>{{profile.entity_category}}</td>
+						<td>{{profile.entity_type}}</td>
+						<td>{{profile.is_gst_enrolled}}</td>
+						<td>{{profile.is_active}}</td>
+						<td>{{profile.status}}</td>
+						<td><a class="btn btn-sm btn-info btn-sm" href="{% url 'customer' profile.id %}">View</a></td>
+					</tr>
+				{% endfor %}
+			</table>
+		</div>
+	</div>
+</div>
+	
+
+
+{% endblock %}
+

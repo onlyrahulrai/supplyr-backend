@@ -1,8 +1,10 @@
+from datetime import time
 from django.db import models
 from django_mysql.models import EnumField
 import random
 import string
 from os.path import splitext
+from django.utils import timezone
 
 def get_document_upload_path(instance, filename, document_category):
     file, ext = splitext(filename)
@@ -24,6 +26,14 @@ class SellerProfile(models.Model):
         MANUFACTURER = 'M', 'Manufacturer'
         DISTRIBUTOR = 'D', 'Distributer'
         WHOLESELLER = 'W', 'Wholeseller'
+        
+    class SellerStatusChoice(models.TextChoices):
+        PENDING_APPROVAL = 'pending_approval', 'Pending Approval'
+        APPROVED = 'approved', 'Approved'
+        REJECTED = 'rejected', 'Rejected'
+        NEED_MORE_INFO = 'need_more_info', 'Need More Information'
+        PERMANENTLY_REJECTED = 'permanently_rejected', 'Permanently Rejected'
+        New = 'new',"New"
 
 
     owner = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='seller_profiles')
@@ -34,11 +44,24 @@ class SellerProfile(models.Model):
     gst_number = models.CharField(max_length=20, blank=True, null=True)
     pan_number = models.CharField(max_length=15, blank=True, null=True)
     tan_number = models.CharField(max_length=15, blank=True, null=True)
-    gst_certificate = models.FileField(upload_to=get_gst_upload_path, max_length=150, blank=True, null=True)
+    gst_certificate = models.FileField(upload_to="documents", max_length=150, blank=True, null=True)
     operational_fields = models.ManyToManyField('inventory.SubCategory', blank=True)
-    is_approved = models.BooleanField(default=False)
+    # is_approved = models.BooleanField(default=False)
+    status = EnumField(default="New",choices=SellerStatusChoice.choices, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     connection_code = models.CharField(max_length=15)
+    created_at = models.DateTimeField(default=timezone.now)
+    
+    # @property
+    # def is_approved(self):
+    #     if self.status == "approved":
+    #         return True
+    #     elif self.status == "rejected":
+    #         return False
+    #     elif self.status == "need_more_info":
+    #         return "need_more_info"
+    #     else:
+    #         return "permanently_rejected"
 
     def generate_connection_code(self):
         if self.connection_code:
@@ -57,6 +80,14 @@ class SellerProfile(models.Model):
 
     class Meta:
         verbose_name_plural = 'Seller Profiles'
+        
+    @property
+    def gst_certificate_url(self):
+        try:
+            url = self.gst_certificate.url
+        except:
+            url = ''
+        return url
 
 
 class BuyerProfile(models.Model):

@@ -80,13 +80,12 @@ class CustomRegisterSerializer(RegisterSerializer):
 
         return user
 
-
 class CustomPasswordResetSerializer(PasswordResetSerializer):
     def get_email_options(self):
 
         print("selff ", vars(self))
 
-        password_reset_url_base = settings.URL_FRONTEND + 'password-reset/'
+        password_reset_url_base = settings.URL_FRONTEND + 'forgot-password/'
 
         """Override this method to change default e-mail options"""
         return {
@@ -137,9 +136,6 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
         def save(self):
             return self.set_password_form.save()
             
-
-
-        
 class CustomLoginSerializer(LoginSerializer):
     
     email = serializers.CharField(required=False, allow_blank=True)

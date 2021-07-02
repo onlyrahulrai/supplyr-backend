@@ -326,3 +326,12 @@ class ProfilingCategoriesView(views.APIView, UserInfoMixin):
         response = self.inject_user_info({'success': True}, request.user)
 
         return Response(response)
+    
+class ApplyForApproval(views.APIView,UserInfoMixin):
+    permission_classes = [IsUnapproved]
+    def post(self,request,*args,**kwargs):
+        seller_profile = request.user.seller_profiles.first()
+        seller_profile.status = "pending_approval"
+        seller_profile.save()
+        response = self.inject_user_info({'success': True}, request.user)
+        return Response(response)

@@ -32,8 +32,20 @@ class User(AbstractUser):
 
     @property
     def seller_status(self):
-        if self.seller_profiles.filter(is_approved=True).exists():
+        if self.seller_profiles.filter(status="approved").exists():
             return 'approved'
+        elif self.seller_profiles.exclude(operational_fields = None).exists() and self.seller_profiles.filter(status="New").exists():
+            return "new"
+        elif self.seller_profiles.exclude(operational_fields = None).exists() and self.seller_profiles.filter(status="pending_approval").exists():
+            return "pending_approval"
+        elif self.seller_profiles.exclude(operational_fields = None).exists() and self.seller_profiles.filter(status="approved").exists():
+            return "approved"
+        elif self.seller_profiles.exclude(operational_fields = None).exists() and self.seller_profiles.filter(status="rejected").exists():
+            return "rejected"
+        elif self.seller_profiles.exclude(operational_fields = None).exists() and self.seller_profiles.filter(status="need_more_info").exists():
+            return "need_more_information"
+        elif self.seller_profiles.exclude(operational_fields = None).exists() and self.seller_profiles.filter(status="permanently_rejected").exists():
+            return "permanently_rejected"
         elif self.seller_profiles.exclude(operational_fields = None).exists():
             return 'categories_selected'
         elif self.seller_profiles.exists():
