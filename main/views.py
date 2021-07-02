@@ -14,6 +14,7 @@ from django.shortcuts import get_object_or_404
 from supplyr.core.models import User
 from supplyr.profiles.models import SellerProfile
 from .filters import SellerProfileFilter
+from supplyr.profiles.models import SellerProfile
 
 
 @login_required(login_url="login")
@@ -65,26 +66,23 @@ def approve_seller(request):
     data = json.loads(request.body)
     sellerProfileId = data.get("sellerProfileId")
     action = data.get("action")
-    print(action)
     comments = data.get("comment")
     user_id = data.get("userId")
     seller_profile = SellerProfile.objects.get(id=sellerProfileId)
     user = get_object_or_404(User, id=user_id)
-    if action == "approved":
+    if action == SellerProfile.SellerStatusChoice.APPROVED:
         seller_profile.status="Approved"
-    elif action == "unapproved":
+    elif action == SellerProfile.SellerStatusChoice.REJECTED:
         seller_profile.status="Rejected"
-    elif action == "need_more_info":
+    elif action == SellerProfile.SellerStatusChoice.NEED_MORE_INFO:
         seller_profile.status="need_more_info"
-    elif action == "permanently_rejected":
+    elif action == SellerProfile.SellerStatusChoice.PERMANENTLY_REJECTED:
         seller_profile.status="permanently_rejected"
     seller_profile_review = SellerProfileReview.objects.create(
-            reviewer=user, seller=seller_profile, is_rejected=True, comments=comments)
+            reviewer=user, seller=seller_profile, status=action, comments=comments)
     seller_profile.save()
     seller_profile_review.save()
-        
     
-
     return JsonResponse({"data": data, "success": "true"})
 
 

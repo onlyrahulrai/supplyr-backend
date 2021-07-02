@@ -12,6 +12,7 @@ from django.utils.crypto import get_random_string
 from allauth.account.models import EmailAddress
 import string
 import random
+from supplyr.profiles.models import SellerProfile
 
 class User(AbstractUser):
 
@@ -32,19 +33,17 @@ class User(AbstractUser):
 
     @property
     def seller_status(self):
-        if self.seller_profiles.filter(status="approved").exists():
+        if self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.APPROVED).exists():
             return 'approved'
-        elif self.seller_profiles.exclude(operational_fields = None).exists() and self.seller_profiles.filter(status="New").exists():
+        elif self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.NEW).exists():
             return "new"
-        elif self.seller_profiles.exclude(operational_fields = None).exists() and self.seller_profiles.filter(status="pending_approval").exists():
+        elif self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.PENDING_APPROVAL).exists():
             return "pending_approval"
-        elif self.seller_profiles.exclude(operational_fields = None).exists() and self.seller_profiles.filter(status="approved").exists():
-            return "approved"
-        elif self.seller_profiles.exclude(operational_fields = None).exists() and self.seller_profiles.filter(status="rejected").exists():
+        elif self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.REJECTED).exists():
             return "rejected"
-        elif self.seller_profiles.exclude(operational_fields = None).exists() and self.seller_profiles.filter(status="need_more_info").exists():
+        elif  self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.NEED_MORE_INFO).exists():
             return "need_more_information"
-        elif self.seller_profiles.exclude(operational_fields = None).exists() and self.seller_profiles.filter(status="permanently_rejected").exists():
+        elif self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.PERMANENTLY_REJECTED).exists():
             return "permanently_rejected"
         elif self.seller_profiles.exclude(operational_fields = None).exists():
             return 'categories_selected'
