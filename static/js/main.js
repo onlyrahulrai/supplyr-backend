@@ -9,7 +9,7 @@ for (i = 0; i < approvalButton.length; i++) {
     var sellerProfileId = this.dataset.id;
     var action = this.dataset.action;
     seller_profile_approve.classList.add(action);
-    if (action === "unapproved" || action === "need_more_info" || action === "permanently_rejected") {
+    if (action === "rejected" || action === "need_more_info" || action === "permanently_rejected") {
       comments.required = true;
       approve_button.classList.remove("btn-info")
       approve_button.classList.add("btn-success")
