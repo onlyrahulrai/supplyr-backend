@@ -128,7 +128,7 @@
 					{% if seller_profile.status == 'approved' %}
 						<span class="badge badge-success">Approved</span>
 					{% elif seller_profile.status == 'rejected' %}
-						<span class="badge badge-danger">Unapproved</span>
+						<span class="badge badge-danger">Rejected</span>
 					{% elif seller_profile.status == 'need_more_info' %}
 						<span class="badge badge-warning">Need More Info</span>
 					{% elif seller_profile.status == 'pending_approval' %}
@@ -198,10 +198,10 @@
 				<button type="button" data-action="need_more_info" data-id="{{seller_profile.id}}" class="btn btn-sm btn-warning approvalbutton" data-toggle="modal" data-target=".need_more_info">Need more info</button>
 			{% endif %}
 			{% if seller_profile.status == 'approved'   %}
-				<button type="button" data-action="rejected" data-id="{{seller_profile.id}}" class="btn btn-sm btn-danger approvalbutton" data-toggle="modal" data-target=".rejected">Unapproved</button>
+				<button type="button" data-action="rejected" data-id="{{seller_profile.id}}" class="btn btn-sm btn-danger approvalbutton" data-toggle="modal" data-target=".rejected">Reject</button>
 			{% endif %}
 			{% if seller_profile.status == 'pending_approval' or seller_profile.status == 'need_more_info' or seller_profile.status == 'rejected' %}
-					<button type="button" data-action="permanently_rejected" data-id="{{seller_profile.id}}" class="btn btn-sm btn-info approvalbutton" data-toggle="modal" data-target=".permanently_rejected">Permanently Reject</button>
+					<button type="button" data-action="permanently_rejected" data-id="{{seller_profile.id}}" class="btn btn-sm btn-secondary approvalbutton" data-toggle="modal" data-target=".permanently_rejected">Permanently Reject</button>
 			{% endif %}
 			
 			

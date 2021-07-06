@@ -9,25 +9,26 @@
 <div class="row">
 	<div class="col mx-auto">
 		<div class="card card-body align-items-center">
+		<form method="get">
 			<ul class="nav nav-tabs nav-pills justify-content-center mb-3" id="myTab" role="tablist">
 				<li class="nav-item bg-outline-primary mr-2 ">
-					<a class="nav-link status_btn" data-status="pending_approval" id="pending_approval-tab" data-toggle="tab" href="#pending_approval" role="tab" aria-controls="pending_approval" aria-selected="true"><strong>Pending Approval</strong></a>
+					<button type="submit" class="nav-link status_btn btn btn-info btn-sm" data-status="pending_approval" id="pending_approval-tab" data-toggle="tab" data-target="#pending_approval" role="tab" aria-controls="pending_approval" aria-selected="true">Pending Approval</button>
 				</li>
 				<li class="nav-item mr-2">
-					<a class="nav-link status_btn" data-status="approved" id="approved-tab" data-toggle="tab" href="#approved" role="tab" aria-controls="approved" aria-selected="false"><strong>Approved</strong></a>
+					<button type="submit" class="nav-link status_btn btn btn-success btn-sm" data-status="approved" id="approved-tab" data-toggle="tab" data-target="#approved" role="tab" aria-controls="approved" aria-selected="false">Approved</button>
 				</li>
 				<li class="nav-item mr-2">
-					<a class="nav-link status_btn" data-status="rejected" id="rejected-tab" data-toggle="tab" href="#rejected" role="tab" aria-controls="rejected" aria-selected="false"><strong>Rejected</strong></a>
+					<button type="submit" class="nav-link status_btn btn btn-danger btn-sm" data-status="rejected" id="rejected-tab" data-toggle="tab" data-target="#rejected" role="tab" aria-controls="rejected" aria-selected="false">Rejected</button>
 				</li>
 				<li class="nav-item mr-2">
-					<a class="nav-link status_btn" data-status="need_more_info" id="need_more_info-tab" data-toggle="tab" href="#need_more_info" role="tab" aria-controls="need_more_info" aria-selected="false"><strong>Need More Infomation</strong></a>
+					<button type="submit" class="nav-link status_btn btn btn-warning btn-sm" data-status="need_more_info" id="need_more_info-tab" data-toggle="tab" data-target="#need_more_info" role="tab" aria-controls="need_more_info" aria-selected="false">Need More Infomation</button>
 				</li>
 				<li class="nav-item">
-					<a class="nav-link status_btn" data-status="permanently_rejected" id="permanently_rejected-tab" data-toggle="tab" href="#permanently_rejected" role="tab" aria-controls="permanently_rejected" aria-selected="false"><strong>Permanently Rejected</strong></a>
+					<button type="submit" class="nav-link status_btn btn btn-secondary btn-sm" data-status="permanently_rejected" id="permanently_rejected-tab" data-toggle="tab" data-target="#permanently_rejected" role="tab" aria-controls="permanently_rejected" aria-selected="false">Permanently Rejected</button>
 				</li>
 			</ul>
 			<div class="tab-content" id="myTabContent">
-				<form method="get">
+				
 					<div class="tab-pane fade" id="form-field" role="tabpanel" >
 						{% for field in filter.form %}
 							{{field.label}}
@@ -36,9 +37,8 @@
 						<input type="hidden" id="hidden_status" name="status">
 						<button class="btn btn-primary btn-sm" style="margin-bottom: 0.5rem;" type="submit">Search</button>
 					</div>
-				</form>
 			</div>
-		  
+		</form>
 		</div>
 	</div>
 </div>
