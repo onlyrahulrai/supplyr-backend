@@ -104,6 +104,27 @@
 					</tr>
 				{% endfor %}
 			</table>
+			<div class="d-flex justify-content-center border-top ">
+				{% if profiles.has_other_pages %}
+					{% if profiles.has_previous %}
+						<a class="btn btn-outline-info btn-sm mr-2 mt-3" href="?filter=1">First</a>
+						<a class="btn btn-outline-info btn-sm mr-2 mt-3" href="?filter={{ profiles.previous_page_number }}">Previous</a>
+					{% endif %}
+			
+					{% for num in profiles.paginator.page_range %}
+						{% if profiles.number == num %}
+							  <a class="btn btn-outline-info btn-sm rounded-circle mr-2 mt-3" href="?filter={{ num }}">{{ num }}</a>
+						{% elif num > profiles.number|add:'-3' and num < profiles.number|add:'3' %}
+							  <a class="btn btn-outline-info btn-sm rounded-circle mr-2 mt-3" href="?filter={{ num }}">{{ num }}</a>
+						{% endif %}
+					  {% endfor %}
+
+					  {% if profiles.has_next %}
+					  <a class="btn btn-outline-info btn-sm mr-2 mt-3" href="?filter={{ profiles.next_page_number }}">Next</a>
+					  <a class="btn btn-outline-info btn-sm mr-2 mt-3" href="?filter={{ profiles.paginator.num_pages }}">Last</a>
+					{% endif %}
+				{% endif %}
+			</div>
 		</div>
 	</div>
 </div>

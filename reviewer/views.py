@@ -32,7 +32,9 @@ def dashboard(request):
     
     seller_profiles = SellerProfile.objects.all()
     user_filter = SellerProfileFilter(request.GET,queryset=seller_profiles)
-    profiles = user_filter.qs
+    filter = request.GET.get('filter', 1)
+    profiles = paginate_func(request, user_filter.qs, filter,count=7)
+    
     
     context = {
         "unverified_sellers": unverified_sellers,
