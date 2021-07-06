@@ -51,4 +51,3 @@ function approved(sellerProfileId, action,comment,user) {
 }
 
 
-

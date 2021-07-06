@@ -1,17 +1,118 @@
 {%  extends 'main.html' %}
 {% load crispy_forms_tags %}
 {% block content %}
-
+{% load extras %}
 {%  include 'status.html' %}
 
 <br>
 
 <div class="row">
+	<div class="col mx-auto">
+		<div class="card card-body align-items-center">
+			<ul class="nav nav-tabs nav-pills justify-content-center mb-3" id="myTab" role="tablist">
+				<li class="nav-item bg-outline-primary mr-2 ">
+					<a class="nav-link status_btn" data-status="pending_approval" id="pending_approval-tab" data-toggle="tab" href="#pending_approval" role="tab" aria-controls="pending_approval" aria-selected="true"><strong>Pending Approval</strong></a>
+				</li>
+				<li class="nav-item mr-2">
+					<a class="nav-link status_btn" data-status="approved" id="approved-tab" data-toggle="tab" href="#approved" role="tab" aria-controls="approved" aria-selected="false"><strong>Approved</strong></a>
+				</li>
+				<li class="nav-item mr-2">
+					<a class="nav-link status_btn" data-status="rejected" id="rejected-tab" data-toggle="tab" href="#rejected" role="tab" aria-controls="rejected" aria-selected="false"><strong>Rejected</strong></a>
+				</li>
+				<li class="nav-item mr-2">
+					<a class="nav-link status_btn" data-status="need_more_info" id="need_more_info-tab" data-toggle="tab" href="#need_more_info" role="tab" aria-controls="need_more_info" aria-selected="false"><strong>Need More Infomation</strong></a>
+				</li>
+				<li class="nav-item">
+					<a class="nav-link status_btn" data-status="permanently_rejected" id="permanently_rejected-tab" data-toggle="tab" href="#permanently_rejected" role="tab" aria-controls="permanently_rejected" aria-selected="false"><strong>Permanently Rejected</strong></a>
+				</li>
+			</ul>
+			<div class="tab-content" id="myTabContent">
+				<form method="get">
+					<div class="tab-pane fade" id="form-field" role="tabpanel" >
+						{% for field in filter.form %}
+							{{field.label}}
+							{{field}}
+						{% endfor %}
+						<input type="hidden" id="hidden_status" name="status">
+						<button class="btn btn-primary btn-sm" style="margin-bottom: 0.5rem;" type="submit">Search</button>
+					</div>
+				</form>
+			</div>
+		  
+		</div>
+	</div>
+</div>
+<div class="row">
+	<div class="col-md">
+		<div class="card card-body">
+			<table class="table table-sm">
+				<tr>
+					<th>Owner</th>
+					<th>Business Name</th>
+					<th>Category</th>
+					<th>Type</th>
+					<th>Gst Enrolled</th>
+					<th>Active</th>
+					<th>Status</th>
+					<th>View</th>
+				</tr>
+				{% for profile in profiles %}
+					<tr>
+						<td>{{profile.owner|title}}</td>
+						<td>{{profile.business_name}}</td>
+						<td>
+						{% if profile.entity_category == "M" %}
+							Manufacturer
+						{% elif profile.entity_category == "W" %}
+							Wholeseller
+						{% elif profile.entity_category == "D" %}
+							Distributer
+						{% else %}
+							" "
+						{% endif %}
+						</td>
+						<td>
+						{% if profile.entity_type == "pvtltd" %}
+							Private Limited
+						{% elif profile.entity_type == "llp" %}
+							Limited Liablity Partnership
+						{% elif profile.entity_type == "part" %}
+							Partnership
+						{% elif profile.entity_type == "prop" %}
+							Propertieship
+						{% else %}
+							" "
+						{% endif %}
+						</td>
+						<td>
+						
+						{% if profile.is_gst_enrolled %}
+							Yes
+						{% else %}
+						 	No
+						{% endif %}
+						</td>
+						<td>
+						{% if profile.is_active %}
+							Yes
+						{% else %}
+						 	No
+						{% endif %}
+						</td>
+						<td>{{profile.status|replace:"_"}}</td>
+						<td><a class="btn btn-sm btn-info btn-sm" href="{% url 'customer' profile.id %}">View</a></td>
+					</tr>
+				{% endfor %}
+			</table>
+		</div>
+	</div>
+</div>
+	
+<div class="row mt-3">
 	<div class="col-md-5">
 		<h5>Last 4 Verified Seller</h5>
 		<hr>
 		<div class="card card-body">
-			<a class="btn btn-primary  btn-sm btn-block" href="">Create Customer</a>
 			<table class="table table-sm mb-0">
 				<tr>
 					<th></th>
@@ -117,52 +218,6 @@
 	</div>
 
 </div>
-
-<br>
-<div class="row">
-	<div class="col mx-auto">
-		<div class="card card-body align-items-center">
-			<form method="get">
-		    {% for field in filter.form %}
-		    	{{field.label}}
-		    	{{field}}
-		    {% endfor %}
-		    <button class="btn btn-primary btn-sm" style="margin-bottom: 0.5rem;" type="submit">Search</button>
-		  </form>
-		</div>
-	</div>
-</div>
-<div class="row">
-	<div class="col-md">
-		<div class="card card-body">
-			<table class="table table-sm">
-				<tr>
-					<th>Owner</th>
-					<th>Business Name</th>
-					<th>Category</th>
-					<th>Type</th>
-					<th>Gst Enrolled</th>
-					<th>Active</th>
-					<th>Status</th>
-					<th>View</th>
-				</tr>
-				{% for profile in profiles %}
-					<tr>
-						<td>{{profile.owner|title}}</td>
-						<td>{{profile.business_name}}</td>
-						<td>{{profile.entity_category}}</td>
-						<td>{{profile.entity_type}}</td>
-						<td>{{profile.is_gst_enrolled}}</td>
-						<td>{{profile.is_active}}</td>
-						<td>{{profile.status}}</td>
-						<td><a class="btn btn-sm btn-info btn-sm" href="{% url 'customer' profile.id %}">View</a></td>
-					</tr>
-				{% endfor %}
-			</table>
-		</div>
-	</div>
-</div>
-	
 
 
 {% endblock %}

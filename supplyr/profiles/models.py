@@ -33,6 +33,7 @@ class SellerProfile(models.Model):
         REJECTED = 'rejected', 'Rejected'
         NEED_MORE_INFO = 'need_more_info', 'Need More Information'
         PERMANENTLY_REJECTED = 'permanently_rejected', 'Permanently Rejected'
+        CATEGORIES_SELECTED = "categories_selected","Categories Selected"
         NEW = 'new',"New"
 
 
@@ -46,7 +47,7 @@ class SellerProfile(models.Model):
     tan_number = models.CharField(max_length=15, blank=True, null=True)
     gst_certificate = models.FileField(upload_to=get_gst_upload_path, max_length=150, blank=True, null=True)
     operational_fields = models.ManyToManyField('inventory.SubCategory', blank=True)
-    status = EnumField(default="New",choices=SellerStatusChoice.choices, blank=True, null=True)
+    status = EnumField(default="new",choices=SellerStatusChoice.choices, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     connection_code = models.CharField(max_length=15)
     created_at = models.DateTimeField(default=timezone.now)

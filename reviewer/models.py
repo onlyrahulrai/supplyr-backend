@@ -1,7 +1,7 @@
 from random import choices
 from django.db import models
 from supplyr.core.models import User
-from supplyr.profiles.models import SellerProfile
+
 from django.utils import timezone
 from supplyr.profiles.models import SellerProfile
 from django_mysql.models import EnumField
@@ -9,7 +9,7 @@ from django_mysql.models import EnumField
 
 class SellerProfileReview(models.Model):
     reviewer = models.ForeignKey(User,on_delete=models.CASCADE,null=True,blank=True)
-    seller = models.ForeignKey(SellerProfile,on_delete=models.CASCADE,null=True,blank=True)
+    seller = models.ForeignKey(SellerProfile,on_delete=models.CASCADE,null=True,blank=True,related_name="seller_profile_review")
     is_approved = models.BooleanField(default=False)
     status = EnumField(default="new",choices=SellerProfile.SellerStatusChoice,blank=True,null=True)
     comments = models.CharField(max_length=200,null=True,blank=True)

@@ -150,6 +150,14 @@ class UserDetailsSerializer(serializers.ModelSerializer):
             return user.salesperson_status
         
         return None
+    
+    user_profile_review = serializers.SerializerMethodField()
+    def get_user_profile_review(self,user):
+            if seller_profile := user.seller_profiles.first():
+                seller_profile_review = seller_profile.seller_profile_review.last()
+                review = seller_profile_review.comments
+                return review
+            
 
 
     user_role = serializers.SerializerMethodField()
@@ -162,7 +170,7 @@ class UserDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['name', 'first_name', 'last_name', 'username', 'is_staff', 'user_status', 'profiling_data', 'profile', 'user_role', 'is_email_verified', 'is_mobile_verified', 'email', 'mobile_number']
+        fields = ['name', 'first_name', 'last_name', 'username', 'is_staff', 'user_status','user_profile_review','profiling_data', 'profile', 'user_role', 'is_email_verified', 'is_mobile_verified', 'email', 'mobile_number']
 
 
 class BuyerAddressSerializer(serializers.ModelSerializer):

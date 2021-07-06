@@ -32,27 +32,33 @@ class User(AbstractUser):
     #     self.save()
 
     @property
-    def seller_status(self):
-        if self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.APPROVED).exists():
-            return 'approved'
-        elif self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.NEW).exists():
+    def seller_status(self):  
+        if self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.NEW).exists():
             return "new"
         elif self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.PENDING_APPROVAL).exists():
             return "pending_approval"
+        elif  self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.APPROVED).exists():
+            return 'approved'
         elif self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.REJECTED).exists():
             return "rejected"
-        elif  self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.NEED_MORE_INFO).exists():
+        elif self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.NEED_MORE_INFO).exists():
             return "need_more_information"
         elif self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.PERMANENTLY_REJECTED).exists():
             return "permanently_rejected"
-        elif self.seller_profiles.exclude(operational_fields = None).exists():
-            return 'categories_selected'
-        elif self.seller_profiles.exists():
+        elif self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.CATEGORIES_SELECTED).exists():
+            return "categories_selected"
+        
+        if self.seller_profiles.exists():
             return 'form_filled'
-        elif self.is_email_verified and self.is_mobile_verified:
+        
+        if self.is_email_verified and self.is_mobile_verified:
             return 'verified' # unprofiled
         else:
             return 'unverified'
+        
+        
+        
+        # self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.NEW).exists()
 
     @property
     def buyer_status(self):

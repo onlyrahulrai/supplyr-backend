@@ -6,13 +6,21 @@
                 <p class="m-0">{{review.comments|truncatewords:10}}</p>
                 <hr>
                 <div class="d-flex justify-content-between">
-                    {% if review.is_approved %}
-                        <strong>Verified</strong>
-                    {% else %}
+                    {% if review.status == "approved" %}
+                        <strong>Approved</strong>
+                    {% elif review.status == "approved" %}
                         <strong>Rejected</strong>
+                    {% elif review.status == "need_more_info" %}
+                        <strong>Need More Info</strong>
+                    {% elif review.status == "permanently_rejected" %}
+                        <strong>Permanently Rejected</strong>
+                    {% elif review.status == "rejected" %}
+                        <strong>Rejected</strong>
+                    {% else %}
+                        <strong>Pending Approval</strong>
                     {% endif %}
-                    <span>by, {{review.reviewer.name}}</span>
                 </div>
+                <span>by, {{review.reviewer.name}}</span>
             </div>
         </div>
     {% endfor %}

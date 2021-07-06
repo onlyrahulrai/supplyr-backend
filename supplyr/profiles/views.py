@@ -19,6 +19,7 @@ from rest_framework import status
 from supplyr.utils.api.mixins import UserInfoMixin
 from django.db import transaction
 from collections import OrderedDict
+from .models import SellerProfile
 
 User = get_user_model()
 
@@ -323,6 +324,8 @@ class ProfilingCategoriesView(views.APIView, UserInfoMixin):
         sub_categories = request.data['sub_categories']
         profile = request.user.seller_profiles.first()
         profile.operational_fields.set(sub_categories)
+        profile.status = "categories_selected"
+        profile.save()
         response = self.inject_user_info({'success': True}, request.user)
 
         return Response(response)

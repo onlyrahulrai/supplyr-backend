@@ -33,7 +33,7 @@ def dashboard(request):
     seller_profiles = SellerProfile.objects.all()
     user_filter = SellerProfileFilter(request.GET,queryset=seller_profiles)
     profiles = user_filter.qs
-
+    
     context = {
         "unverified_sellers": unverified_sellers,
         "verified_sellers": verified_sellers,
@@ -68,6 +68,7 @@ def approve_seller(request):
     action = data.get("action")
     comments = data.get("comment")
     user_id = data.get("userId")
+    print(action)
     seller_profile = SellerProfile.objects.get(id=sellerProfileId)
     user = get_object_or_404(User, id=user_id)
     if action == SellerProfile.SellerStatusChoice.APPROVED:
@@ -78,6 +79,8 @@ def approve_seller(request):
         seller_profile.status="need_more_info"
     elif action == SellerProfile.SellerStatusChoice.PERMANENTLY_REJECTED:
         seller_profile.status="permanently_rejected"
+    
+    print(action)
     seller_profile_review = SellerProfileReview.objects.create(
             reviewer=user, seller=seller_profile, status=action, comments=comments)
     seller_profile.save()
