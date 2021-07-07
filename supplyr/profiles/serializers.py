@@ -153,10 +153,12 @@ class UserDetailsSerializer(serializers.ModelSerializer):
     
     user_profile_review = serializers.SerializerMethodField()
     def get_user_profile_review(self,user):
-            if seller_profile := user.seller_profiles.first():
-                seller_profile_review = seller_profile.seller_profile_review.last()
-                review = seller_profile_review.comments
-                return review
+        review = None
+        if seller_profile := user.seller_profiles.first():
+            seller_profile_review = seller_profile.seller_profile_review.last()
+            if(seller_profile_review):
+                review = seller_profile_review.comments 
+            return review
             
 
 
