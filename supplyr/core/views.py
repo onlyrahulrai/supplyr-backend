@@ -223,29 +223,28 @@ class PasswordResetMobileConfirmView(APIView, UserInfoMixin):
         email=request.data.get("email")
         user=User.objects.filter(mobile_number=mobile_number).first()
         
-        if mobile_number:
-            if new_password1 != new_password2:
-                return Response({"message": "The two password fields didn't match.", "success": False})
-            else:
-                if user.check_password(new_password1):
-                    return Response({"message": "This is your previous password type new password", "success": False})
-                    
+        if mobile_number:        
+            try:
+                if new_password1 == new_password2:
+                    if otp := user.verification_otps.filter(mobile_number=mobile_number, code=code, id=otp_id, created_at__gt=timezone.now() - timedelta(minutes=settings.MOBILE_VERIFICATION_OTP_EXPIRY_MINUTES)).first():
+                        user.set_password(new_password1)
+                        user.save()
+                        try:
+                            if user.is_credentials_verified:
+                                check_and_link_manually_created_profiles(user)
+                        except Exception as e:
+                            print(e)
 
-            if otp := user.verification_otps.filter(mobile_number=mobile_number, code=code, id=otp_id, created_at__gt=timezone.now() - timedelta(minutes=settings.MOBILE_VERIFICATION_OTP_EXPIRY_MINUTES)).first():
-                user.set_password(new_password1)
-                user.save()
-                try:
-                    if user.is_credentials_verified:
-                        check_and_link_manually_created_profiles(user)
-                except Exception as e:
-                    print(e)
-
-                response_data={
-                    'success': True, 
-                    "message": _("Password has been reset with the new password."),
-                    "name":user.name
-                    }
-                return Response(response_data)
+                        response_data={
+                            'success': True, 
+                            "message": _("Password has been reset with the new password."),
+                            "name":user.name
+                            }
+                        return Response(response_data)
+            except Exception as e:
+                return Response({
+                    'success': False, 'message': str(e)
+                }, status=500)
 
             else:
                 return Response({
