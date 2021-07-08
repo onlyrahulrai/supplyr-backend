@@ -19,7 +19,7 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     created_by = models.ForeignKey('core.User', related_name='orders_created', on_delete=models.RESTRICT)
-    cancelled_at = models.DateTimeField(blank=True, null=True)
+    cancelled_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
     cancelled_by = EnumField(
         choices=('buyer', 'seller', 'staff', 'sales'),
         blank=True, null=True

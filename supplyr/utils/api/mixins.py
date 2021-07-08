@@ -25,7 +25,7 @@ class UserInfoMixin():
         extra_context = {}
         if hasattr(self, 'request'):
             extra_context['request'] = self.request
-
+            
         serializer = UserDetailsSerializer(user, context=extra_context)
         return serializer.data
 

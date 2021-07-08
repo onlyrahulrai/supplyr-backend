@@ -15,15 +15,27 @@ for (i = 0; i < approvalButton.length; i++) {
       approve_button.classList.add("btn-success")
       
     } else if (action === "approved") {
-        approve_button.classList.remove("btn-danger")
-        approve_button.classList.add("btn-info");
+        approve_button.classList.remove("btn-danger") ||
+        approve_button.classList.remove("btn-warning") ||
+        approve_button.classList.remove("btn-info") 
+        approve_button.classList.add("btn-success");
+        approve_button.innerText = "Approve";
     }
     if(action === "need_more_info"){
+      approve_button.classList.remove("btn-danger")
+      approve_button.classList.add("btn-warning")
       approve_button.innerText = "Need more Info";
     }else if(action === "permanently_rejected"){
-      approve_button.innerText = "Permanently Rejected";
-    }else{
-      approve_button.innerText = action;
+      approve_button.classList.remove("btn-success") ||
+      approve_button.classList.remove("btn-info")
+      approve_button.classList.add("btn-secondary")
+      approve_button.innerText = "Permanently Reject";
+    }else if (action === "rejected"){
+      approve_button.classList.remove("btn-warning") ||
+      approve_button.classList.remove("btn-info")
+      approve_button.classList.add("btn-danger") 
+      approve_button.innerText = "Reject";
+
     }
     approve_form.addEventListener("submit",() => {
         event.preventDefault()
@@ -49,6 +61,5 @@ function approved(sellerProfileId, action,comment,user) {
     })
     .catch((error) => console.log(error));
 }
-
 
 
