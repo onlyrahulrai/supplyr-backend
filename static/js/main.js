@@ -27,7 +27,8 @@ for (i = 0; i < approvalButton.length; i++) {
       approve_button.innerText = "Need more Info";
     }else if(action === "permanently_rejected"){
       approve_button.classList.remove("btn-success") ||
-      approve_button.classList.remove("btn-info")
+      approve_button.classList.remove("btn-info") || 
+      approve_button.classList.remove("btn-warning") 
       approve_button.classList.add("btn-secondary")
       approve_button.innerText = "Permanently Reject";
     }else if (action === "rejected"){

@@ -1,0 +1,298 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %} Profile {% endblock title %}
+
+{% block content %}
+
+    <!-- Header -->
+    <div class="header pb-8 pt-5 pt-lg-8 d-flex align-items-center" 
+         style="min-height: 600px; background-image: url(/static/assets/img/theme/profile-cover.jpg); background-size: cover; background-position: center top;">
+      <!-- Mask -->
+      <span class="mask bg-gradient-default opacity-8"></span>
+      <!-- Header container -->
+      <div class="container-fluid d-flex align-items-center">
+        <div class="row">
+          <div class="col-lg-7 col-md-10">
+            <h1 class="display-2 text-white">Hello {{ request.user.username|title }}</h1>
+            <p class="text-white mt-0 mb-5">This is 
+            <strong>{{seller_profile.business_name|title}}</strong>
+            profile page. You can see the profile documents.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid mt--7">
+
+      <div class="row mb-5">
+        <div class="col-xl-4 order-xl-2 mb-5 mb-xl-0">
+          <div class="card card-profile shadow">
+            <div class="card-header text-center border-0 pt-8 pt-md-4 pb-0">
+              <h3>History</h3>
+            </div>
+            <hr class="my-2" />
+            <div class="card-body pt-0 ">
+              {% include "includes/history.html" %}
+            </div>
+          </div>
+        </div>
+        <div class="col-xl-8 order-xl-1">
+          <div class="card bg-secondary shadow">
+            <div class="card-header bg-white border-0">
+              <div class="row align-items-center">
+                <div class="col-8">
+                  <h3 class="mb-0">My account</h3>
+                </div>
+                <div class="col-4 text-right">
+                  <a href="{% url 'dashboard' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    Go back
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <form>
+                <h6 class="heading-small text-muted mb-4">User information</h6>
+                <div class="pl-lg-4">
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <h4 class="mb-2">Owner</h4>
+                        <p class="shadow  p-2 rounded text-bold">
+                          <strong>{{seller_profile.owner|title}}</strong>
+                        </p>
+                      </div>
+                    </div>
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                         <h4 class="mb-2">Business name</h4>
+                        <p class="shadow  p-2 rounded text-bold">
+                          <strong>{{seller_profile.business_name|title}}</strong>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <h4 class="mb-2">Entity category</h4>
+                        <p class="shadow  p-2 rounded text-bold">
+                          {% if seller_profile.entity_category == "W" %}
+                          <strong>Wholeseller</strong>
+                          {% elif seller_profile.entity_category == "D" %}
+                          <strong>Distributer</strong>
+                          {% elif seller_profile.entity_category == "M" %}
+                          <strong>Manufacturer</strong>
+                          {% endif %}
+                        </p>
+                      </div>
+                    </div>
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <h4 class="mb-2">Entity type</h4>
+                        <p class="shadow  p-2 rounded text-bold">
+                          {% if seller_profile.entity_type == "pvtltd" %}
+                          <strong>Private Limited</strong>
+                          {% elif seller_profile.entity_type == "llp" %}
+                          <strong>Limited Liablity Partnership</strong>
+                          {% elif seller_profile.entity_type == "part" %}
+                          <strong>Partnership</strong>
+                          {% elif seller_profile.entity_type == "prop" %}
+                          <strong>Propertieship</strong>
+                          {% endif %}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <hr class="my-4" />
+                <!-- Address -->
+                <h6 class="heading-small text-muted mb-4">Legal information</h6>
+                <div class="pl-lg-4">
+                  <div class="row">
+                    <div class="col-md-12">
+                      <div class="form-group">
+                        <h4 class="mb-2">Gst enrolled</h4>
+                        <p class="shadow  p-2 rounded text-bold">
+                          {% if seller_profile.is_gst_enrolled %}
+                          <strong>Yes</strong>
+                          {% else %}
+                          <strong>No</strong>
+                          {% endif %}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                      {% if seller_profile.gst_number %}
+                    <div class="col-lg-4">
+                      <div class="form-group">
+                        <h4 class="mb-2">Gst Number</h4>
+                        <p class="shadow  p-2 rounded text-bold">{{seller_profile.gst_number|title}}</p>
+                      </div>
+                    </div>
+			                {% endif %}
+                    <div class="col-lg-4">
+                      <div class="form-group">
+                        <h4 class="mb-2">Pan number</h4>
+                        <p class="shadow  p-2 rounded text-bold">{{seller_profile.pan_number|title}}</p>
+                      </div>
+                    </div>
+                    <div class="col-lg-4">
+                      <div class="form-group">
+                        <h4 class="mb-2">Tan number</h4>
+                        <p class="shadow  p-2 rounded text-bold">{{seller_profile.tan_number|title}}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                      {% if seller_profile.is_gst_enrolled %}
+                    <div class="col-lg-10 col-sm-3">
+                      <div class="form-group">
+                        <h4 class="mb-2">Gst certificate</h4>
+                        <p class="shadow  p-2 rounded text-bold">
+                          <a href="{{'127.0.0.1:8000'}}{{seller_profile.gst_certificate_url}}" class="btn btn-sm btn-info" download>Get Certificate</a>
+                        </p>
+                      </div>
+                    </div>
+			                {% endif %}
+                  </div>
+                </div>
+                
+                <hr class="my-4" />
+                <!-- Description -->
+                <h6 class="heading-small text-muted mb-4">Category Info</h6>
+                <div class="pl-lg-4">
+                  <div class="form-group">
+                    <h4 class="mb-2">Operational fields</h4>
+                      {% with subcategories=seller_profile.operational_fields.all%}
+					            {% regroup subcategories by category as subcategories_list %}
+                      <ul class="shadow  p-2 rounded text-bold">
+                        {% for category in subcategories_list %}
+                          <li>{{ category.grouper.name }}
+                          <ul>
+                            {% for subcategory in category.list %}
+                              <li>{{ subcategory.name }}</li>
+                            {% endfor %}
+                          </ul>
+                          </li>
+                        {% endfor %}
+                        </ul>
+                      {% endwith %}
+                  </div>
+                </div>
+                <hr class="my-4" />
+                <h6 class="heading-small text-muted mb-4">Account Status</h6>
+                <div class="row">
+                  <div class="col-lg-6 col-sm-3">
+                    <div class="form-group">
+                      <h4 class="mb-2">Approvel Status</h4>
+                      <p class="shadow  p-2 rounded text-bold">
+                        {% if seller_profile.status == 'approved' %}
+						              <span class="badge badge-success">Approved</span>
+                        {% elif seller_profile.status == 'rejected' %}
+                          <span class="badge badge-danger">Rejected</span>
+                        {% elif seller_profile.status == 'need_more_info' %}
+                          <span class="badge badge-warning">Need More Info</span>
+                        {% elif seller_profile.status == 'pending_approval' %}
+                          <span class="badge badge-info">Pending Approval</span>
+                        {% elif seller_profile.status == 'permanently_rejected' %}
+                          <span class="badge badge-secondary">Permanently Rejected</span>
+                        {% endif %}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="col-lg-6 col-sm-3">
+                    <div class="form-group">
+                      <h4 class="mb-2">Active Status</h4>
+                      <p class="shadow  p-2 rounded text-bold">
+                        {% if seller_profile.is_active %}
+                        Active
+                      {% else %}
+                        Shutdown
+                      {% endif %}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <hr class="my-4" />
+                <h6 class="heading-small text-muted mb-4">Other Information</h6>
+                <div class="row">
+                  <div class="col-lg-6 col-sm-3">
+                    <div class="form-group">
+                      <h4 class="mb-2">Connection code</h4>
+                      <p class="shadow  p-2 rounded text-bold">
+                        {{seller_profile.connection_code}}
+                      </p>
+                    </div>
+                  </div>
+                  <div class="col-lg-6 col-sm-3">
+                    <div class="form-group">
+                      <h4 class="mb-2">Joined</h4>
+                      <p class="shadow  p-2 rounded text-bold">
+                        {{seller_profile.created_at}}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <hr class="my-4" />
+                <div class="d-flex justify-content-between">
+                  <div>
+                {% if seller_profile.status == 'pending_approval' or seller_profile.status == 'rejected' or seller_profile.status == 'need_more_info'  %}
+                  <button type="button" data-action="approved" data-id="{{seller_profile.id}}" class="btn btn-sm btn-success approvalbutton" data-toggle="modal" data-target=".approved">Approve</button>
+                {% endif %}
+                {% if seller_profile.status == 'need_more_info' or seller_profile.status == 'pending_approval' or seller_profile.status == 'rejected'  %}
+                  <button type="button" data-action="need_more_info" data-id="{{seller_profile.id}}" class="btn btn-sm btn-warning approvalbutton" data-toggle="modal" data-target=".need_more_info">Need more info</button>
+                {% endif %}
+                {% if seller_profile.status == 'approved'   %}
+                  <button type="button" data-action="rejected" data-id="{{seller_profile.id}}" class="btn btn-sm btn-danger approvalbutton" data-toggle="modal" data-target=".rejected">Reject</button>
+                {% endif %}
+                {% if seller_profile.status == 'pending_approval' or seller_profile.status == 'need_more_info' or seller_profile.status == 'rejected' %}
+                    <button type="button" data-action="permanently_rejected" data-id="{{seller_profile.id}}" class="btn btn-sm btn-secondary approvalbutton" data-toggle="modal" data-target=".permanently_rejected">Permanently Reject</button>
+                {% endif %}
+                </div>
+                <div>
+                <a href="{% url 'dashboard' %}" class="btn btn-sm btn-primary ml-auto">
+                  <i class="fas fa-arrow-left mr-2"></i>
+                  Go back
+                </a>
+              </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+<!-- Modal -->
+<div class="modal fade" id="seller_profile_approve" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLabel">Approval Form</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <form id="approve_form">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="exampleInputEmail1">Comments</label>
+            <input type="text" class="form-control"  id="comments" aria-describedby="emailHelp" placeholder="Enter the comments">
+            </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
+              <button type="submit" class="btn btn-info btn-sm" id="approve_button">Approved</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Modal -->
+
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}{% endblock javascripts %}

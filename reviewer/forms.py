@@ -1,7 +1,24 @@
 from django import forms
 from supplyr.profiles.models import SellerProfile
 from .models import SellerProfileReview
+from django import forms
 
+
+class LoginForm(forms.Form):
+    email= forms.CharField(
+        widget=forms.TextInput(
+            attrs={
+                "placeholder" : "Email",                
+                "class": "form-control"
+            }
+        ))
+    password = forms.CharField(
+        widget=forms.PasswordInput(
+            attrs={
+                "placeholder" : "Password",                
+                "class": "form-control"
+            }
+        ))
 
 
 class SellerProfileForm(forms.ModelForm):

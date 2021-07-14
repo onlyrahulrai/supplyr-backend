@@ -15,6 +15,9 @@ from supplyr.core.models import User
 from supplyr.profiles.models import SellerProfile
 from .filters import SellerProfileFilter
 from supplyr.profiles.models import SellerProfile
+from .forms import LoginForm
+import json
+
 
 
 @login_required(login_url="login")
@@ -45,7 +48,16 @@ def dashboard(request):
         "profiles":profiles,
         "filter":user_filter
     }
-    return render(request, "dashboard.html", context)
+    return render(request, "index.html", context)
+
+
+def seller_profiles(request):
+    objects = SellerProfile.objects.all()
+    user_filter = SellerProfileFilter(request.GET,queryset=objects)
+    profiles = user_filter.qs
+    print(profiles)
+    seller_profiles = [{"id":seller_profile.id,"owner":seller_profile.owner.name,"business_name":seller_profile.business_name,"entity_category":seller_profile.entity_category,"entity_type":seller_profile.entity_type,"is_gst_enrolled":seller_profile.is_gst_enrolled,"is_active":seller_profile.is_active,"status":seller_profile.status} for seller_profile in profiles]
+    return JsonResponse(seller_profiles,safe=False)
 
 
 @login_required(login_url="login")
@@ -60,7 +72,7 @@ def customer(request, pk):
         "seller_profile": seller_profile,
         "reviews": reviews,
     }
-    return render(request, "customer.html", context)
+    return render(request, "profile.html", context)
 
 
 @csrf_exempt
@@ -90,26 +102,31 @@ def approve_seller(request):
     
     return JsonResponse({"data": data, "success": "true"})
 
-
-@login_required(login_url="login")
-@admin_only
-def product(request):
-    return render(request, "products.html")
-
-
 @unauthenticated_user
 def mylogin(request):
+    form = LoginForm(request.POST or None)
+    msg = None
     if request.method == "POST":
-        email = request.POST.get("email")
-        password = request.POST.get("password")
-        user = authenticate(request, email=email, password=password)
-        print(user)
-        if user is not None:
-            login(request, user)
-            return redirect("dashboard")
-    return render(request, "login.html")
+        if form.is_valid():
+            email = form.cleaned_data.get("email")
+            password = form.cleaned_data.get("password")
+            user = authenticate(request, email=email, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect("dashboard")
+            else:    
+                msg = 'Invalid credentials' 
+        else:
+            msg = 'Error validating the form' 
+    context = {
+        "form":form,
+        "msg":msg
+    }
+    return render(request, "accounts/login.html",context)
 
 
 def mylogout(request):
     logout(request)
     return redirect("login")
+
+    

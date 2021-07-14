@@ -10,7 +10,7 @@
     content: '';
     position: absolute;
     width: 6px;
-    background-color: white;
+    background-color: gray !important;
     top: 0;
     bottom: 0;
     left: 50%;
@@ -84,7 +84,6 @@
   
   /* The actual content */
   .content {
-    padding: 20px 30px;
     background-color: white;
     position: relative;
     border-radius: 6px;
