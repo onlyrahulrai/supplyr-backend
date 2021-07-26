@@ -1,0 +1,73 @@
+{% extends 'layouts/base.html' %} {% block title %} {{title}} {% endblock title %}
+{% load crispy_forms_tags %}
+{% block content %}
+
+<div class="header pt-5 pt-lg-8 d-flex align-items-center">
+  <hr />
+  <span class="mask bg-gradient-primary opacity-8"></span>
+</div>
+
+<div class="container-fluid mt--6">
+  <div class="row mt-5 mb-5">
+    <div class="col-xl-12 mb-5 mb-xl-0">
+      <div class="card shadow">
+        <div class="card-header border-0">
+          <div class="row align-items-center">
+            <div class="col">
+              <h3 class="mb-0">{{title}}</h3>
+            </div>
+            <div class="col text-right">
+              <button type="button" class="btn btn-outline-danger mb-2">
+                <i class="ni ni-fat-remove"></i>  
+                Cancle
+                </button>
+            </div>
+          </div>
+        </div>
+        <hr class="mt-1">
+        <div class="card-body">
+            {% if messages %}
+              {% for message in messages %}
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                  <span class="alert-icon"><i class="ni ni-like-2"></i></span>
+                  <span class="alert-text">{{message}}</span>
+                  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                  </button>
+                </div>
+              {% endfor %}
+            {% endif %}
+
+            <div class="row justify-content-center">
+                <div class="col-md-5 shadow-lg p-3">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                          <label for="exampleFormControlInput1" class="form-label">Name:</label>
+                          <input type="text" class="form-control" name="category_name">
+                        </div>
+                        <div class="mb-3">
+                          <label for="exampleFormControlInput1" class="form-label">Image:</label>
+                          <input class="form-control" type="file" id="formFile">
+                        </div>
+                        <div class="mb-3">
+                          <label for="exampleFormControlInput1" class="form-label">Subcategory Name:</label>
+                          <input type="text" class="form-control" name="subcategory_name">
+                        </div>
+                        
+                        <hr class="mt-1 mb-2">
+                        <button type="submit" class="btn btn-primary mb-3">Create</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+      </div>   
+      </div>
+    </div>
+  </div>
+
+  {% endblock content %}
+
+  <!-- Specific JS goes HERE -->
+  {% block javascripts %}{% endblock javascripts %}
+</div>

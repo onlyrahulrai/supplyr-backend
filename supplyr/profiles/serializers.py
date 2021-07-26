@@ -190,11 +190,17 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
     #     if data['gst_number'] == '123':
     #         raise serializers.ValidationError("Dummy Error")  
     #     return data
-
+    
+    owner_name = serializers.SerializerMethodField()
+    def get_owner_name(self,sellerprofile):
+        return sellerprofile.owner.name
+    
     class Meta:
         model = SellerProfile
         fields = [
-            'owner',
+            "id",
+            "owner",
+            "owner_name",
             'business_name',
             'entity_category',
             'entity_type',
@@ -203,6 +209,7 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
             'pan_number',
             'tan_number',
             'gst_certificate',
+            "status"
             ]
 
         read_only_fields = [
@@ -224,6 +231,9 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
                 'allow_null': False,
                 'allow_blank': False
             },
+            "owner_name":{
+                "read_only":True
+            }
         }
 
 class SellerProfilingDocumentsSerializer(serializers.ModelSerializer):

@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
   
   <title>
-    Argon Dashboard Django - {% block title %} Open-Source Admin Panel {% endblock %} | Creative-Tim
+    Reviewer Dashboard - {% block title %} Open-Source Admin Panel {% endblock %} 
   </title>
 
   <!-- Favicon - loaded as static -->
@@ -22,7 +22,7 @@
   <!-- CSS Files -->
   <link href="/static/assets/css/argon-dashboard.css" rel="stylesheet" />
 
-	<link rel="stylesheet" href="{% static 'css/history.css' %}">
+ 	<link rel="stylesheet" href="{% static 'css/history.css' %}">
 
 
   <!-- Specific CSS goes HERE -->
@@ -35,6 +35,31 @@
   <style>
     .fade:not(.show){
       display:none;
+    }
+    .table .thead-light th{
+      position:relative;
+      cursor:pointer;
+    }
+    .table .thead-light th.sort:after {
+      content:"\2304";
+      position:absolute;
+      right:10px;
+      bottom:10px;
+    }
+    .table .thead-light th.sort:before{
+      content:"\005E";
+      position:absolute;
+      right:10px;
+      top:10px;
+    }
+    .table .thead-light th.sort:last-child:after{
+      content:"";
+    }
+    .table .thead-light th.sort:last-child:before{
+      content:"";
+    }
+    .table .thead-light th.table-column-color {
+      background-color:#c4f1de;
     }
   </style>
 

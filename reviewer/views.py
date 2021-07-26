@@ -4,7 +4,6 @@ from django.contrib.auth import authenticate, logout, login
 from django.contrib.auth.decorators import login_required
 from .decorators import unauthenticated_user, admin_only
 from supplyr.core.models import User
-from supplyr.inventory.models import Category
 from .utils import paginate_func
 from supplyr.profiles.models import SellerProfile
 from django.views.decorators.csrf import csrf_exempt
@@ -15,49 +14,20 @@ from supplyr.core.models import User
 from supplyr.profiles.models import SellerProfile
 from .filters import SellerProfileFilter
 from supplyr.profiles.models import SellerProfile
-from .forms import LoginForm
 import json
+from .forms import LoginForm
+from supplyr.profiles.serializers import SellerProfilingSerializer
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework import permissions
+from .utils import CustomPageNumber
+from rest_framework.pagination import PageNumberPagination
 
 
 
 @login_required(login_url="login")
 @admin_only
 def dashboard(request):
-    unverified_seller = User.objects.filter(
-        seller_profiles__status="rejected").order_by("-date_joined")
-    verified_seller = User.objects.filter(
-        seller_profiles__status="approved").order_by("-date_joined")
-    category_count = Category.objects.all().count()
-    verified = request.GET.get('verified', 1)
-    unverified = request.GET.get('unverified', 1)
-    verified_sellers = paginate_func(request, verified_seller, verified)
-    unverified_sellers = paginate_func(request, unverified_seller, unverified)
-    
-    seller_profiles = SellerProfile.objects.all()
-    user_filter = SellerProfileFilter(request.GET,queryset=seller_profiles)
-    filter = request.GET.get('filter', 1)
-    profiles = paginate_func(request, user_filter.qs, filter,count=7)
-    
-    
-    context = {
-        "unverified_sellers": unverified_sellers,
-        "verified_sellers": verified_sellers,
-        "total_verified_seller": verified_seller.count(),
-        "total_unverified_seller": unverified_seller.count(),
-        "category_count": category_count,
-        "profiles":profiles,
-        "filter":user_filter
-    }
-    return render(request, "index.html", context)
-
-
-def seller_profiles(request):
-    objects = SellerProfile.objects.all()
-    user_filter = SellerProfileFilter(request.GET,queryset=objects)
-    profiles = user_filter.qs
-    print(profiles)
-    seller_profiles = [{"id":seller_profile.id,"owner":seller_profile.owner.name,"business_name":seller_profile.business_name,"entity_category":seller_profile.entity_category,"entity_type":seller_profile.entity_type,"is_gst_enrolled":seller_profile.is_gst_enrolled,"is_active":seller_profile.is_active,"status":seller_profile.status} for seller_profile in profiles]
-    return JsonResponse(seller_profiles,safe=False)
+    return render(request, "index.html")
 
 
 @login_required(login_url="login")
@@ -129,4 +99,14 @@ def mylogout(request):
     logout(request)
     return redirect("login")
 
-    
+@api_view(["GET"])
+@permission_classes((permissions.AllowAny,))
+def seller_profiles(request):
+    if request.method == "GET":
+        paginator = CustomPageNumber()
+        paginator.page_size = 3
+        objects = SellerProfile.objects.all().order_by("id")
+        filters = SellerProfileFilter(request.GET,queryset=objects)
+        result_page = paginator.paginate_queryset(filters.qs, request)
+        serializer = SellerProfilingSerializer(result_page,many=True)
+        return paginator.get_paginated_response(serializer.data)

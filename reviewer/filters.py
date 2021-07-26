@@ -1,13 +1,17 @@
 from django.db.models import fields
-import django_filters
+from django_filters import FilterSet, filters, widgets
 from supplyr.profiles.models import SellerProfile
 from django_filters import CharFilter
 
-class SellerProfileFilter(django_filters.FilterSet):
+class SellerProfileFilter(FilterSet):
     search = CharFilter(field_name="business_name",lookup_expr="icontains")
+    
+    sort = filters.OrderingFilter(fields=['id',"business_name","owner","entity_category","entity_type","status","is_gst_enrolled","is_active"], widget=widgets.LinkWidget)
+
     class Meta:
         model = SellerProfile
-        fields = ["search","entity_category","entity_type","is_gst_enrolled","is_active","status"]
+        fields = ["search","entity_category","entity_type","is_gst_enrolled","is_active","status","sort"]
+        ordering_fields = '__all__'
         
         
     def __init__(self, *args,**kwargs):

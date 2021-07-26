@@ -14,26 +14,59 @@ const table_body = document
 const resetFilter = document.getElementById("reset-filter")
 const filterForm = document.getElementsByClassName("filter-form")
 
+const thead_th = document.getElementsByClassName("sort")
+
 var url;
 var status;
-var search;
+var search="";
 
-
-const btn_prev = document.getElementById("btn_prev")
-const btn_next = document.getElementById("btn_next")
 
 // It is used to hide the filter Start
 resetFilter.addEventListener("click",function(){
-    url = "http://127.0.0.1:8000/v1/reviewer/seller_profiles/"
+    resetFilter.classList.add("d-none")
+    url = "/v1/reviewer/seller_profiles/"
     filterForm[0].classList.remove("show","active")
     fetchData(url)
+    status = ""
     for(var i=0;i<tabBtn.length;i++){
         if (tabBtn[i].classList.contains("active")){
             tabBtn[i].classList.remove("active")
         }
     }
+    for(var i = 0;i<thead_th.length;i++){
+        thead_th[i].classList.remove("table-column-color")
+    }
+    form.reset()
 })
 // It is used to hide the filter End
+
+
+// Filter accroding to the field start
+for(var i = 0;i<thead_th.length;i++){
+    thead_th[i].addEventListener("click",function(){
+        resetFilter.classList.remove("d-none")
+        const order = this.dataset.sort;
+        const name = this.dataset.name;
+        const id = this.dataset.id;
+
+        if(order === "asc"){
+            thead_th[id].setAttribute("data-sort","desc")
+            url = `/v1/reviewer/seller_profiles/?search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}&status=${status}&sort=${name}`;
+
+        } 
+        else if(order === "desc"){
+            thead_th[id].setAttribute("data-sort","asc")
+            url = `/v1/reviewer/seller_profiles/?search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}&status=${status}&sort=-${name}`;
+        }
+        for(var i = 0;i<thead_th.length;i++){
+            thead_th[i].classList.remove("table-column-color")
+        }
+        fetchData(url)
+        thead_th[id].classList.toggle("table-column-color")
+    })
+    
+}
+// Filter accroding to the field end
 
 
 // Preventing the form for refresh Start
@@ -50,7 +83,7 @@ for(var i=0;i<tabBtn.length;i++){
         const action = this.dataset.action;
         tabBody.setAttribute("id",action)
         tabBody.setAttribute("aria-labelledby",action)
-        url = `http://127.0.0.1:8000/v1/reviewer/seller_profiles/?status=${action}`;
+        url = `/v1/reviewer/seller_profiles/?status=${action}&search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}`;
         fetchData(url)
         status = action
         resetFilter.classList.remove("d-none")
@@ -70,7 +103,7 @@ function debounce(func, timeout = 1000){
   }
 function saveInput(){
     search = searchInput.value.replace(" ","+");
-    url = `http://127.0.0.1:8000/v1/reviewer/seller_profiles/?search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}&status=${status}`;
+    url = `/v1/reviewer/seller_profiles/?search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}&status=${status}`;
     fetchData(url)
 }
 const processChange = debounce(() => saveInput());
@@ -87,19 +120,15 @@ searchInput.addEventListener("change",function(event){
 
 // It is trigger when any change happen in the form filter Start
 form.addEventListener("change", function(event){
-    url = `http://127.0.0.1:8000/v1/reviewer/seller_profiles/?search=${searchInput.value}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}&status=${status}`;
+    url = `/v1/reviewer/seller_profiles/?search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}&status=${status}`;
         fetchData(url)
         table_body.HTML = ""
 })
 // It is trigger when any change happen in the form filter Start
 
-
-
-
-
 // It is used to load data inside a table Start
 window.addEventListener("load", function () {
-    url = "http://127.0.0.1:8000/v1/reviewer/seller_profiles/";
+    url = "/v1/reviewer/seller_profiles/";
     fetchData(url)
 });
 
@@ -111,131 +140,70 @@ function fetchData(url){
         },
     })
     .then((res) => res.json())
-    .then((data) => pagination(data))
-    .catch((error) => console.log(error));
+    .then((data) => displayTable(data))
+    .catch((error) => console.log(error));   
 }
 
-// Pagination STart
-
-var current_page = 1;
-var records_per_page = 5;
-
-function pagination(objJson){ 
-    btn_prev.addEventListener("click",() => {
-        if (current_page > 1) {
-            current_page--;
-            changePage(current_page);
-        }
-    })
-    btn_next.addEventListener("click",() => {
-        if (current_page < numPages()) {
-            current_page++;
-            changePage(current_page);
-        }
-    }) 
-
-        function changePage(page)
-        {
-        var btn_next = document.getElementById("btn_next");
-        var btn_prev = document.getElementById("btn_prev");
-        var listing_table = document.getElementById("listingTable");
-        var page_span = document.getElementById("page");
-
-        // Validate page
-        if (page < 1) page = 1;
-        if (page > numPages()) page = numPages();
-
-        listing_table.innerHTML = "";
-        var tbody = ""
-
-            if(objJson.length > 0){
-                for (var i = (page-1) * records_per_page; i < (page * records_per_page); i++) {
-                    if (objJson.length  > i){
-                        const child = `
-                            <tr>
-                                <td>${objJson[i].owner}</td>
-                                <td>${objJson[i].business_name}</td>
-                                <td>
-                                    ${ (objJson[i].entity_category === "M" && "Manufacturer") || (objJson[i].entity_category === "W" && "Wholeseller") || (objJson[i].entity_category === "D" && "Distributer") }
-                                </td>
-                                <td>
-                                    ${ (objJson[i].entity_type === "pvtltd" && "Private Limited") || (objJson[i].entity_type === "llp" && "Limited Liablity Partnership") || (objJson[i].entity_type === "part" && "Partnership") || (objJson[i].entity_type === "prop" && "Propertieship")}
-                                </td>
-                                <td>
-                                    ${ objJson[i].is_gst_enrolled  ? "Yes" : "No" }
-                                </td>
-                                <td>
-                                    ${ objJson[i].is_active ? "Yes" : "No" }
-                                </td>
-                                <td style="text-transform: capitalize;
-                                ">${objJson[i].status.replace(/_/g," ")}</td>
-                                <td><a class="btn btn-sm btn-info btn-sm" href="/v1/reviewer/customer/${objJson[i].id}">View</a></td>
-                            </tr>
-                        `;
-                        tbody += child
-                    }
-                }
-                table_body.innerHTML = tbody
-                page_span.innerHTML = `${page} of ${numPages()}` ;
-            }else{
-                table_body.innerHTML = ""
-                page_span.innerHTML = `${page} of 1` ;
-            }
-
-            
-            if (page === 0 || page === 1) {
-                btn_prev.style.visibility = "hidden";
-            } else {
-                btn_prev.style.visibility = "visible";
-            }
-
-            if (page === numPages()) {
-                btn_next.style.visibility = "hidden";
-            } else {
-                btn_next.style.visibility = "visible";
-            }
-        }
-
-        function numPages()
-        {
-            return Math.ceil(objJson.length / records_per_page);
-        }
-
-        changePage(1);
+function displayTable(data) {
+    var tbody = ""
+    for (var i = 0; i < data.results.length; i++) {
+        const child = `
+            <tr>
+                <td class="id">${data.results[i].id}</td>
+                <td class="owner">${data.results[i].owner_name}</td>
+                <td class="business_name">${data.results[i].business_name}</td>
+                <td class="entity_category">
+                    ${ (data.results[i].entity_category === "M" && "Manufacturer") || (data.results[i].entity_category === "W" && "Wholeseller") || (data.results[i].entity_category === "D" && "Distributer") }
+                </td>
+                <td class="entity_type">
+                    ${ (data.results[i].entity_type === "pvtltd" && "Private Limited") || (data.results[i].entity_type === "llp" && "Limited Liablity Partnership") || (data.results[i].entity_type === "part" && "Partnership") || (data.results[i].entity_type === "prop" && "Propertieship")}
+                </td>
+                <td class="is_gst_enrolled">
+                    ${ data.results[i].is_gst_enrolled  ? "Yes" : "No" }
+                </td>
+                <td class="status" style="text-transform: capitalize;
+                ">${data.results[i].status.replace(/_/g," ")}</td>
+                <td><a class="btn btn-sm btn-info btn-sm" href="/v1/reviewer/customer/${data.results[i].id}">View</a></td>
+            </tr>
+        `;
+        tbody += child
+    }
+    table_body.innerHTML = tbody
+    const page = document.getElementById("page")
+    page.innerHTML = `Showing ${data.start} to ${data.end} of ${data.totalItems} entries`
+    paginator(data)
 }
 
-// Pagination End
+function paginator(data){
+    let pager = ``
+    if(data.previous){
+        pager += `<button type="button" class="btn btn-outline-info btn-sm mb-4 page-pagination " onclick="paginationAction(1)"  >First</button>` +
+        `<button type="button" class="btn btn-sm btn-outline-info mb-4 page-pagination" onclick="paginationAction(${data.currentPage - 1})" >Previous</button>`
+    }
 
-// It is used to load data inside a table Start
+    for(var num=1;num<=data.pageRange.length;num++){
+        if(data.currentPage == num){
+            pager += `
+                <button type="button" class="btn btn-info btn-sm mb-4 page-pagination" onclick="paginationAction(${num})" >${num}</button>
+            `
+        }
+        else if((num > data.currentPage-3) && (num <  data.currentPage+3)){
+            pager += `<button type="button" class="btn btn-outline-info btn-sm mb-4 page-pagination" onclick="paginationAction(${num})" >${num}</button>`
+        }
+    }
 
-// function displayTable(data) {
-//     var tbody = ""
-//     for (var i = 0; i < data.length; i++) {
-//         const child = `
-//             <tr>
-//                 <td>${data[i].owner}</td>
-//                 <td>${data[i].business_name}</td>
-//                 <td>
-//                     ${ (data[i].entity_category === "M" && "Manufacturer") || (data[i].entity_category === "W" && "Wholeseller") || (data[i].entity_category === "D" && "Distributer") }
-//                 </td>
-//                 <td>
-//                     ${ (data[i].entity_type === "pvtltd" && "Private Limited") || (data[i].entity_type === "llp" && "Limited Liablity Partnership") || (data[i].entity_type === "part" && "Partnership") || (data[i].entity_type === "prop" && "Propertieship")}
-//                 </td>
-//                 <td>
-//                     ${ data[i].is_gst_enrolled  ? "Yes" : "No" }
-//                 </td>
-//                 <td>
-//                     ${ data[i].is_active ? "Yes" : "No" }
-//                 </td>
-//                 <td style="text-transform: capitalize;
-//                 ">${data[i].status.replace(/_/g," ")}</td>
-//                 <td><a class="btn btn-sm btn-info btn-sm" href="/v1/reviewer/customer/${data[i].id}">View</a></td>
-//             </tr>
-//         `;
-//         tbody += child
-//     }
-//     table_body.innerHTML = tbody
-// }
+    if(data.next){
+        pager += `<button type="button" class="btn btn-sm btn-outline-info mb-4 page-pagination" onclick="paginationAction(${data.currentPage + 1} )">Next</button>`+
+        `<button type="button" class="btn btn-sm btn-outline-info mb-4 page-pagination" onclick="paginationAction(${data.pageRange.length})">Last</button>`
+    }
 
-// It is used to load data inside a table End
+    const pagination_fields = document.getElementById("pagination_field")
+    pagination_fields.innerHTML = pager
+}
+
+
+function paginationAction(page){
+    url += `&page=${page}`
+    fetchData(url)
+}
 

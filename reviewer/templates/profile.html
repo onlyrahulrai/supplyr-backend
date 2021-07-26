@@ -5,24 +5,32 @@
 {% block content %}
 
     <!-- Header -->
-    <div class="header pb-8 pt-5 pt-lg-8 d-flex align-items-center" 
-         style="min-height: 600px; background-image: url(/static/assets/img/theme/profile-cover.jpg); background-size: cover; background-position: center top;">
-      <!-- Mask -->
-      <span class="mask bg-gradient-default opacity-8"></span>
-      <!-- Header container -->
-      <div class="container-fluid d-flex align-items-center">
-        <div class="row">
-          <div class="col-lg-7 col-md-10">
-            <h1 class="display-2 text-white">Hello {{ request.user.username|title }}</h1>
-            <p class="text-white mt-0 mb-5">This is 
-            <strong>{{seller_profile.business_name|title}}</strong>
-            profile page. You can see the profile documents.</p>
+    <div class="header bg-gradient-primary pb-5 pt-5 pt-md-8">
+      <div class="container-fluid">
+        <div class="header-body">
+          <div class="row">
+            <div class="col-xl-8 col-md-12 d-flex justify-content-between align-items-center">
+              <h3 class="text-white pl-1">{{seller_profile.business_name|title}}</h3>
+              <p class="shadow  p-2 rounded text-bold">
+                {% if seller_profile.status == 'approved' %}
+                  <span class="btn btn-success btn-sm text-white">Approved</span>
+                {% elif seller_profile.status == 'rejected' %}
+                  <span class="btn btn-danger btn-sm">Rejected</span>
+                {% elif seller_profile.status == 'need_more_info' %}
+                  <span class="btn btn-warning btn-sm">Need More Info</span>
+                {% elif seller_profile.status == 'pending_approval' %}
+                  <span class="btn btn-info btn-sm">Pending Approval</span>
+                {% elif seller_profile.status == 'permanently_rejected' %}
+                  <span class="btn btn-secondary btn-sm">Permanently Rejected</span>
+                {% endif %}
+              </p>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="container-fluid mt--7">
+    <div class="container-fluid mt--5">
 
       <div class="row mb-5">
         <div class="col-xl-4 order-xl-2 mb-5 mb-xl-0">
@@ -41,7 +49,7 @@
             <div class="card-header bg-white border-0">
               <div class="row align-items-center">
                 <div class="col-8">
-                  <h3 class="mb-0">My account</h3>
+                  <h3 class="mb-0">Seller Profile</h3>
                 </div>
                 <div class="col-4 text-right">
                   <a href="{% url 'dashboard' %}" class="btn btn-sm btn-primary">
@@ -151,7 +159,7 @@
                       <div class="form-group">
                         <h4 class="mb-2">Gst certificate</h4>
                         <p class="shadow  p-2 rounded text-bold">
-                          <a href="{{'127.0.0.1:8000'}}{{seller_profile.gst_certificate_url}}" class="btn btn-sm btn-info" download>Get Certificate</a>
+                          <a href="{{'http://127.0.0.1:8000'}}{{seller_profile.gst_certificate_url}}" class="btn btn-sm btn-info" target="_blank">Get Certificate</a>
                         </p>
                       </div>
                     </div>
@@ -199,18 +207,6 @@
                         {% elif seller_profile.status == 'permanently_rejected' %}
                           <span class="badge badge-secondary">Permanently Rejected</span>
                         {% endif %}
-                      </p>
-                    </div>
-                  </div>
-                  <div class="col-lg-6 col-sm-3">
-                    <div class="form-group">
-                      <h4 class="mb-2">Active Status</h4>
-                      <p class="shadow  p-2 rounded text-bold">
-                        {% if seller_profile.is_active %}
-                        Active
-                      {% else %}
-                        Shutdown
-                      {% endif %}
                       </p>
                     </div>
                   </div>
@@ -290,6 +286,8 @@
   </div>
 </div>
 <!-- Modal -->
+
+
 
 
 {% endblock content %}

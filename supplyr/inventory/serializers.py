@@ -361,6 +361,7 @@ class CategoriesSerializer2(serializers.ModelSerializer):
     
     sub_categories = serializers.SerializerMethodField()
     def get_sub_categories(self, category):
+        print(category.name)
         sub_categories = category.sub_categories.filter(is_active =True)
         return SubCategorySerializer(sub_categories, many=True).data
 
