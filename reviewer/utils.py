@@ -3,6 +3,9 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from collections import OrderedDict
 
+
+
+# This is a pagination function.It is used for the pagination of any Model object.This is build with normal django.
 def paginate_func(request,object,page_number,count=4):
     paginator = Paginator(object, count)
     try:
@@ -13,7 +16,11 @@ def paginate_func(request,object,page_number,count=4):
         objects = paginator.page(paginator.num_pages)
     return objects
 
+
 class CustomPageNumber(PageNumberPagination):
+    '''
+    This is a Custom pagination class.It is able to work with any type of model object in api creation.
+    '''
     page_size = 2
 
     def get_paginated_response(self, data):

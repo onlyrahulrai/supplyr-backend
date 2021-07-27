@@ -1,24 +1,19 @@
 from supplyr.core.functions import check_and_link_manually_created_profiles
 from supplyr.orders.models import Order
-from django.shortcuts import render
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.db.models import Count, Sum
 from django.utils import timezone
 from datetime import timedelta
-from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import status
-from rest_framework import mixins, generics
-
 from dj_rest_auth.views import LoginView
 
-from .permissions import IsFromSellerAPI, IsUnapproved, IsFromBuyerAPI
-from supplyr.profiles.models import BuyerSellerConnection, SellerProfile, BuyerProfile
-from supplyr.inventory.models import Category, Product
+from .permissions import IsFromSellerAPI
+from supplyr.profiles.models import BuyerSellerConnection
+from supplyr.inventory.models import Product
 
 from supplyr.utils.api.mixins import APISourceMixin
 from supplyr.utils.api.mixins import UserInfoMixin
@@ -40,6 +35,9 @@ sensitive_post_parameters_m = method_decorator(
 )
 
 class UserDetailsView(APIView, UserInfoMixin):
+    '''
+    This is responsiable for returning the user detail 
+    '''
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
@@ -49,6 +47,9 @@ class UserDetailsView(APIView, UserInfoMixin):
         return Response(response_data)
 
 class CustomLoginView(LoginView, APISourceMixin):
+    '''
+    This is a custom Login view for authenticating an user on the server
+    '''
     def get_response(self):
         response = super().get_response()
         print("SRC ", self.request.user)
@@ -58,6 +59,9 @@ class CustomLoginView(LoginView, APISourceMixin):
         return response
 
 class SellerDashboardStats(APIView):
+    '''
+    This is responsibale for returning the seller dashboard stats
+    '''
     permission_classes = [IsFromSellerAPI]
 
     def get(self, request, *args, **kwargs):
@@ -133,13 +137,12 @@ class SellerDashboardStats(APIView):
 
         return Response(response)
 
+
+# This function is used for generate an otp and send on the mobile number for verification
 def generate_and_send_mobile_verification_otp(user,new_mobile = None):
     error_message = None
     mobile_number = None
     
-    print(new_mobile)
-    print(user.is_mobile_verified)
-
     if user.is_mobile_verified:
         error_message = "User's number already verified"
     else:
@@ -180,6 +183,9 @@ def generate_and_send_mobile_verification_otp(user,new_mobile = None):
         })
 
 class RequestForgetPassword(GenericAPIView):
+    '''
+    It handle the user password reset request by taking the mobile_number or email arguments as a post request. 
+    '''
     permission_classes = [AllowAny]
     serializer_class = CustomPasswordResetSerializer
 
@@ -201,6 +207,9 @@ class RequestForgetPassword(GenericAPIView):
             )
 
 class PasswordResetEmailConfirmView(GenericAPIView, UserInfoMixin):
+    '''
+        It handles the email verification after requesting the password reset email confirmation.By clicking the link send on the user email.
+    '''
     serializer_class = PasswordResetConfirmSerializer
     permission_classes = (AllowAny,)
 
@@ -223,6 +232,9 @@ class PasswordResetEmailConfirmView(GenericAPIView, UserInfoMixin):
         return Response(response_data)
 
 class PasswordResetMobileConfirmView(APIView, UserInfoMixin):
+    '''
+        It handles the mobile number verification after requesting the forget password reset.By taking the these arguments otp_id,mobile_number,email,new_mobile1,new_mobile2,code etc as post request.
+    '''
     permission_classes=(AllowAny,)
 
     def post(self, request, *args, **kwargs):
@@ -263,12 +275,18 @@ class PasswordResetMobileConfirmView(APIView, UserInfoMixin):
                 })
 
 class SendMobileVerificationOTP(APIView):
+    '''
+    It is used for sending the mobile number verification OTP on authenticated users' mobile numbers.
+    '''
     permission_classes=[IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         return generate_and_send_mobile_verification_otp(request.user)
 
 class VerifyMobileVerificationOTP(APIView, UserInfoMixin):
+    '''
+        It handles the mobile number OTP verification after the registration of a user. By taking these arguments otp_id, code, etc as a post request.
+    '''
 
     permission_classes=[IsAuthenticated]
 
@@ -297,9 +315,10 @@ class VerifyMobileVerificationOTP(APIView, UserInfoMixin):
             })
 
 class ChangeEmailView(APIView, UserInfoMixin):
-
+    '''
+        This handle the seller email change request in email verification on profiling creation section.when a user is not already verified.
+    '''
     permission_classes=[IsAuthenticated]
-
     def post(self, request, *args, **kwargs):
         user=request.user
         new_email=request.data.get('new_email')
@@ -323,6 +342,9 @@ class ChangeEmailView(APIView, UserInfoMixin):
                 }, status=500)
 
 class ChangeMobileNumberView(APIView, UserInfoMixin):
+    '''
+        This handle the seller mobile number change request in mobile number verification on profiling creation section.when a user is not already verified.
+    '''
 
     permission_classes=[IsAuthenticated]
 
@@ -348,6 +370,7 @@ class ChangeMobileNumberView(APIView, UserInfoMixin):
         }, user))
 
 class UpdateMobileNumberView(APIView,UserInfoMixin):
+    '''It handles the seller mobile number change request by taking the new_mobile as a post request.'''
     permission_classes=[IsAuthenticated]
     
     def post(self,request,*args,**kwargs):
@@ -371,6 +394,9 @@ class UpdateMobileNumberView(APIView,UserInfoMixin):
             return generate_and_send_mobile_verification_otp(user,new_mobile)
         
 class UpdateMobileNumberConfirmView(GenericAPIView,UserInfoMixin):
+    '''
+        It handles the mobile number verification after requesting their mobile number change.By taking the these arguments otp_id,new_mobile,code etc as post request.
+    '''
     permission_classes=[IsAuthenticated]
     
     def post(self,request,*args,**kwargs):

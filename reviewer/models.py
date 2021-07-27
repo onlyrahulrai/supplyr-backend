@@ -8,6 +8,10 @@ from django_mysql.models import EnumField
 # Create your models here.
 
 class SellerProfileReview(models.Model):
+    '''
+        SellerProfileReview aims is to create History on user profile update state by the reviewer.
+    '''
+    
     reviewer = models.ForeignKey(User,on_delete=models.CASCADE,null=True,blank=True)
     seller = models.ForeignKey(SellerProfile,on_delete=models.CASCADE,null=True,blank=True,related_name="seller_profile_review")
     is_approved = models.BooleanField(default=False)

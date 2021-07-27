@@ -332,6 +332,9 @@ class ProfilingCategoriesView(views.APIView, UserInfoMixin):
         return Response(response)
     
 class ApplyForApproval(views.APIView,UserInfoMixin):
+    '''
+        It's allow user to make request to the reviewer for thier account approval. 
+    '''
     permission_classes = [IsUnapproved]
     def post(self,request,*args,**kwargs):
         seller_profile = request.user.seller_profiles.first()

@@ -20,7 +20,7 @@ from supplyr.profiles.serializers import SellerProfilingSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import permissions
 from .utils import CustomPageNumber
-from rest_framework.pagination import PageNumberPagination
+
 
 
 
