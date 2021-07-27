@@ -39,7 +39,6 @@ sensitive_post_parameters_m = method_decorator(
     )
 )
 
-
 class UserDetailsView(APIView, UserInfoMixin):
     permission_classes = [IsAuthenticated]
 
@@ -49,7 +48,6 @@ class UserDetailsView(APIView, UserInfoMixin):
 
         return Response(response_data)
 
-
 class CustomLoginView(LoginView, APISourceMixin):
     def get_response(self):
         response = super().get_response()
@@ -58,7 +56,6 @@ class CustomLoginView(LoginView, APISourceMixin):
         # del response.data['user']
         # response.set_cookie('refresh', self.refresh_token)
         return response
-
 
 class SellerDashboardStats(APIView):
     permission_classes = [IsFromSellerAPI]
@@ -136,27 +133,43 @@ class SellerDashboardStats(APIView):
 
         return Response(response)
 
-
-def generate_and_send_mobile_verification_otp(user):
+def generate_and_send_mobile_verification_otp(user,new_mobile = None):
     error_message = None
-
+    mobile_number = None
+    
+    print(new_mobile)
     print(user.is_mobile_verified)
 
     if user.is_mobile_verified:
         error_message = "User's number already verified"
     else:
         error_message = "User's number isn't verified"
-    otp = user.verification_otps.filter(mobile_number=user.mobile_number, created_at__gt=timezone.now(
+        
+    if new_mobile:
+        otp = user.verification_otps.filter(mobile_number=new_mobile, created_at__gt=timezone.now(
     ) - timedelta(minutes=settings.MOBILE_VERIFICATION_OTP_EXPIRY_MINUTES - 1)).first()
-    if not otp:
-        otp = user.verification_otps.create(mobile_number=user.mobile_number)
+        
+        if not otp:
+            otp = user.verification_otps.create(mobile_number=new_mobile)
+            
+        mobile_number = new_mobile
+    else:
+        otp = user.verification_otps.filter(mobile_number=user.mobile_number, created_at__gt=timezone.now(
+    ) - timedelta(minutes=settings.MOBILE_VERIFICATION_OTP_EXPIRY_MINUTES - 1)).first()
+        
+        if not otp:
+            otp = user.verification_otps.create(mobile_number=user.mobile_number)
+            
+        mobile_number = user.mobile_number
 
     res = otp.send()
+    
     if res:
         return Response({
+            "message": _("An Otp has been sent on your mobile number"),
             'success': True,
             'otp_id': otp.id,
-            "mobile_number": user.mobile_number
+            "mobile_number": mobile_number
         })
     else:
         error_message = "Unknown Error"
@@ -165,7 +178,6 @@ def generate_and_send_mobile_verification_otp(user):
         return Response({
             'success': False, 'message': error_message, "mobile_number": user.mobile_number
         })
-
 
 class RequestForgetPassword(GenericAPIView):
     permission_classes = [AllowAny]
@@ -187,7 +199,6 @@ class RequestForgetPassword(GenericAPIView):
                 {"message": _("Password reset e-mail has been sent."),"email":email,"success":True},
                 status=status.HTTP_200_OK
             )
-
 
 class PasswordResetEmailConfirmView(GenericAPIView, UserInfoMixin):
     serializer_class = PasswordResetConfirmSerializer
@@ -251,14 +262,11 @@ class PasswordResetMobileConfirmView(APIView, UserInfoMixin):
                     'success': False, 'message': 'Invalid or expired OTP'
                 })
 
-
-
 class SendMobileVerificationOTP(APIView):
     permission_classes=[IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
         return generate_and_send_mobile_verification_otp(request.user)
-
 
 class VerifyMobileVerificationOTP(APIView, UserInfoMixin):
 
@@ -269,7 +277,7 @@ class VerifyMobileVerificationOTP(APIView, UserInfoMixin):
         otp_id=request.data.get('otp_id')
         user=request.user
 
-        if otp := user.verification_otps.filter(mobile_number=user.mobile_number, code=code, id=otp_id, created_at__gt=timezone.now() - timedelta(minutes=settings.MOBILE_VERIFICATION_OTP_EXPIRY_MINUTES)).first():
+        if otp := user.verification_otps.filter(mobile_number=user.mobile_number, code=code, id=otp_id, created_at__gt=timezone.now() - timedelta(minutes=settings.MOBILE_VERIFICATION_OTP_EXPIRY_MINUTES)).first(): 
             user.is_mobile_verified=True
             user.save()
 
@@ -287,7 +295,6 @@ class VerifyMobileVerificationOTP(APIView, UserInfoMixin):
             return Response({
                 'success': False, 'message': 'Invalid or expired OTP'
             })
-
 
 class ChangeEmailView(APIView, UserInfoMixin):
 
@@ -315,7 +322,6 @@ class ChangeEmailView(APIView, UserInfoMixin):
                     'success': False, 'message': str(e)
                 }, status=500)
 
-
 class ChangeMobileNumberView(APIView, UserInfoMixin):
 
     permission_classes=[IsAuthenticated]
@@ -323,7 +329,7 @@ class ChangeMobileNumberView(APIView, UserInfoMixin):
     def post(self, request, *args, **kwargs):
         user=request.user
         new_mobile=request.data.get('new_mobile')
-
+         
         if not validate_mobile_number(new_mobile):
             return Response({'success': False, 'message': 'Please enter a valid 10-digit mobile number'}, status=400)
 
@@ -340,3 +346,55 @@ class ChangeMobileNumberView(APIView, UserInfoMixin):
         return Response(self.inject_user_info({
             'success': True
         }, user))
+
+class UpdateMobileNumberView(APIView,UserInfoMixin):
+    permission_classes=[IsAuthenticated]
+    
+    def post(self,request,*args,**kwargs):
+        user = request.user
+        new_mobile = request.data.get("new_mobile")
+        
+        try:
+            validate_mobile_number(new_mobile)
+        except:
+            return Response({'success': False, 'message': 'Please enter a valid 10-digit mobile number'})
+        
+        if user.mobile_number == new_mobile:
+            return Response({
+                'success': False, 'message': 'Mobile Number already added by Yourself.Please try with another mobile number.'
+            })
+        elif User.objects.exclude(id=user.id).filter(mobile_number=new_mobile).exists():
+            return Response({
+                'success': False, 'message': 'Mobile Number already added by some other user'
+            })
+        else:
+            return generate_and_send_mobile_verification_otp(user,new_mobile)
+        
+class UpdateMobileNumberConfirmView(GenericAPIView,UserInfoMixin):
+    permission_classes=[IsAuthenticated]
+    
+    def post(self,request,*args,**kwargs):
+        otp_id=request.data.get("otp_id", None)
+        code=request.data.get("code", None)
+        new_mobile = request.data.get("new_mobile",None)
+        user = request.user
+        
+        try:
+            validate_mobile_number(new_mobile)
+        except:
+            return Response({'success': False, 'message': 'Please enter a valid 10-digit mobile number'})
+        
+        if otp := user.verification_otps.filter(mobile_number=new_mobile, code=code, id=otp_id, created_at__gt=timezone.now() - timedelta(minutes=settings.MOBILE_VERIFICATION_OTP_EXPIRY_MINUTES)).first():
+            user.mobile_number = new_mobile
+            user.save()
+                
+            return Response({
+                'success': True, 
+                "message": _("Mobile Number has been set with a new number.")
+            })
+            
+        else:
+            return Response({
+                'success': False, 'message': 'Invalid or expired OTP'
+            })
+        
