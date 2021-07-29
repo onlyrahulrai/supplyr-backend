@@ -4,7 +4,7 @@ from django import forms
 
 
 
-
+# This is a login form.use for authenticating an user by their email and password. 
 class LoginForm(forms.Form):
     email= forms.CharField(
         widget=forms.TextInput(
@@ -21,13 +21,5 @@ class LoginForm(forms.Form):
             }
         ))
         
-class SellerProfileReviewForm(forms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        super(SellerProfileReviewForm, self).__init__(*args, **kwargs)
-        self.fields['reviewer'].disabled = True
-        self.fields['seller'].disabled = True
-            
-    class Meta:
-        model = SellerProfileReview
-        fields = "__all__"
+
         

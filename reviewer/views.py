@@ -20,19 +20,21 @@ from supplyr.profiles.serializers import SellerProfilingSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import permissions
 from .utils import CustomPageNumber
-from rest_framework.pagination import PageNumberPagination
+
 
 
 
 @login_required(login_url="login")
 @admin_only
 def dashboard(request):
+    # It is a dashboard route. which is responsible for the reviewer dashboard main page.
     return render(request, "index.html")
 
 
 @login_required(login_url="login")
 @admin_only
 def customer(request, pk):
+    # It is a seller profile Detail Route. which is responsible for display the seller profile detail.
     seller_profile = get_object_or_404(SellerProfile, pk=pk)
     seller_profile_review = SellerProfileReview.objects.filter(
         seller=seller_profile).order_by("-id")
@@ -47,6 +49,7 @@ def customer(request, pk):
 
 @csrf_exempt
 def approve_seller(request):
+    # This route is responsible for handling the seller account status. where the reviewer can approve, reject, permanently reject, request some necessary information from the seller, etc.
     data = json.loads(request.body)
     sellerProfileId = data.get("sellerProfileId")
     action = data.get("action")
@@ -74,6 +77,7 @@ def approve_seller(request):
 
 @unauthenticated_user
 def mylogin(request):
+    # This is a Login route.which is responsible for authenticating an user on the server.
     form = LoginForm(request.POST or None)
     msg = None
     if request.method == "POST":
@@ -96,12 +100,14 @@ def mylogin(request):
 
 
 def mylogout(request):
+    # This is the Logout route. which is responsible for removing all the access of users from the server after authentication on the server.
     logout(request)
     return redirect("login")
 
 @api_view(["GET"])
 @permission_classes((permissions.AllowAny,))
 def seller_profiles(request):
+    # This is an API for returning the seller profile. where implemented so many things like pagination, filter, etc.
     if request.method == "GET":
         paginator = CustomPageNumber()
         paginator.page_size = 3

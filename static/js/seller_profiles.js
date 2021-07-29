@@ -41,7 +41,7 @@ resetFilter.addEventListener("click",function(){
 // It is used to hide the filter End
 
 
-// Filter accroding to the field start
+// Filter accroding to the Table Head field start
 for(var i = 0;i<thead_th.length;i++){
     thead_th[i].addEventListener("click",function(){
         resetFilter.classList.remove("d-none")
@@ -66,7 +66,7 @@ for(var i = 0;i<thead_th.length;i++){
     })
     
 }
-// Filter accroding to the field end
+// Filter accroding to the Table Head field end
 
 
 // Preventing the form for refresh Start
@@ -110,12 +110,12 @@ const processChange = debounce(() => saveInput());
 
 // Implement the debouncing for search field delay in execution End
 
-// Prevenvt Search input field change Start
+// Prevent Search input field change Start
 searchInput.addEventListener("change",function(event){
     event.preventDefault()
     event.stopPropagation();
 })
-// Prevenvt Search input field change End
+// Prevent Search input field change End
 
 
 // It is trigger when any change happen in the form filter Start
@@ -144,6 +144,8 @@ function fetchData(url){
     .catch((error) => console.log(error));   
 }
 
+
+// It is used to display table in home page Start
 function displayTable(data) {
     var tbody = ""
     for (var i = 0; i < data.results.length; i++) {
@@ -173,7 +175,10 @@ function displayTable(data) {
     page.innerHTML = `Showing ${data.start} to ${data.end} of ${data.totalItems} entries`
     paginator(data)
 }
+// It is used to display table in home page End
 
+
+// It's display the pagination button on the reviewer dashboard page Start
 function paginator(data){
     let pager = ``
     if(data.previous){
@@ -200,10 +205,11 @@ function paginator(data){
     const pagination_fields = document.getElementById("pagination_field")
     pagination_fields.innerHTML = pager
 }
+// It's display the pagination button on the reviewer dashboard page End
 
-
+// It's handle the pagination each button click Start
 function paginationAction(page){
     url += `&page=${page}`
     fetchData(url)
 }
-
+// It's handle the pagination each button click End

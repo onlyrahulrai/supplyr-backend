@@ -1,6 +1,9 @@
 from django.http import HttpResponse
 from django.shortcuts import redirect
 
+
+
+# This is a decorator function used for checking user in authenticated or not
 def unauthenticated_user(view_func):
     def wrapper_function(request,*args,**kwargs):
         if request.user.is_authenticated:
@@ -9,6 +12,7 @@ def unauthenticated_user(view_func):
             return view_func(request,*args,**kwargs)
     return wrapper_function
 
+# This is a decorator function used for checking user role.and decide which user able to redirect to the dashboard route 
 def admin_only(view_func):
     def wrapper_function(request,*args,**kwargs):
         group = None

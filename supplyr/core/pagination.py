@@ -6,7 +6,6 @@ from rest_framework.response import Response
 class CustomPagination(pagination.PageNumberPagination):
 
     def get_paginated_response(self, data):
-        print(self.page)
         return Response({
             # 'links': {
             #    'next': self.get_next_link(),
