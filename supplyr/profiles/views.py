@@ -317,16 +317,20 @@ class ProfilingCategoriesView(views.APIView, UserInfoMixin):
     Filling seller operational categories while profiling
     """
 
-    permission_classes = [IsUnapproved]
+    permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
 
         sub_categories = request.data['sub_categories']
         profile = request.user.seller_profiles.first()
         profile.operational_fields.set(sub_categories)
-        if(profile.status == "new"):
-            profile.status = "categories_selected"
-            profile.save()
+        
+        
+        if not request.user.is_approved:
+            if(profile.status == "new"):
+                profile.status = "categories_selected"
+                profile.save()
+        
         response = self.inject_user_info({'success': True}, request.user)
 
         return Response(response)

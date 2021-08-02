@@ -64,6 +64,7 @@ def _get_seller_profiling_data(user: User) -> Dict:
 
     existing_profile = user.seller_profiles.first()
     entity_details = None
+    profiling_data = None
     user_selected_sub_categories = []
     if  existing_profile:
         entity_details = SellerProfilingSerializer(existing_profile).data
@@ -79,10 +80,15 @@ def _get_seller_profiling_data(user: User) -> Dict:
             'selected_sub_categories': user_selected_sub_categories
         }
 
-    profiling_data = {
-        'entity_details': entity_details,
-        'categories_data': categories_data
-    }
+    if not user.is_approved:
+        profiling_data = {
+            'entity_details': entity_details,
+            'categories_data': categories_data
+        }
+    elif user.is_approved:
+        profiling_data = {
+            'categories_data': categories_data
+        }
     
     return profiling_data
 
@@ -116,9 +122,8 @@ class UserDetailsSerializer(serializers.ModelSerializer):
         """
         Profiling data for people who are still filling the profiling form
         """
-        if not user.is_approved:
-            return _get_seller_profiling_data(user) 
-        return None
+        return _get_seller_profiling_data(user) 
+
     
     profile = serializers.SerializerMethodField()
     def get_profile(self, user):
