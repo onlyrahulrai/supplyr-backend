@@ -1,3 +1,4 @@
+from django.http import request
 from django.shortcuts import render, get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -177,11 +178,15 @@ class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModel
     """
     View for viewing, adding, updating, and deleting categories and subcategories
     """
-    queryset = Category.objects.filter(is_active =True)
     serializer_class = CategoriesSerializer2
     permission_classes = [IsApproved]
     # parser_classes = [FormParser, MultiPartParser]
     pagination_class = None
+    
+    def get_queryset(self):
+        seller_profile = self.request.user.seller_profiles.first()
+        return Category.objects.filter(is_active=True,parent=None).filter(Q(seller=None) | Q(seller=seller_profile))
+         
 
     def get(self, request, *args, **kwargs):
         if kwargs.get('pk'):

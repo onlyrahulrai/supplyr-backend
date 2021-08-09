@@ -3,16 +3,10 @@ from django.conf import settings
 from rest_framework import serializers
 from dj_rest_auth.registration.serializers import RegisterSerializer
 from dj_rest_auth.serializers import JWTSerializer, LoginSerializer, PasswordResetSerializer
-# from .models import SellerProfile, Category, SubCategory, BuyerProfile
-from supplyr.profiles.models import SalespersonPreregisteredUser, SellerProfile, BuyerProfile
-from supplyr.inventory.models import Category, SubCategory
-import json
+from supplyr.profiles.models import SalespersonPreregisteredUser
 from supplyr.utils.general import validate_mobile_number
-from django.db.models import Q
 from rest_framework.exceptions import ValidationError
-from supplyr.profiles.models import ManuallyCreatedBuyer
-
-from django.contrib.auth.forms import PasswordResetForm, SetPasswordForm
+from django.contrib.auth.forms import SetPasswordForm
 # if 'allauth' in settings.INSTALLED_APPS:
 # from allauth.account.forms import default_token_generator
 # from allauth.account.utils import url_str_to_user_pk as uid_decoder

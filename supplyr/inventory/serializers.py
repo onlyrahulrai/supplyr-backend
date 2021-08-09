@@ -1,8 +1,7 @@
 import os
 import json
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
-from .models import Product, Variant, ProductImage, Category, SubCategory
+from .models import Product, Variant, ProductImage, Category
 from supplyr.profiles.models import SellerProfile
 from django.conf import settings
 from django.db import transaction
@@ -361,8 +360,7 @@ class CategoriesSerializer2(serializers.ModelSerializer):
     
     sub_categories = serializers.SerializerMethodField()
     def get_sub_categories(self, category):
-        print(category.name)
-        sub_categories = category.sub_categories.filter(is_active =True)
+        sub_categories = category.sub_categories.filter(is_active=True)
         return SubCategorySerializer(sub_categories, many=True).data
 
     class Meta:
@@ -397,10 +395,14 @@ class CategoriesSerializer2(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Not very secure, for staff use only. Will need to add more security if it needs to be open to public, like popping ID field
+        seller =  self.context['request'].user.seller_profiles.first()
         sub_categories_data = validated_data.pop('sub_categories')
-        category = Category.objects.create(**validated_data)
+        if self.context['request'].user.is_staff:
+            category = Category.objects.create(seller=None,**validated_data)
+        else:
+            category = Category.objects.create(seller=seller,**validated_data)
         for sub_category in sub_categories_data:
-            SubCategory.objects.create(category=category, **sub_category)
+            Category.objects.create(parent=category, **sub_category)
 
         return category
 
@@ -416,29 +418,30 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         sub_categories_final = []
         sub_categories_data = validated_data.pop('sub_categories')
         for sc_data in sub_categories_data:
-            sc = SubCategory(category_id=instance.id, **sc_data)
+            sc = Category(parent=instance, **sc_data)
             sc.save()
             sub_categories_final.append(sc.id)
             
         sub_categories_to_remove = [sc for sc in sub_categories_initial if sc not in sub_categories_final]
-        SubCategory.objects.filter(id__in=sub_categories_to_remove).update(is_active = False)
+        Category.objects.filter(id__in=sub_categories_to_remove).update(is_active = False)
         return instance
 
         
 class SubCategorySerializer(serializers.ModelSerializer):
-
     class Meta:
-        model = SubCategory
+        model = Category
         fields = [
             'id',
             'name'
         ]
 
 class SubCategorySerializer2(serializers.ModelSerializer):
-    category = serializers.CharField(source='category.name')
+    category = serializers.SerializerMethodField()
+    def get_category(self,category):
+        return category.parent.name
     
     class Meta:
-        model = SubCategory
+        model = Category
         fields = [
             'id',
             'name',

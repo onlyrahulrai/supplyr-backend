@@ -1,8 +1,9 @@
+from django.db.models.query_utils import Q
 from rest_framework import serializers
 from .models import BuyerAddress, BuyerProfile, SellerProfile, SalespersonProfile
 from django.contrib.auth import get_user_model
 from typing import Dict
-from supplyr.inventory.models import Category, SubCategory
+from supplyr.inventory.models import Category
 from supplyr.inventory.serializers import SubCategorySerializer2, SubCategorySerializer
 
 
@@ -48,8 +49,11 @@ class CategoriesSerializer(serializers.ModelSerializer):
     """
     Used for generating cateogries list for displaying in seller profiling form
     """
-    
-    sub_categories = SubCategorySerializer(many=True)
+    sub_categories = serializers.SerializerMethodField()
+    def get_sub_categories(self, category):
+        sub_categories = category.sub_categories.filter(is_active=True)
+        return SubCategorySerializer(sub_categories, many=True).data
+    # sub_categories = SubCategorySerializer(many=True)
 
     class Meta:
         model = Category
@@ -71,7 +75,8 @@ def _get_seller_profiling_data(user: User) -> Dict:
         user_selected_sub_categories = existing_profile.operational_fields.all().values_list('id', flat=True)
 
     ### Category Information
-    categories = Category.objects.filter(is_active=True).exclude(sub_categories = None)
+    # categories = Category.objects.filter(is_active=True).exclude(sub_categories = None)
+    categories = Category.objects.filter(is_active=True,parent=None).filter(Q(seller=None) | Q(seller=existing_profile))
     cat_serializer = CategoriesSerializer(categories, many=True)
     cat_serializer_data = cat_serializer.data
 

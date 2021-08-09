@@ -50,6 +50,8 @@ class Category(models.Model):
     serial = models.PositiveSmallIntegerField(null=True, blank=True)
     image = models.ImageField(upload_to=get_image_upload_path, blank=True, null=True)
     image_sm = models.ImageField(upload_to=get_image_sm_upload_path, blank=True, null=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, related_name="sub_categories",null=True,blank=True)
+    seller = models.ForeignKey('profiles.SellerProfile', on_delete=models.CASCADE,null=True,blank=True)
     is_active = models.BooleanField(default=True)
 
     def __init__(self, *args, **kwargs):
@@ -67,23 +69,12 @@ class Category(models.Model):
     class Meta:
         ordering = ['serial']
 
-
-class SubCategory(models.Model):
-    name = models.CharField(max_length=50)
-    serial = models.PositiveSmallIntegerField(null= True, blank=True)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='sub_categories')
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return f'[{self.id}] {self.name} ({self.category.name})'
-
-
 class Product(Model):
     title = models.CharField(max_length=200)
     slug = AutoSlugField(max_length=100, populate_from=['title'], unique=True)
     description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey('profiles.SellerProfile', related_name='products', on_delete=models.CASCADE)
-    sub_categories = models.ManyToManyField('inventory.SubCategory', related_name='products')
+    sub_categories = models.ManyToManyField('inventory.Category', related_name='products')
 
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

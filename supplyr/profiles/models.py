@@ -36,7 +36,6 @@ class SellerProfile(models.Model):
         CATEGORIES_SELECTED = "categories_selected","Categories Selected"
         NEW = 'new',"New"
 
-
     owner = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='seller_profiles')
     business_name = models.CharField(max_length=100, blank=True, null=True)
     entity_category = EnumField(choices=EntityCategory.choices, blank=True, null=True) 
@@ -46,7 +45,7 @@ class SellerProfile(models.Model):
     pan_number = models.CharField(max_length=15, blank=True, null=True)
     tan_number = models.CharField(max_length=15, blank=True, null=True)
     gst_certificate = models.FileField(upload_to=get_gst_upload_path, max_length=150, blank=True, null=True)
-    operational_fields = models.ManyToManyField('inventory.SubCategory', blank=True)
+    operational_fields = models.ManyToManyField('inventory.Category', blank=True)
     status = EnumField(default="new",choices=SellerStatusChoice.choices, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     connection_code = models.CharField(max_length=15)
