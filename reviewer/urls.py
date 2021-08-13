@@ -10,7 +10,8 @@ urlpatterns = [
     path("customer/<str:pk>/",views.customer,name="customer"),               
     path("approve-seller/",views.approve_seller,name="approve-seller"), 
     path("categories/",views.categories_list,name="categories"),  
-    path("categories/new/",views.category_form,name="category-new"),  
+    path("categories/new/",views.category_create,name="category-new"),  
+    path("categories/update/<str:pk>/",views.category_update,name="category-update"),  
     
     ######################## Authentication Url #########################                          
     path("login/",views.mylogin,name="login"),               

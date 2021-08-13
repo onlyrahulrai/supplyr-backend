@@ -22,11 +22,10 @@ import json
 from .forms import LoginForm
 from supplyr.profiles.serializers import SellerProfilingSerializer
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework import permissions, serializers
+from rest_framework import permissions
 from .utils import CustomPageNumber
-from rest_framework.parsers import JSONParser
 from rest_framework.decorators import api_view
-from rest_framework import status
+
 
 @login_required(login_url="login")
 @admin_only
@@ -132,9 +131,17 @@ def categories_list(request):
 
 
 @csrf_exempt
-def category_form(request):
+def category_create(request):
     context = {
         "title":"Create category"
     }
     return render(request,"category_form.html",context)
 
+def category_update(request,pk=None):
+    category = get_object_or_404(Category,pk=pk)
+    
+    context = {
+        "title":"Update category",
+        "category":category
+    }
+    return render(request,"category_form.html",context)

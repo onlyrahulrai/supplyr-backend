@@ -184,7 +184,10 @@ class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModel
     pagination_class = None
     
     def get_queryset(self):
-        seller_profile = self.request.user.seller_profiles.first()
+        try:
+            seller_profile = self.request.user.seller_profiles.first()
+        except:
+            seller_profile = None
         return Category.objects.filter(is_active=True,parent=None).filter(Q(seller=None) | Q(seller=seller_profile))
          
 
