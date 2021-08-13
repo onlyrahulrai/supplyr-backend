@@ -1,4 +1,8 @@
+from rest_framework.response import Response
+from supplyr.inventory.models import Category
+from supplyr.inventory.serializers import CategoriesSerializer2
 from django.http import JsonResponse
+from django.http.response import HttpResponse
 from django.shortcuts import redirect, render
 from django.contrib.auth import authenticate, logout, login
 from django.contrib.auth.decorators import login_required
@@ -18,11 +22,11 @@ import json
 from .forms import LoginForm
 from supplyr.profiles.serializers import SellerProfilingSerializer
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework import permissions
+from rest_framework import permissions, serializers
 from .utils import CustomPageNumber
-
-
-
+from rest_framework.parsers import JSONParser
+from rest_framework.decorators import api_view
+from rest_framework import status
 
 @login_required(login_url="login")
 @admin_only
@@ -116,3 +120,21 @@ def seller_profiles(request):
         result_page = paginator.paginate_queryset(filters.qs, request)
         serializer = SellerProfilingSerializer(result_page,many=True)
         return paginator.get_paginated_response(serializer.data)
+    
+    
+def categories_list(request):
+    categories = Category.objects.filter(is_active=True,parent=None,seller=None)
+    serializer = CategoriesSerializer2(categories,many=True)
+    context = {
+        "categories":serializer.data
+    }
+    return render(request,"categories.html",context)
+
+
+@csrf_exempt
+def category_form(request):
+    context = {
+        "title":"Create category"
+    }
+    return render(request,"category_form.html",context)
+

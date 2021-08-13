@@ -395,12 +395,17 @@ class CategoriesSerializer2(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Not very secure, for staff use only. Will need to add more security if it needs to be open to public, like popping ID field
-        seller =  self.context['request'].user.seller_profiles.first()
         sub_categories_data = validated_data.pop('sub_categories')
-        if self.context['request'].user.is_staff:
+        try:
+            seller =  self.context['request'].user.seller_profiles.first()
+            if self.context['request'].user.is_staff:
+                category = Category.objects.create(seller=None,**validated_data)
+            else:
+                category = Category.objects.create(seller=seller,**validated_data)
+        except:
             category = Category.objects.create(seller=None,**validated_data)
-        else:
-            category = Category.objects.create(seller=seller,**validated_data)
+            
+     
         for sub_category in sub_categories_data:
             Category.objects.create(parent=category, **sub_category)
 

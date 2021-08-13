@@ -1,4 +1,5 @@
 {% extends 'layouts/base.html' %} {% block title %} {{title}} {% endblock title %}
+{% load static %}
 {% load crispy_forms_tags %}
 {% block content %}
 
@@ -17,10 +18,10 @@
               <h3 class="mb-0">{{title}}</h3>
             </div>
             <div class="col text-right">
-              <button type="button" class="btn btn-outline-danger mb-2">
+              <a href="{% url "categories" %}" class="btn btn-outline-danger mb-2">
                 <i class="ni ni-fat-remove"></i>  
                 Cancle
-                </button>
+                </a>
             </div>
           </div>
         </div>
@@ -40,19 +41,23 @@
 
             <div class="row justify-content-center">
                 <div class="col-md-5 shadow-lg p-3">
-                    <form method="post" enctype="multipart/form-data">
+                    <form method="post" id="catgeory-form" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="mb-3">
                           <label for="exampleFormControlInput1" class="form-label">Name:</label>
-                          <input type="text" class="form-control" name="category_name">
+                          <input type="text" class="form-control" id="category-name" name="category_name" required>
                         </div>
                         <div class="mb-3">
                           <label for="exampleFormControlInput1" class="form-label">Image:</label>
-                          <input class="form-control" type="file" id="formFile">
+                          <input class="form-control" type="file" id="category-img" id="formFile" required>
                         </div>
                         <div class="mb-3">
                           <label for="exampleFormControlInput1" class="form-label">Subcategory Name:</label>
-                          <input type="text" class="form-control" name="subcategory_name">
+                          <input type="text" class="form-control" id="sub_categories" name="subcategory_name">
+                        </div>
+
+                        <div class="sub_category-container">
+                          <ul class="sub_category-list pl-0 mb-0" style="list-style-type:none"></ul>
                         </div>
                         
                         <hr class="mt-1 mb-2">
@@ -66,8 +71,11 @@
     </div>
   </div>
 
+
+  <script src="/static/js/category.js"></script>
   {% endblock content %}
 
+  
   <!-- Specific JS goes HERE -->
   {% block javascripts %}{% endblock javascripts %}
 </div>
