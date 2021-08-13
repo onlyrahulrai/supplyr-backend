@@ -75,6 +75,20 @@
 
     {% block content %}{% endblock content %}
 
+       <!-- Modal -->
+<div class="modal fade text-center show" id="alert-box" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-body">
+        <h1 class="border-bottom pb-2">Category Saved !</h1>
+        <h3>Success 🔥</h3>
+        <button type="button" class="btn btn-success btn-sm" data-dismiss="modal" >Ok</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal -->
+
   </div>
 
   {% include "includes/scripts.html" %}

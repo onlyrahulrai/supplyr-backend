@@ -59,14 +59,17 @@ categoryForm.addEventListener("submit", function (event) {
   }
   form_data.append("name", categoryName.value);
   form_data.append("sub_categories", JSON.stringify(subCategoryData));
+  const alertBox = document.getElementById("alert-box")
   fetch(url, {
     method: "POST",
     body: form_data,
   })
     .then((res) => res.json())
     .then((data) => {
-      console.log(data);
-      window.location.href = "/v1/reviewer/categories/";
+        alertBox.style.display = "block";
+        setTimeout(() => {
+            window.location.href = "/v1/reviewer/categories/";
+        },4000)
     })
     .catch((error) => console.log(error));
 });

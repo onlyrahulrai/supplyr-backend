@@ -80,15 +80,16 @@
 
   <script>
     function handleCategoryDelete(id){
+      const alertBox = document.getElementById("alert-box")
       console.log("hello from category delete")
       fetch(`/v1/seller/inventory/categories/${id}`,{
         method:"DELETE"
       })
       .then((res) => {
-        console.log(res)
+        alertBox.style.display = "block";
         setTimeout(() => {
           location.reload()
-        },5000)
+        },4000)
       })
       .catch((err) => console.log(err))
     }
