@@ -3,6 +3,7 @@ var seller_profile_approve = document.getElementById("seller_profile_approve");
 var approve_button = document.getElementById("approve_button");
 var approve_form = document.getElementById("approve_form")
 var comments = document.getElementById("comments")
+const closeAlertBox = document.getElementById("close-alert-box")
 
 for (i = 0; i < approvalButton.length; i++) {
   approvalButton[i].addEventListener("click", function () {
@@ -62,5 +63,11 @@ function approved(sellerProfileId, action,comment,user) {
     })
     .catch((error) => console.log(error));
 }
+
+
+closeAlertBox.addEventListener("click",function(){
+  const alertBox = document.getElementById("alert-box")
+  alertBox.style.display = "none";
+})
 
 

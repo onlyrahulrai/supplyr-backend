@@ -41,7 +41,7 @@
 
             <div class="row justify-content-center">
                 <div class="col-md-5 shadow-lg p-3">
-                    <form method="post" id="catgeory-form" enctype="multipart/form-data">
+                    <form method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         <div class="mb-3">
                           <label for="exampleFormControlInput1" class="form-label">Name:</label>
@@ -63,7 +63,7 @@
                         </div>
                         
                         <hr class="mt-1 mb-2">
-                        <button type="submit" class="btn btn-primary mb-3">Submit</button>
+                        <button type="button" id="catgeory-form-button" class="btn btn-primary mb-3">Submit</button>
                     </form>
                 </div>
             </div>
