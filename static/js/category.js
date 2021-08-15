@@ -45,7 +45,6 @@ subCategoryInput.addEventListener("keypress", function (e) {
     subCategoryData.push({ name: e.target.value });
     showSubCategory(subCategoryData);
     subCategoryInput.value = "";
-    console.log(subCategoryData);
   }
 });
 
@@ -74,7 +73,7 @@ categoryFormButton.addEventListener("click", function (event) {
       alertBox.style.display = "block";
       setTimeout(() => {
         window.location.href = "/v1/reviewer/categories/";
-      }, 4000);
+      }, 1000);
     })
     .catch((error) => console.log(error));
 });
@@ -164,7 +163,6 @@ function subCategoryEditFunction() {
     subCategoryList.children[activeItem].children[0].children[0].innerHTML =
       event.target.value;
     activeItem = null;
-    console.log(subCategoryData);
   }
 }
 
