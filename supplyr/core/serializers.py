@@ -28,6 +28,7 @@ class CustomRegisterSerializer(RegisterSerializer):
             request = self.context['request']
             kwargs = request.resolver_match.kwargs
             if 'api_source' in kwargs:
+                print(kwargs)
                 return kwargs['api_source']
         return None
     
@@ -51,6 +52,8 @@ class CustomRegisterSerializer(RegisterSerializer):
         
 
         user = super().save(request)
+        
+        print(self._get_api_source())
 
         user.first_name = first_name
         user.last_name = last_name

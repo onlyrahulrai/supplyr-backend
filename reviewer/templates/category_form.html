@@ -20,7 +20,7 @@
             <div class="col text-right">
               <a href="{% url "categories" %}" class="btn btn-outline-danger mb-2">
                 <i class="ni ni-fat-remove"></i>  
-                Cancle
+                Cancel
                 </a>
             </div>
           </div>
@@ -48,7 +48,9 @@
                           <input type="text" class="form-control" id="category-name" name="category_name" required>
                         </div>
                         <div class="mb-3">
-                          <label for="exampleFormControlInput1" class="form-label">Image:</label>
+                          <label for="exampleFormControlInput1" class="form-label" id="category-img-field">
+                            Image:
+                          </label>
                           <input class="form-control" type="file" id="category-img" id="formFile" required>
                         </div>
                         <div class="mb-3">
@@ -61,7 +63,7 @@
                         </div>
                         
                         <hr class="mt-1 mb-2">
-                        <button type="submit" class="btn btn-primary mb-3">Create</button>
+                        <button type="submit" class="btn btn-primary mb-3">Submit</button>
                     </form>
                 </div>
             </div>
