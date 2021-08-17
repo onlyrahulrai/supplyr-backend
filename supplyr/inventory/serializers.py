@@ -362,12 +362,22 @@ class CategoriesSerializer2(serializers.ModelSerializer):
     def get_sub_categories(self, category):
         sub_categories = category.sub_categories.filter(is_active=True)
         return SubCategorySerializer(sub_categories, many=True).data
+    
+    seller = serializers.SerializerMethodField()
+    def get_seller(self,category):
+        name = None
+        try:
+            name = category.seller.owner.name
+        except:
+            name = None
+        return name
 
     class Meta:
         model = Category
         fields = [
-            'name',
             'id',
+            'name',
+            'seller',
             'sub_categories',
             'image'
         ]

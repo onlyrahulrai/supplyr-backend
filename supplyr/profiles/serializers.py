@@ -54,12 +54,22 @@ class CategoriesSerializer(serializers.ModelSerializer):
         sub_categories = category.sub_categories.filter(is_active=True)
         return SubCategorySerializer(sub_categories, many=True).data
     # sub_categories = SubCategorySerializer(many=True)
+    
+    seller = serializers.SerializerMethodField()
+    def get_seller(self,category):
+        name = None
+        try:
+            name = category.seller.owner.name
+        except:
+            name = None
+        return name
 
     class Meta:
         model = Category
         fields = [
             'name',
             'id',
+            "seller",
             'sub_categories'
         ]
         depth = 1

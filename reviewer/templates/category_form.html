@@ -46,22 +46,25 @@
                         <div class="mb-3">
                           <label for="exampleFormControlInput1" class="form-label">Name:</label>
                           <input type="text" class="form-control" id="category-name" name="category_name" required>
+                          <span id="category-name-validation" class="text-sm d-none" style="color:#dc3545;">This field is required</span>
                         </div>
                         <div class="mb-3">
                           <label for="exampleFormControlInput1" class="form-label" id="category-img-field">
                             Image:
                           </label>
                           <input class="form-control" type="file" id="category-img" id="formFile" required>
-                        </div>
-                        <div class="mb-3">
-                          <label for="exampleFormControlInput1" class="form-label">Subcategory Name:</label>
-                          <input type="text" class="form-control" id="sub_categories" name="subcategory_name">
-                        </div>
-
-                        <div class="sub_category-container">
-                          <ul class="sub_category-list pl-0 mb-0" style="list-style-type:none"></ul>
+                          <span id="category-img-validation" class="text-sm d-none" style="color:#dc3545;">This field is required</span>
                         </div>
                         
+                        
+                        <div class="mb-3">
+                          <label for="exampleFormControlInput1" class="form-label">Subcategory Name:</label>
+                          <div class="sub_category-container">
+                            <ul class="sub_category-list pl-0 mb-0" style="list-style-type:none"></ul>
+                          </div>
+                
+                          <input type="text" class="form-control" id="sub_categories" name="subcategory_name">
+                        </div>
                         <hr class="mt-1 mb-2">
                         <button type="button" id="catgeory-form-button" class="btn btn-primary mb-3">Submit</button>
                     </form>

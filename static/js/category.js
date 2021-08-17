@@ -9,6 +9,9 @@ var categoryId = null;
 var form_data = new FormData();
 var imageUrl = null;
 
+const categoryNameValidation = document.getElementById("category-name-validation")
+const categoryImgValidation = document.getElementById("category-img-validation")
+
 const updateUrl = window.location.href;
 
 if (updateUrl.includes("update")) {
@@ -48,34 +51,55 @@ subCategoryInput.addEventListener("keypress", function (e) {
   }
 });
 
+
+// Form Validation and formData image assignment
+
 categoryImg.addEventListener("change", function (e) {
   form_data.append("image", categoryImg.files[0]);
+  categoryImgValidation.classList.add("d-none")
 });
+
+categoryName.addEventListener("keypress",function(e){
+  categoryNameValidation.classList.add("d-none")
+})
+// Form Validation and formData image assignment
+
 
 categoryFormButton.addEventListener("click", function (event) {
   event.preventDefault();
-  if (categoryId) {
-    form_data.append("id", categoryId);
-    url = `/v1/seller/inventory/categories/${categoryId}/`;
-  } else {
-    url = "/v1/seller/inventory/categories/";
-  }
-  form_data.append("name", categoryName.value);
-  form_data.append("sub_categories", JSON.stringify(subCategoryData));
-  
-  fetch(url, {
-    method: "POST",
-    body: form_data,
-  })
-    .then((res) => res.json())
-    .then((data) => {
-      const alertBox = document.getElementById("alert-box");
-      alertBox.style.display = "block";
-      setTimeout(() => {
-        window.location.href = "/v1/reviewer/categories/";
-      }, 1000);
+
+  if(categoryName.value && categoryImg.files[0]){
+    if (categoryId) {
+      form_data.append("id", categoryId);
+      url = `/v1/seller/inventory/categories/${categoryId}/`;
+    } else {
+      url = "/v1/seller/inventory/categories/";
+    }
+    form_data.append("name", categoryName.value);
+    form_data.append("sub_categories", JSON.stringify(subCategoryData));
+    
+    fetch(url, {
+      method: "POST",
+      body: form_data,
     })
-    .catch((error) => console.log(error));
+      .then((res) => res.json())
+      .then((data) => {
+        const alertBox = document.getElementById("alert-box");
+        alertBox.style.display = "block";
+        setTimeout(() => {
+          window.location.href = "/v1/reviewer/categories/";
+        }, 1000);
+      })
+      .catch((error) => console.log(error));
+  }else{
+    if(categoryImg.files[0] === undefined){
+      categoryImgValidation.classList.remove("d-none")
+    }
+    if(categoryName.value === ""){
+      categoryNameValidation.classList.remove("d-none")
+    }
+  }
+
 });
 
 function deleteSubcategory(pos) {
