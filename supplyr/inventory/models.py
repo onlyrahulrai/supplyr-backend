@@ -68,6 +68,8 @@ class Category(models.Model):
 
     class Meta:
         ordering = ['serial']
+        verbose_name = 'Category'
+        verbose_name_plural = 'Categories'
 
 class Product(Model):
     title = models.CharField(max_length=200)

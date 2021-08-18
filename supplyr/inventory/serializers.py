@@ -406,14 +406,7 @@ class CategoriesSerializer2(serializers.ModelSerializer):
     def create(self, validated_data):
         # Not very secure, for staff use only. Will need to add more security if it needs to be open to public, like popping ID field
         sub_categories_data = validated_data.pop('sub_categories')
-        try:
-            seller =  self.context['request'].user.seller_profiles.first()
-            if self.context['request'].user.is_staff:
-                category = Category.objects.create(seller=None,**validated_data)
-            else:
-                category = Category.objects.create(seller=seller,**validated_data)
-        except:
-            category = Category.objects.create(seller=None,**validated_data)
+        category = Category.objects.create(seller=None,**validated_data)
             
      
         for sub_category in sub_categories_data:
@@ -422,6 +415,7 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         return category
 
     def update(self, instance, validated_data):
+        
         instance.name = validated_data['name']
         if 'delete_image' in validated_data:
             instance.image.delete(save=False)
@@ -432,6 +426,7 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         sub_categories_initial = list(instance.sub_categories.values_list('id', flat=True))
         sub_categories_final = []
         sub_categories_data = validated_data.pop('sub_categories')
+        
         for sc_data in sub_categories_data:
             sc = Category(parent=instance, **sc_data)
             sc.save()
@@ -443,11 +438,20 @@ class CategoriesSerializer2(serializers.ModelSerializer):
 
         
 class SubCategorySerializer(serializers.ModelSerializer):
+    seller = serializers.SerializerMethodField()
+    def get_seller(self,category):
+        name = None
+        try:
+            name = category.seller.owner.name
+        except:
+            name = None
+        return name
     class Meta:
         model = Category
         fields = [
             'id',
-            'name'
+            'name',
+            "seller"
         ]
 
 class SubCategorySerializer2(serializers.ModelSerializer):
