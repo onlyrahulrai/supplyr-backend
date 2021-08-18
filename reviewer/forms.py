@@ -1,6 +1,8 @@
+from django.forms import fields
+from supplyr.inventory.models import Category
 from django import forms
 from .models import SellerProfileReview
-from django import forms
+
 
 
 
@@ -20,6 +22,11 @@ class LoginForm(forms.Form):
                 "class": "form-control"
             }
         ))
+    
+class CategoryCreateForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ["name","image"]
         
 
         

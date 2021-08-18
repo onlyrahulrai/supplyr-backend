@@ -14,11 +14,12 @@ const categoryImgValidation = document.getElementById("category-img-validation")
 
 const updateUrl = window.location.href;
 
-if (updateUrl.includes("update")) {
+
+if (updateUrl.includes("action")) {
   categoryId = updateUrl
     .slice(updateUrl.slice(0, updateUrl.lastIndexOf("/")).lastIndexOf("/") + 1)
     .replace("/", "");
-  fetch(`/v1/seller/inventory/categories/${categoryId}/`)
+  fetch(`/v1/reviewer/categories/detail/${categoryId}/`)
     .then((res) => res.json())
     .then((data) => {
       categoryName.value = data.name;
@@ -71,19 +72,19 @@ categoryFormButton.addEventListener("click", function (event) {
   if(categoryName.value && categoryImg.files[0]){
     if (categoryId) {
       form_data.append("id", categoryId);
-      url = `/v1/seller/inventory/categories/${categoryId}/`;
+      url = `/v1/reviewer/categories/update/${categoryId}/`;
     } else {
-      url = "/v1/seller/inventory/categories/";
+      url = "/v1/reviewer/categories/create/";
     }
     form_data.append("name", categoryName.value);
     form_data.append("sub_categories", JSON.stringify(subCategoryData));
+    
     
     fetch(url, {
       method: "POST",
       body: form_data,
     })
-      .then((res) => res.json())
-      .then((data) => {
+      .then((res) => {
         const alertBox = document.getElementById("alert-box");
         alertBox.style.display = "block";
         setTimeout(() => {
@@ -202,3 +203,4 @@ function removeSubCategoryEditInput() {
   selectSubCategoryEditDiv.remove();
   activeItem = null
 }
+
