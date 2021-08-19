@@ -1,3 +1,4 @@
+from re import sub
 from rest_framework.response import Response
 from supplyr.inventory.models import Category
 from supplyr.inventory.serializers import CategoriesSerializer2
@@ -149,7 +150,7 @@ def category_detail(request,pk=None):
 @csrf_exempt
 @login_required(login_url="login")
 @admin_only
-def category_create(request,pk=None):
+def category_create(request):
     if request.method == "POST":
         sub_categories = json.loads(request.POST.get("sub_categories"))
         form = CategoryCreateForm(request.POST,request.FILES)
@@ -173,6 +174,15 @@ def category_update(request,pk=None):
             sub_categories_initial = list(parent.sub_categories.values_list('id', flat=True))
             sub_categories_final = []
             for sub_category in sub_categories:
+                try:
+                    if "id" in sub_category.keys():
+                        user = User.objects.filter(username=sub_category.get("seller")).first()
+                        sub_category["seller"] = user.seller_profiles.first()
+                    else:
+                        sub_category["seller"] = None
+                except:
+                    sub_category["seller"] = None
+                    
                 updated_sub_category = Category(parent=parent,**sub_category)
                 updated_sub_category.save()
                 sub_categories_final.append(updated_sub_category.id)

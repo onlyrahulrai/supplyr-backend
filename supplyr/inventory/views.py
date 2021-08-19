@@ -179,7 +179,7 @@ class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModel
     View for viewing, adding, updating, and deleting categories and subcategories
     """
     serializer_class = CategoriesSerializer2
-    permission_classes = [AllowAny]
+    permission_classes = [IsApproved]
     # parser_classes = [FormParser, MultiPartParser]
     pagination_class = None
     
@@ -197,7 +197,7 @@ class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModel
         return super().list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        # print(request.data)
+        print(request.data)
         if category_id := kwargs.get('pk'):
             # category_instance = get_object_or_404(Category, id=category_id)
             return super().update(request, *args, **kwargs)

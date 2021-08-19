@@ -1,7 +1,8 @@
 import os
 import json
 from rest_framework import serializers
-from .models import Product, Variant, ProductImage, Category
+from rest_framework.exceptions import ValidationError
+from .models import Product, User, Variant, ProductImage, Category
 from supplyr.profiles.models import SellerProfile
 from django.conf import settings
 from django.db import transaction
@@ -367,7 +368,7 @@ class CategoriesSerializer2(serializers.ModelSerializer):
     def get_seller(self,category):
         name = None
         try:
-            name = category.seller.owner.name
+            name = category.seller.owner.username
         except:
             name = None
         return name
@@ -391,7 +392,8 @@ class CategoriesSerializer2(serializers.ModelSerializer):
     def to_internal_value(self, data):
         value = super().to_internal_value(data)
         sub_categories_raw_data = json.loads(data['sub_categories'])
-        sub_categories_data = map(lambda sc: {_key: sc[_key] for _key in ['name', 'id'] if _key in sc}, sub_categories_raw_data) # By default, 'id' field for sub categories was omitted., hence needed to include it
+        sub_categories_data = map(lambda sc: {_key: sc[_key] for _key in ['name', 'id',"seller"] if _key in sc}, sub_categories_raw_data) # By default, 'id' field for sub categories was omitted., hence needed to include it
+        value["seller"] = data["seller"]
         value['sub_categories'] = sub_categories_data # By default,  'id' field for sub categories was omitted.
         if 'delete_image' in data:
             value['delete_image'] = data['delete_image']
@@ -406,31 +408,49 @@ class CategoriesSerializer2(serializers.ModelSerializer):
     def create(self, validated_data):
         # Not very secure, for staff use only. Will need to add more security if it needs to be open to public, like popping ID field
         sub_categories_data = validated_data.pop('sub_categories')
-        category = Category.objects.create(seller=None,**validated_data)
+        user = validated_data.pop("seller")
+        seller = User.objects.filter(username=user).first().seller_profiles.first()
+        category = Category.objects.create(seller=seller,**validated_data)
             
      
         for sub_category in sub_categories_data:
-            Category.objects.create(parent=category, **sub_category)
+            Category.objects.create(parent=category,seller=seller,**sub_category)
 
         return category
 
     def update(self, instance, validated_data):
+        user = User.objects.filter(username=validated_data.get("seller")).first()
+        seller_profile = user.seller_profiles.first()
+        print("seller profile and category instance: ",instance,seller_profile)
         
-        instance.name = validated_data['name']
-        if 'delete_image' in validated_data:
-            instance.image.delete(save=False)
-        elif 'image' in validated_data:
-            instance.image = validated_data['image']
-        instance.save()
+        if instance.seller == seller_profile:
+            instance.name = validated_data['name']
+            if 'delete_image' in validated_data:
+                instance.image.delete(save=False)
+            elif 'image' in validated_data:
+                instance.image = validated_data['image']
+            instance.save()
 
         sub_categories_initial = list(instance.sub_categories.values_list('id', flat=True))
         sub_categories_final = []
         sub_categories_data = validated_data.pop('sub_categories')
-        
-        for sc_data in sub_categories_data:
+        for sc_data in list(sub_categories_data):
+            try:
+                if "id" in sc_data.keys():
+                    user = User.objects.filter(username=sc_data.get("seller")).first()
+                    sc_data["seller"] = user.seller_profiles.first()
+                    print("sub-category updated")
+                else:
+                    sc_data["seller"] = self.context['request'].user.seller_profiles.first()
+                    print("sub-category created")
+            except:
+                sc_data["seller"] = None
+            
+            print("sub-category updated",sc_data)
             sc = Category(parent=instance, **sc_data)
             sc.save()
             sub_categories_final.append(sc.id)
+            
             
         sub_categories_to_remove = [sc for sc in sub_categories_initial if sc not in sub_categories_final]
         Category.objects.filter(id__in=sub_categories_to_remove).update(is_active = False)
@@ -442,7 +462,7 @@ class SubCategorySerializer(serializers.ModelSerializer):
     def get_seller(self,category):
         name = None
         try:
-            name = category.seller.owner.name
+            name = category.seller.owner.username
         except:
             name = None
         return name

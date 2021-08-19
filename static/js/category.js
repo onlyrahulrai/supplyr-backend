@@ -9,37 +9,42 @@ var categoryId = null;
 var form_data = new FormData();
 var imageUrl = null;
 
-const categoryNameValidation = document.getElementById("category-name-validation")
-const categoryImgValidation = document.getElementById("category-img-validation")
+const categoryNameValidation = document.getElementById(
+  "category-name-validation"
+);
+const categoryImgValidation = document.getElementById(
+  "category-img-validation"
+);
 
 const updateUrl = window.location.href;
 
-
-if (updateUrl.includes("action")) {
+if (updateUrl.includes("update")) {
   categoryId = updateUrl
     .slice(updateUrl.slice(0, updateUrl.lastIndexOf("/")).lastIndexOf("/") + 1)
     .replace("/", "");
-  fetch(`/v1/reviewer/categories/detail/${categoryId}/`)
-    .then((res) => res.json())
-    .then((data) => {
-      categoryName.value = data.name;
-      subCategoryData = [...data.sub_categories];
-      showSubCategory(subCategoryData);
-      const categoryImgField = document.getElementById("category-img-field");
-      imageUrl = window.location.origin + data.image;
-      const image = document.createElement("img");
-      image.src = imageUrl;
-      image.alt = data.name;
-      image.setAttribute("width", "64px");
-      image.setAttribute("height", "44px");
-      categoryImgField.append(image);
-      let list = new DataTransfer();
-      let file = new File(["content"], data.image);
-      list.items.add(file);
-      let myFileList = list.files;
-      categoryImg.files = myFileList;
-    })
-    .catch((err) => console.log(err));
+  if (categoryId) {
+    fetch(`/v1/reviewer/categories/detail/${categoryId}/`)
+      .then((res) => res.json())
+      .then((data) => {
+        categoryName.value = data.name;
+        subCategoryData = [...data.sub_categories];
+        showSubCategory(subCategoryData);
+        const categoryImgField = document.getElementById("category-img-field");
+        imageUrl = window.location.origin + data.image;
+        const image = document.createElement("img");
+        image.src = imageUrl;
+        image.alt = data.name;
+        image.setAttribute("width", "64px");
+        image.setAttribute("height", "44px");
+        categoryImgField.append(image);
+        let list = new DataTransfer();
+        let file = new File(["content"], data.image);
+        list.items.add(file);
+        let myFileList = list.files;
+        categoryImg.files = myFileList;
+      })
+      .catch((err) => console.log(err));
+  }
 } else {
   console.log("hello world");
 }
@@ -52,24 +57,21 @@ subCategoryInput.addEventListener("keypress", function (e) {
   }
 });
 
-
 // Form Validation and formData image assignment
 
 categoryImg.addEventListener("change", function (e) {
   form_data.append("image", categoryImg.files[0]);
-  categoryImgValidation.classList.add("d-none")
+  categoryImgValidation.classList.add("d-none");
 });
 
-categoryName.addEventListener("keypress",function(e){
-  categoryNameValidation.classList.add("d-none")
-})
+categoryName.addEventListener("keypress", function (e) {
+  categoryNameValidation.classList.add("d-none");
+});
 // Form Validation and formData image assignment
-
 
 categoryFormButton.addEventListener("click", function (event) {
   event.preventDefault();
-
-  if(categoryName.value && categoryImg.files[0]){
+  if (categoryName.value && categoryImg.files[0]) {
     if (categoryId) {
       form_data.append("id", categoryId);
       url = `/v1/reviewer/categories/update/${categoryId}/`;
@@ -78,8 +80,7 @@ categoryFormButton.addEventListener("click", function (event) {
     }
     form_data.append("name", categoryName.value);
     form_data.append("sub_categories", JSON.stringify(subCategoryData));
-    
-    
+
     fetch(url, {
       method: "POST",
       body: form_data,
@@ -92,15 +93,14 @@ categoryFormButton.addEventListener("click", function (event) {
         }, 1000);
       })
       .catch((error) => console.log(error));
-  }else{
-    if(categoryImg.files[0] === undefined){
-      categoryImgValidation.classList.remove("d-none")
+  } else {
+    if (categoryImg.files[0] === undefined) {
+      categoryImgValidation.classList.remove("d-none");
     }
-    if(categoryName.value === ""){
-      categoryNameValidation.classList.remove("d-none")
+    if (categoryName.value === "") {
+      categoryNameValidation.classList.remove("d-none");
     }
   }
-
 });
 
 function deleteSubcategory(pos) {
@@ -123,10 +123,16 @@ function showSubCategory(subCategory) {
             <div class="shadow-lg" id="subcategory-div${i}">
                 <li class="list-group-item p-2 border-top d-flex justify-content-between align-items-center">
                     <span>${subCategory[i].name}</span> 
-                    <div class="flex justify-content-center align-items-center">
-                            <span class="ni ni-ruler-pencil edit-subcategory" onclick="editSubcategory(${i})"  style="cursor:pointer;"></span>
-                            <span class="ni ni-fat-remove" onclick="deleteSubcategory(${i})" style="cursor:pointer;"></span>
-                    </div>
+                    ${
+                      subCategory[i].seller === null || subCategory[i].seller === undefined ?
+                      `
+                        <div class="flex justify-content-center align-items-center">
+                          <span class="fas fa-pencil-alt edit-subcategory" onclick="editSubcategory(${i})"  style="cursor:pointer;"></span>
+                          <span class="ni ni-fat-remove" onclick="deleteSubcategory(${i})" style="cursor:pointer;"></span>
+                        </div>
+                      `:``
+                    }
+                    
                 </li>
             </div>
         `;
@@ -201,6 +207,5 @@ function removeSubCategoryEditInput() {
   subcategoryActiveDiv.children[0].classList.remove("d-none");
   subcategoryActiveDiv.children[0].classList.add("d-flex");
   selectSubCategoryEditDiv.remove();
-  activeItem = null
+  activeItem = null;
 }
-

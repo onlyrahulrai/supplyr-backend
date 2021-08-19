@@ -28,5 +28,7 @@ class CategoryCreateForm(forms.ModelForm):
         model = Category
         fields = ["name","image"]
         
+    
+        
 
         
