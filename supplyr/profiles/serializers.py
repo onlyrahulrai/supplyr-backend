@@ -51,7 +51,7 @@ class CategoriesSerializer(serializers.ModelSerializer):
     """
     sub_categories = serializers.SerializerMethodField()
     def get_sub_categories(self, category):
-        sub_categories = category.sub_categories.filter(is_active=True)
+        sub_categories = category.sub_categories.filter(is_active=True).filter(Q(seller=None) | Q(seller=self.context.get("seller")))
         return SubCategorySerializer(sub_categories, many=True).data
     # sub_categories = SubCategorySerializer(many=True)
     
@@ -75,7 +75,6 @@ class CategoriesSerializer(serializers.ModelSerializer):
         depth = 1
 
 def _get_seller_profiling_data(user: User) -> Dict:
-
     existing_profile = user.seller_profiles.first()
     entity_details = None
     profiling_data = None
@@ -87,7 +86,7 @@ def _get_seller_profiling_data(user: User) -> Dict:
     ### Category Information
     # categories = Category.objects.filter(is_active=True).exclude(sub_categories = None)
     categories = Category.objects.filter(is_active=True,parent=None).filter(Q(seller=None) | Q(seller=existing_profile))
-    cat_serializer = CategoriesSerializer(categories, many=True)
+    cat_serializer = CategoriesSerializer(categories, many=True,context={"seller":existing_profile})
     cat_serializer_data = cat_serializer.data
 
     categories_data = {
@@ -137,6 +136,7 @@ class UserDetailsSerializer(serializers.ModelSerializer):
         """
         Profiling data for people who are still filling the profiling form
         """
+       
         return _get_seller_profiling_data(user) 
 
     

@@ -36,9 +36,9 @@
               </div>
              {% endfor %}
           {% endif %}
-          <div class="row">
+          <div class="card-columns">
             {% for category in categories %}
-            <div class="col-md-4 mb-3">
+    
             <div class=" card shadow-lg p-2">
               <div class="row ">
                 <div class="col">
@@ -63,12 +63,12 @@
                 <div class="row mt-3">
                 {% for subcategory in category.sub_categories %}
                   <div class="col-auto mb-1">
-                    <a href="#" class="btn btn-secondary btn-sm">{{subcategory.name|truncatechars:12}}</a>
+                    <a href="javascript:void(0)" class="btn btn-secondary btn-sm">{{subcategory.name}}</a>
                   </div>
                   {% endfor %}
                 </div>
               {% endif %}
-            </div>
+       
           </div>
           {% endfor %} 
           </div>

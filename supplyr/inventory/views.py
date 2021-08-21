@@ -1,3 +1,5 @@
+from django.http.response import JsonResponse
+from supplyr.utils.api.mixins import UserInfoMixin
 from django.http import request
 from django.shortcuts import render, get_object_or_404
 from rest_framework.views import APIView
@@ -174,7 +176,7 @@ class ProductsBulkUpdateView(APIView):
         return Response({'success': True})
 
 
-class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.CreateModelMixin):
+class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.CreateModelMixin, UserInfoMixin):
     """
     View for viewing, adding, updating, and deleting categories and subcategories
     """
@@ -200,7 +202,10 @@ class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModel
         print(request.data)
         if category_id := kwargs.get('pk'):
             # category_instance = get_object_or_404(Category, id=category_id)
-            return super().update(request, *args, **kwargs)
+            response =  {'test':56, 'user': request.user.username}
+            rsp=self.inject_user_info(response, request.user)
+            print("\n\n\n RSP: ", rsp)
+            return JsonResponse(rsp)
         return super().create(request, *args, **kwargs)
     
     def delete(self, request, *args, **kwargs):

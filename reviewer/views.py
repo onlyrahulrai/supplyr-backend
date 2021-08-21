@@ -171,7 +171,7 @@ def category_update(request,pk=None):
         form = CategoryCreateForm(request.POST,request.FILES,instance=category)
         if form.is_valid():
             parent = form.save()
-            sub_categories_initial = list(parent.sub_categories.values_list('id', flat=True))
+            sub_categories_initial = list(parent.sub_categories.filter(seller=None).values_list('id', flat=True))
             sub_categories_final = []
             for sub_category in sub_categories:
                 try:

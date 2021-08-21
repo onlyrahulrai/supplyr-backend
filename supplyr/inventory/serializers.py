@@ -1,12 +1,13 @@
 import os
 import json
+from django.http import request
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 from .models import Product, User, Variant, ProductImage, Category
 from supplyr.profiles.models import SellerProfile
 from django.conf import settings
 from django.db import transaction
 from django.db.models.functions import Coalesce
+from django.db.models import Q
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -361,7 +362,10 @@ class CategoriesSerializer2(serializers.ModelSerializer):
     
     sub_categories = serializers.SerializerMethodField()
     def get_sub_categories(self, category):
-        sub_categories = category.sub_categories.filter(is_active=True)
+        try:
+            sub_categories = category.sub_categories.filter(is_active=True).filter(Q(seller=None) | Q(seller = self.context['request'].user.seller_profiles.first()))
+        except:
+            sub_categories = category.sub_categories.filter(is_active=True).filter(seller=None)
         return SubCategorySerializer(sub_categories, many=True).data
     
     seller = serializers.SerializerMethodField()
@@ -431,7 +435,8 @@ class CategoriesSerializer2(serializers.ModelSerializer):
                 instance.image = validated_data['image']
             instance.save()
 
-        sub_categories_initial = list(instance.sub_categories.values_list('id', flat=True))
+        sub_categories_initial = list(instance.sub_categories.filter(Q(seller=None) | Q(seller=self.context['request'].user.seller_profiles.first())).values_list('id', flat=True))
+        print(sub_categories_initial)
         sub_categories_final = []
         sub_categories_data = validated_data.pop('sub_categories')
         for sc_data in list(sub_categories_data):
