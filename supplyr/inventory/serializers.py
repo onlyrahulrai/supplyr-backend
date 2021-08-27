@@ -1,8 +1,9 @@
 import os
 import json
 from django.http import request
+from django_extensions.db import fields
 from rest_framework import serializers
-from .models import Product, User, Variant, ProductImage, Category
+from .models import Product, Tags, User, Variant, ProductImage, Category
 from supplyr.profiles.models import SellerProfile
 from django.conf import settings
 from django.db import transaction
@@ -152,6 +153,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     variants_data = serializers.SerializerMethodField('get_variants_data')
     owner = ProductOwnerSerializer(read_only=True)
     images = serializers.SerializerMethodField(read_only=True)
+    tags = serializers.SerializerMethodField()
     sub_categories = serializers.SerializerMethodField()
     is_favourite = serializers.SerializerMethodField()
 
@@ -163,6 +165,10 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
             return buyer_profile and buyer_profile.favourite_products.filter(id= product.id).exists()
         return None
 
+    def get_tags(self,product):
+        tags = product.tags.filter(is_active=True)
+        return TagsSerializer(tags,many=True).data
+
     def get_sub_categories(self, product):
         sub_categories = product.sub_categories.all()
         return SubCategorySerializer2(sub_categories, many=True).data
@@ -172,6 +178,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         serializer = self.ProductImageReadOnlySerializer(qs, many=True)
         return serializer.data
 
+    
 
     def get_variants_data(self, instance):
         multiple = instance.has_multiple_variants()
@@ -210,10 +217,12 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
         images = data.get('images')
         sub_categories = data.get('sub_categories')
+        tags = data.get("tags")
 
         internal_value.update({
             'variants_data': variants_final_data,
             'images': images,
+            "tags":tags,
             'sub_categories': sub_categories,   #SerializerMethodField is readOnly. So need to include it here manually to save it
         })
 
@@ -221,13 +230,22 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-
+        print("validated Data: ",validated_data)
         images = validated_data['images']
         del validated_data['images']    #Otherwise saving will break, as there are just image IDs in this field instead of instances
+        tags_data = validated_data.pop("tags")
         sub_categories = validated_data.pop('sub_categories')
         variants_data = validated_data.pop('variants_data')
+        
+        ######### Add or (Create then Add) tags in product #########
+        
+        tags = [(Tags.objects.create(name=tag.get("label"),seller=validated_data.get("owner")).id) if(tag.get("new")) else tag.get("id") for tag in list(tags_data)]
+        
+        ######### Add or (Create then Add) tags in product #########
 
         product = Product.objects.create(**validated_data)
+        
+        product.tags.set(tags)
 
         product.sub_categories.set(sub_categories)
         is_multi_variant = variants_data['multiple']
@@ -260,6 +278,18 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     
     @transaction.atomic
     def update(self, instance, validated_data):
+        print("update validated data: ",validated_data)
+        tags_data = validated_data.get("tags")
+        del validated_data['tags']
+        
+        ######### Add or (Create then Add) tags in product #########
+                
+        tags = [(Tags.objects.create(name=tag.get("label"),seller=validated_data.get("owner")).id) if(tag.get("new")) else tag.get("id") for tag in list(tags_data)]
+                
+        instance.tags.set(tags)
+        
+        ######### Add or (Create then Add) tags in product #########
+        
         product = instance
         images = validated_data['images']
         del validated_data['images']    #Otherwise saving will break, as there are just image IDs in this field instead of instances
@@ -314,7 +344,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'title', 'slug', 'description', 'owner', 'images', 'variants_data', 'sub_categories', 'is_favourite']
+        fields = ['id', 'title', 'slug', 'description', 'owner', 'images', 'variants_data',"tags", 'sub_categories', 'is_favourite']
         # depth = 1
 
 
@@ -491,3 +521,12 @@ class SubCategorySerializer2(serializers.ModelSerializer):
             'name',
             'category'
         ]
+
+
+class TagsSerializer(serializers.ModelSerializer):
+    label = serializers.SerializerMethodField()
+    def get_label(self,tags):
+        return tags.name
+    class Meta:
+        model = Tags
+        fields = ["id","label"]

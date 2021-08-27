@@ -71,13 +71,25 @@ class Category(models.Model):
         verbose_name = 'Category'
         verbose_name_plural = 'Categories'
 
+class Tags(models.Model):
+    name = models.CharField(max_length=200)
+    seller = models.ForeignKey('profiles.SellerProfile',on_delete=models.CASCADE,related_name="tags")
+    created_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Tag'
+        verbose_name_plural = 'Tags'
+        
+    def __str__(self):
+        return f'[{self.id}] {self.name}'
+
 class Product(Model):
     title = models.CharField(max_length=200)
     slug = AutoSlugField(max_length=100, populate_from=['title'], unique=True)
     description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey('profiles.SellerProfile', related_name='products', on_delete=models.CASCADE)
     sub_categories = models.ManyToManyField('inventory.Category', related_name='products')
-
+    tags = models.ManyToManyField('inventory.Tags', related_name='products')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -15,7 +15,7 @@ from supplyr.profiles.models import SellerProfile
 from .models import Product, Variant, ProductImage
 from django.db.models import Prefetch, Q, Count, Sum, Min, Max
 
-class AddProduct(APIView):
+class AddProduct(APIView,UserInfoMixin):
     permission_classes = [IsApproved]
     def post(self, request, *args, **kwargs):
         
@@ -31,8 +31,9 @@ class AddProduct(APIView):
         if product_serializer.is_valid():
             product = product_serializer.save(owner = profile)
 
+        response = self.inject_user_info(product_serializer.data, request.user)
 
-        return Response({"product": product_serializer.data})
+        return Response({"product": response })
 
 class DeleteProduct(APIView):
     permission_classes = [IsApproved]
@@ -76,7 +77,6 @@ class ProductImageUpload(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save(uploaded_by = request.user.seller_profiles.first())
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
 
 class SellerSelfProductListView(ListAPIView):
     """
@@ -174,7 +174,6 @@ class ProductsBulkUpdateView(APIView):
         
         return Response({'success': True})
 
-
 class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.CreateModelMixin, UserInfoMixin):
     """
     View for viewing, adding, updating, and deleting categories and subcategories
@@ -213,7 +212,6 @@ class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModel
         if category_id := kwargs.get('pk'):
             category = Category.objects.filter(pk=category_id).update(is_active = False)
             return Response(None, status=204)
-
 
 class UpdateFavouritesView(APIView):
     permission_classes = [IsAuthenticated, IsFromBuyerAPI]

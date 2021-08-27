@@ -7,3 +7,4 @@ class PetAdmin(admin.ModelAdmin):
 admin.site.register(Product)
 admin.site.register(Variant)
 admin.site.register(ProductImage)
+admin.site.register(Tags)

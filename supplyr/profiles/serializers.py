@@ -3,8 +3,8 @@ from rest_framework import serializers
 from .models import BuyerAddress, BuyerProfile, SellerProfile, SalespersonProfile
 from django.contrib.auth import get_user_model
 from typing import Dict
-from supplyr.inventory.models import Category
-from supplyr.inventory.serializers import SubCategorySerializer2, SubCategorySerializer
+from supplyr.inventory.models import Category, Tags
+from supplyr.inventory.serializers import SubCategorySerializer2, SubCategorySerializer, TagsSerializer
 
 
 User = get_user_model()
@@ -33,12 +33,19 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
         sub_categories = profile.operational_fields.all()
         sub_categories_serializer = SubCategorySerializer2(sub_categories, many=True)
         return sub_categories_serializer.data
+    
+    tags = serializers.SerializerMethodField()
+    def get_tags(self,profile):
+        tags = profile.tags.filter(is_active=True)
+        tag_serializer = TagsSerializer(tags,many=True)
+        return tag_serializer.data
 
     class Meta:
         model = SellerProfile
         fields = [
             'business_name',
             'id',
+            "tags",
             'sub_categories',
             'connection_code',
             ]
@@ -88,6 +95,8 @@ def _get_seller_profiling_data(user: User) -> Dict:
     categories = Category.objects.filter(is_active=True,parent=None).filter(Q(seller=None) | Q(seller=existing_profile))
     cat_serializer = CategoriesSerializer(categories, many=True,context={"seller":existing_profile})
     cat_serializer_data = cat_serializer.data
+    
+   
 
     categories_data = {
             'categories': cat_serializer_data,
