@@ -166,7 +166,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         return None
 
     def get_tags(self,product):
-        tags = product.tags.filter(is_active=True)
+        tags = product.tags.all()
         return TagsSerializer(tags,many=True).data
 
     def get_sub_categories(self, product):

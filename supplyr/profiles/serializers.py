@@ -36,7 +36,7 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
     
     tags = serializers.SerializerMethodField()
     def get_tags(self,profile):
-        tags = profile.tags.filter(is_active=True)
+        tags = profile.tags.all()
         tag_serializer = TagsSerializer(tags,many=True)
         return tag_serializer.data
 
