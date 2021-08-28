@@ -82,12 +82,25 @@ class Tags(models.Model):
         
     def __str__(self):
         return f'[{self.id}] {self.name}'
+    
+class Vendors(models.Model):
+    name = models.CharField(max_length=200)
+    seller = models.ForeignKey('profiles.SellerProfile',on_delete=models.CASCADE,related_name="vendors")
+    created_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Vendor'
+        verbose_name_plural = 'Vendors'
+        
+    def __str__(self):
+        return f'[{self.id}] {self.name}'
 
 class Product(Model):
     title = models.CharField(max_length=200)
     slug = AutoSlugField(max_length=100, populate_from=['title'], unique=True)
     description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey('profiles.SellerProfile', related_name='products', on_delete=models.CASCADE)
+    vendors = models.ForeignKey('inventory.vendors', related_name='products', on_delete=models.CASCADE,blank=True,null=True)
     sub_categories = models.ManyToManyField('inventory.Category', related_name='products')
     tags = models.ManyToManyField('inventory.Tags', related_name='products')
     is_active = models.BooleanField(default=True)

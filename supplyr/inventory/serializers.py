@@ -3,7 +3,7 @@ import json
 from django.http import request
 from django_extensions.db import fields
 from rest_framework import serializers
-from .models import Product, Tags, User, Variant, ProductImage, Category
+from .models import Product, Tags, User, Variant, ProductImage, Category, Vendors
 from supplyr.profiles.models import SellerProfile
 from django.conf import settings
 from django.db import transaction
@@ -154,6 +154,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     owner = ProductOwnerSerializer(read_only=True)
     images = serializers.SerializerMethodField(read_only=True)
     tags = serializers.SerializerMethodField()
+    vendors = serializers.SerializerMethodField()
     sub_categories = serializers.SerializerMethodField()
     is_favourite = serializers.SerializerMethodField()
 
@@ -168,6 +169,10 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     def get_tags(self,product):
         tags = product.tags.all()
         return TagsSerializer(tags,many=True).data
+    
+    def get_vendors(self,product):
+        vendors = product.vendors
+        return VendorsSerializer(vendors).data
 
     def get_sub_categories(self, product):
         sub_categories = product.sub_categories.all()
@@ -218,11 +223,13 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         images = data.get('images')
         sub_categories = data.get('sub_categories')
         tags = data.get("tags")
+        vendors = data.get("vendors")
 
         internal_value.update({
             'variants_data': variants_final_data,
             'images': images,
             "tags":tags,
+            "vendors":vendors,
             'sub_categories': sub_categories,   #SerializerMethodField is readOnly. So need to include it here manually to save it
         })
 
@@ -242,6 +249,14 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         tags = [(Tags.objects.create(name=tag.get("label"),seller=validated_data.get("owner")).id) if(tag.get("new")) else tag.get("id") for tag in list(tags_data)]
         
         ######### Add or (Create then Add) tags in product #########
+        
+        ######### Add or (Create then Add) vendors in product #########
+        vendor_data = validated_data.pop("vendors")
+        
+        vendor = Vendors.objects.create(name=vendor_data.get("label"),seller=validated_data.get("owner")) if(vendor_data.get("new")) else Vendors.objects.get(id=vendor_data.get("id"))
+      
+        validated_data["vendors"] = vendor
+        ######### Add or (Create then Add) vendors in product #########
 
         product = Product.objects.create(**validated_data)
         
@@ -279,16 +294,26 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def update(self, instance, validated_data):
         print("update validated data: ",validated_data)
-        tags_data = validated_data.get("tags")
-        del validated_data['tags']
         
         ######### Add or (Create then Add) tags in product #########
+        
+        tags_data = validated_data.get("tags")
+        del validated_data['tags']
                 
         tags = [(Tags.objects.create(name=tag.get("label"),seller=validated_data.get("owner")).id) if(tag.get("new")) else tag.get("id") for tag in list(tags_data)]
                 
         instance.tags.set(tags)
         
         ######### Add or (Create then Add) tags in product #########
+        
+        ######### Add or (Create then Add) vendors in product #########
+        vendor_data = validated_data.pop("vendors")
+        
+        vendor = Vendors.objects.create(name=vendor_data.get("label"),seller=validated_data.get("owner")) if(vendor_data.get("new")) else Vendors.objects.get(id=vendor_data.get("id"))
+        
+        validated_data["vendors"] = vendor
+        ######### Add or (Create then Add) vendors in product #########
+        
         
         product = instance
         images = validated_data['images']
@@ -344,7 +369,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'title', 'slug', 'description', 'owner', 'images', 'variants_data',"tags", 'sub_categories', 'is_favourite']
+        fields = ['id', 'title', 'slug', 'description', 'owner', 'images', 'variants_data',"vendors","tags", 'sub_categories', 'is_favourite']
         # depth = 1
 
 
@@ -529,4 +554,12 @@ class TagsSerializer(serializers.ModelSerializer):
         return tags.name
     class Meta:
         model = Tags
+        fields = ["id","label"]
+        
+class VendorsSerializer(serializers.ModelSerializer):
+    label = serializers.SerializerMethodField()
+    def get_label(self,vendors):
+        return vendors.name
+    class Meta:
+        model = Vendors
         fields = ["id","label"]

@@ -4,7 +4,7 @@ from .models import BuyerAddress, BuyerProfile, SellerProfile, SalespersonProfil
 from django.contrib.auth import get_user_model
 from typing import Dict
 from supplyr.inventory.models import Category, Tags
-from supplyr.inventory.serializers import SubCategorySerializer2, SubCategorySerializer, TagsSerializer
+from supplyr.inventory.serializers import SubCategorySerializer2, SubCategorySerializer, TagsSerializer, VendorsSerializer
 
 
 User = get_user_model()
@@ -39,6 +39,12 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
         tags = profile.tags.all()
         tag_serializer = TagsSerializer(tags,many=True)
         return tag_serializer.data
+    
+    vendors = serializers.SerializerMethodField()
+    def get_vendors(self,profile):
+        vendors = profile.vendors.all()
+        vendors_serializer = VendorsSerializer(vendors,many=True)
+        return vendors_serializer.data
 
     class Meta:
         model = SellerProfile
@@ -46,6 +52,7 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
             'business_name',
             'id',
             "tags",
+            "vendors",
             'sub_categories',
             'connection_code',
             ]
