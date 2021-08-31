@@ -5,12 +5,14 @@ from io import BytesIO
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.db import models
-from django.template.defaultfilters import slugify
+from django.db.models.enums import Choices
+from django.template.defaultfilters import default, slugify
 from django_mysql.models import Model
 from PIL import Image
 from supplyr.core.model_utils import generate_image_sizes
 from django.utils.functional import cached_property
 from django_extensions.db.fields import AutoSlugField
+from django_mysql.models import EnumField
 
 User = get_user_model()
 
@@ -96,6 +98,12 @@ class Vendors(models.Model):
         return f'[{self.id}] {self.name}'
 
 class Product(Model):
+    class WeightUnit(models.TextChoices):
+        MG = 'mg', 'Milligram'
+        GM = 'gm', 'Gram'
+        KG = 'kg', 'Kilogram'
+        lb = 'lbs', 'lbs'
+        
     title = models.CharField(max_length=200)
     slug = AutoSlugField(max_length=100, populate_from=['title'], unique=True)
     description = models.TextField(blank=True, null=True)
@@ -103,8 +111,14 @@ class Product(Model):
     vendors = models.ForeignKey('inventory.vendors', related_name='products', on_delete=models.CASCADE,blank=True,null=True)
     sub_categories = models.ManyToManyField('inventory.Category', related_name='products')
     tags = models.ManyToManyField('inventory.Tags', related_name='products')
+    weight_unit = EnumField(choices=WeightUnit.choices,blank=True,null=True)
+    weight_value = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    @property
+    def weight(self):
+        return f'{self.weight_value}{self.weight_unit}'
 
     def has_multiple_variants(self):
         if self.variants_count > 1:
