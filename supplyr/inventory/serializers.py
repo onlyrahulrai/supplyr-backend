@@ -226,6 +226,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         vendors = data.get("vendors")
         weight_unit = data.get("weight_unit")
         weight_value = data.get("weight_value")
+        country = data.get("country")
 
         internal_value.update({
             'variants_data': variants_final_data,
@@ -234,6 +235,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
             "weight_value":weight_value,
             "tags":tags,
             "vendors":vendors,
+            "country":country,
             'sub_categories': sub_categories,   #SerializerMethodField is readOnly. So need to include it here manually to save it
         })
 
@@ -373,7 +375,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'title', 'slug', 'description', 'owner', 'images', 'variants_data',"vendors","tags", 'sub_categories', 'is_favourite',"weight_unit","weight_value"]
+        fields = ['id', 'title', 'slug', 'description', 'owner', 'images', 'variants_data',"vendors","tags", 'sub_categories', 'is_favourite',"weight_unit","weight_value","country"]
         # depth = 1
 
 
