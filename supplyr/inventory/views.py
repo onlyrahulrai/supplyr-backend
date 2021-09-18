@@ -188,7 +188,7 @@ class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModel
             seller_profile = self.request.user.seller_profiles.first()
         except:
             seller_profile = None
-        return Category.objects.filter(is_active=True,parent=None).filter(Q(seller=None) | Q(seller=seller_profile))
+        return Category.objects.filter(is_active=True,parent=None).filter(Q(seller=seller_profile))
          
 
     def get(self, request, *args, **kwargs):

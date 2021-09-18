@@ -4,7 +4,7 @@ from .models import BuyerAddress, BuyerProfile, SellerProfile, SalespersonProfil
 from django.contrib.auth import get_user_model
 from typing import Dict
 from supplyr.inventory.models import Category, Tags
-from supplyr.inventory.serializers import SubCategorySerializer2, SubCategorySerializer, TagsSerializer, VendorsSerializer
+from supplyr.inventory.serializers import CategoriesSerializer2, SubCategorySerializer2, SubCategorySerializer, TagsSerializer, VendorsSerializer
 
 
 User = get_user_model()
@@ -31,8 +31,17 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
     sub_categories = serializers.SerializerMethodField()
     def get_sub_categories(self, profile):
         sub_categories = profile.operational_fields.all()
-        sub_categories_serializer = SubCategorySerializer2(sub_categories, many=True)
+        parent_category_list = []
+        
+        for sub_category in sub_categories:
+            if sub_category.parent not in parent_category_list:
+                parent_category_list.append(sub_category.parent)
+        
+        category_list = list(sub_categories) + parent_category_list
+
+        sub_categories_serializer = SubCategorySerializer2(category_list, many=True)
         return sub_categories_serializer.data
+    
     
     tags = serializers.SerializerMethodField()
     def get_tags(self,profile):

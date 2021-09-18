@@ -424,7 +424,7 @@ class CategoriesSerializer2(serializers.ModelSerializer):
     sub_categories = serializers.SerializerMethodField()
     def get_sub_categories(self, category):
         try:
-            sub_categories = category.sub_categories.filter(is_active=True).filter(Q(seller=None) | Q(seller = self.context['request'].user.seller_profiles.first()))
+            sub_categories = category.sub_categories.filter(is_active=True).filter(Q(seller = self.context['request'].user.seller_profiles.first()))
         except:
             sub_categories = category.sub_categories.filter(is_active=True).filter(seller=None)
         return SubCategorySerializer(sub_categories, many=True).data
@@ -437,6 +437,9 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         except:
             name = None
         return name
+    no_of_product = serializers.SerializerMethodField()
+    def get_no_of_product(self,category):
+        return category.products.filter(is_active=True).count()
 
     class Meta:
         model = Category
@@ -445,7 +448,8 @@ class CategoriesSerializer2(serializers.ModelSerializer):
             'name',
             'seller',
             'sub_categories',
-            'image'
+            'image',
+            "no_of_product"
         ]
         extra_kwargs = {
             'image': {
@@ -532,18 +536,31 @@ class SubCategorySerializer(serializers.ModelSerializer):
         except:
             name = None
         return name
+    
+    no_of_product = serializers.SerializerMethodField()
+    def get_no_of_product(self,category):
+        return category.products.filter(is_active=True).count()
+    
     class Meta:
         model = Category
         fields = [
             'id',
             'name',
-            "seller"
+            "seller",
+            "no_of_product"
         ]
 
 class SubCategorySerializer2(serializers.ModelSerializer):
     category = serializers.SerializerMethodField()
     def get_category(self,category):
-        return category.parent.name
+        parent = None
+        try:
+            parent = category.parent.name
+        except:
+            parent = "(Category)"
+        return parent
+    
+   
     
     class Meta:
         model = Category
