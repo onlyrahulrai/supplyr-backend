@@ -197,11 +197,12 @@ class AutoCategoryRule(models.Model):
     ) 
     
    
-    category = models.ForeignKey(Category,on_delete=models.CASCADE)
+    category = models.ForeignKey(Category,on_delete=models.CASCADE,related_name="auto_category_rule")
     attribute_name = EnumField(choices=attribute_name_choices,null=True,blank=True)
     attribute_value = models.CharField(max_length=100)
-    attribute_unit = EnumField(choices=Product.WeightUnit.choices)
+    attribute_unit = EnumField(choices=Product.WeightUnit.choices,null=True,blank=True)
     comparison_type = EnumField(choices=comparison_type_choices,null=True,blank=True)
+    is_active = models.BooleanField(default=True)
 
 
 class Variant(Model):
