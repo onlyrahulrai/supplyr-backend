@@ -193,7 +193,9 @@ class AutoCategoryRule(models.Model):
         ("starts_with","Starts With"),
         ("ends_with","Ends with"),
         ("contains","Contains"),
-        ("does_not_contain","Does not contain")
+        ("does_not_contain","Does not contain"),
+        ("is_greater_than","Is greater than"),
+        ("is_less_than","Is less than")
     ) 
     
    

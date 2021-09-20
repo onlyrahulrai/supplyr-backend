@@ -437,7 +437,6 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         except:
             name = None
         return name
-    
     no_of_product = serializers.SerializerMethodField()
     def get_no_of_product(self,category):
         return category.products.filter(is_active=True).count()
@@ -498,8 +497,8 @@ class CategoriesSerializer2(serializers.ModelSerializer):
             value['delete_image'] = data['delete_image']
         value.update({
             "collection_type":action,
-            "condition_type":condition,
-            "rules":list(rules),
+            "condition_type":condition if condition else None,
+            "rules":list(rules) if rules else [],
             "description":description
         })
         
@@ -523,15 +522,22 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         user = validated_data.pop("seller")
         # action = validated_data.pop("action")
         # condition = validated_data.pop("condition")
+        
+        
+        collection_type = validated_data.pop("collection_type")
         rules = validated_data.pop("rules")
+        condition_type = validated_data.pop("condition_type")
         
         seller = User.objects.filter(username=user).first().seller_profiles.first()
-        category = Category.objects.create(seller=seller,**validated_data)
-        
-        
-        for rule in rules:
-            AutoCategoryRule.objects.create(category=category,attribute_name=rule.get("attribute_name"),comparison_type=rule.get("comparison_type"),attribute_value=rule.get("attribute_value"))
+        if collection_type == "automated":
+            category = Category.objects.create(seller=seller,collection_type=collection_type,condition_type=condition_type,**validated_data)
             
+            for rule in rules:
+                AutoCategoryRule.objects.create(category=category,attribute_name=rule.get("attribute_name"),comparison_type=rule.get("comparison_type"),attribute_value=rule.get("attribute_value"))
+                
+        elif collection_type == "manual":
+            category = Category.objects.create(seller=seller,collection_type=collection_type,**validated_data)
+        
      
         # for sub_category in sub_categories_data:
         #     Category.objects.create(parent=category,seller=seller,**sub_category)
@@ -543,35 +549,38 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         user = User.objects.filter(username=validated_data.get("seller")).first()
         seller_profile = user.seller_profiles.first()
         print("seller profile and category instance: ",instance,seller_profile)
+        collection_type = validated_data.pop("collection_type")
+        condition_type = validated_data.pop("condition_type",None)
         
         if instance.seller == seller_profile:
             instance.name = validated_data['name']
             instance.description = validated_data["description"]
-            instance.collection_type = validated_data["collection_type"]
-            instance.condition_type = validated_data["condition_type"]
+            instance.collection_type = collection_type
+            if collection_type == "automated":
+                instance.condition_type = condition_type
             # if 'delete_image' in validated_data:
             #     instance.image.delete(save=False)
             # elif 'image' in validated_data:
             #     instance.image = validated_data['image']
             instance.save()
             
-        auto_category_rule_initial = list(instance.auto_category_rule.all().values_list('id', flat=True))
-        auto_category_rule_final = []
-        rules_data = validated_data.pop("rules")
-        print("rules data----> ",rules_data)
-        for rule_data in rules_data:
-            if "id" in rule_data.keys():
-                rule = AutoCategoryRule(category=instance,**rule_data)
-            else:
-                rule_data.pop("setFocus")
-                rule = AutoCategoryRule(category=instance,**rule_data)
-            rule.save()
-            auto_category_rule_final.append(rule.id)
-                    
-        
             
-        rules_to_remove = [rule for rule in auto_category_rule_initial if rule not in auto_category_rule_final]
-        AutoCategoryRule.objects.filter(id__in=rules_to_remove).update(is_active = False)
+        if collection_type == "automated":
+            auto_category_rule_initial = list(instance.auto_category_rule.all().values_list('id', flat=True))
+            auto_category_rule_final = []
+            rules_data = validated_data.pop("rules")
+            print("rules data----> ",rules_data)
+            for rule_data in rules_data:
+                if "id" in rule_data.keys():
+                    rule = AutoCategoryRule(category=instance,**rule_data)
+                else:
+                    rule_data.pop("setFocus")
+                    rule = AutoCategoryRule(category=instance,**rule_data)
+                rule.save()
+                auto_category_rule_final.append(rule.id)
+                        
+            rules_to_remove = [rule for rule in auto_category_rule_initial if rule not in auto_category_rule_final]
+            AutoCategoryRule.objects.filter(id__in=rules_to_remove).update(is_active = False)
 
         # sub_categories_initial = list(instance.sub_categories.filter(Q(seller=None) | Q(seller=self.context['request'].user.seller_profiles.first())).values_list('id', flat=True))
         # print(sub_categories_initial)
