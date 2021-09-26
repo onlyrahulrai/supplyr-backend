@@ -467,7 +467,8 @@ class CategoriesSerializer2(serializers.ModelSerializer):
             'sub_categories',
             'image',
             "no_of_product",
-            "rules"
+            "rules",
+            "parent",
         ]
         extra_kwargs = {
             'image': {
@@ -482,7 +483,6 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         
         # sub_categories_raw_data = json.loads(data['sub_categories'])
         # sub_categories_data = map(lambda sc: {_key: sc[_key] for _key in ['name', 'id',"seller"] if _key in sc}, sub_categories_raw_data) # By default, 'id' field for sub categories was omitted., hence needed to include it
-        
         
         
         value["seller"] = data["seller"]
@@ -552,10 +552,15 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         collection_type = validated_data.pop("collection_type")
         condition_type = validated_data.pop("condition_type",None)
         
+        # parent = Category.objects.get(id=validated_data["parent"]) 
+
+    
+        
         if instance.seller == seller_profile:
             instance.name = validated_data['name']
             instance.description = validated_data["description"]
             instance.collection_type = collection_type
+            instance.parent = validated_data["parent"]
             if collection_type == "automated":
                 instance.condition_type = condition_type
             # if 'delete_image' in validated_data:
@@ -623,13 +628,19 @@ class SubCategorySerializer(serializers.ModelSerializer):
     def get_no_of_product(self,category):
         return category.products.filter(is_active=True).count()
     
+    
+    action = serializers.SerializerMethodField()
+    def get_action(self,category):
+        return category.collection_type
+    
     class Meta:
         model = Category
         fields = [
             'id',
             'name',
             "seller",
-            "no_of_product"
+            "no_of_product",
+            "action"
         ]
 
 class SubCategorySerializer2(serializers.ModelSerializer):

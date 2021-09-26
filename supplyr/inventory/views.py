@@ -193,14 +193,11 @@ class CategoriesDetailView(GenericAPIView,mixins.RetrieveModelMixin,mixins.Updat
         # return super().list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        print("request data :  -----> ",request.data)
         response = None
         if category_id := kwargs.get('pk'):
             # category_instance = get_object_or_404(Category, id=category_id)
-            response =  super().update(request, *args, **kwargs)
-        else: 
-            # response = super().create(request, *args, **kwargs)
-            response = None
-        response = self.inject_user_info(response.data, request.user)
+            response = self.inject_user_info(super().update(request, *args, **kwargs).data, request.user)
         return Response(response)
         
             
@@ -210,7 +207,6 @@ class CategoriesDetailView(GenericAPIView,mixins.RetrieveModelMixin,mixins.Updat
             category = Category.objects.filter(pk=category_id).update(is_active = False)
             return Response(None, status=204)
     
-
 class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.CreateModelMixin, UserInfoMixin):
     """
     View for viewing, adding, updating, and deleting categories and subcategories
@@ -234,14 +230,13 @@ class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModel
         return super().list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        response = None
+        print("requested data ------>:",request.data)
         # if category_id := kwargs.get('pk'):
         #     # category_instance = get_object_or_404(Category, id=category_id)
         #     response =  super().update(request, *args, **kwargs)
         # else: 
         #     response = super().create(request, *args, **kwargs)
-        response = super().create(request, *args, **kwargs)
-        response = self.inject_user_info(response.data, request.user)
+        response = self.inject_user_info(super().create(request, *args, **kwargs).data, request.user)
         return Response(response)
         
             
