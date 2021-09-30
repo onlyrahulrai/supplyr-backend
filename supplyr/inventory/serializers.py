@@ -195,7 +195,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     
     def to_internal_value(self, data):
         internal_value = super().to_internal_value(data)
-        # print('internal_value', data)
+        print('internal Product value    -------->  ', data)
 
         variants_raw_data = data.get('variants_data')
         is_multi_variant = variants_raw_data.get('multiple')
@@ -219,13 +219,14 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
             'multiple': is_multi_variant,
             'data': variants_field_data
         }
+        
 
         images = data.get('images')
         sub_categories = data.get('sub_categories')
         tags = data.get("tags")
         vendors = data.get("vendors")
         weight_unit = data.get("weight_unit")
-        weight_value = data.get("weight_value")
+        weight_value = float(data.get("weight_value")) / 1000 if weight_unit == "mg"  else (float(data.get("weight_value")) * 1000 if weight_unit == "kg" else float(data.get("weight_value")))
         country = data.get("country")
 
         internal_value.update({
@@ -243,7 +244,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        print("validated Data: ",validated_data)
+        print("validated Data ____________: ",validated_data)
         images = validated_data['images']
         del validated_data['images']    #Otherwise saving will break, as there are just image IDs in this field instead of instances
         tags_data = validated_data.pop("tags")
@@ -299,7 +300,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     
     @transaction.atomic
     def update(self, instance, validated_data):
-        print("update validated data: ",validated_data)
+        print("update validated data is this >>>>>>>>>>> : ",validated_data)
         
         ######### Add or (Create then Add) tags in product #########
         
@@ -479,12 +480,12 @@ class CategoriesSerializer2(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         value = super().to_internal_value(data)
-        print("category Data------> ",data.get("action"))
+        print(" Validated data is this >>>>>>>>>>>>>>> ",data)
         
         # sub_categories_raw_data = json.loads(data['sub_categories'])
         # sub_categories_data = map(lambda sc: {_key: sc[_key] for _key in ['name', 'id',"seller"] if _key in sc}, sub_categories_raw_data) # By default, 'id' field for sub categories was omitted., hence needed to include it
         
-        
+        value["selectedProducts"] = json.loads(data["selectedProducts"])
         value["seller"] = data["seller"]
         action = data.get("action")
         condition = data.get("condition")
@@ -520,12 +521,13 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         print("Category Data ----> ",validated_data)
         
         user = validated_data.pop("seller")
-        # action = validated_data.pop("action")
+        selectedProducts = validated_data.pop("selectedProducts")
         # condition = validated_data.pop("condition")
         
-        
+        print("Selecteds products is >>>>>>>>>>>>>>",type(selectedProducts))
         collection_type = validated_data.pop("collection_type")
         rules = validated_data.pop("rules")
+        
         condition_type = validated_data.pop("condition_type")
         
         seller = User.objects.filter(username=user).first().seller_profiles.first()
@@ -537,6 +539,10 @@ class CategoriesSerializer2(serializers.ModelSerializer):
                 
         elif collection_type == "manual":
             category = Category.objects.create(seller=seller,collection_type=collection_type,**validated_data)
+            
+            selected_products = Product.objects.filter(pk__in = selectedProducts, owner=seller, is_active = True)
+            for selected_product in selected_products:
+                selected_product.sub_categories.add(category)
         
      
         # for sub_category in sub_categories_data:
@@ -545,13 +551,13 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         return category
 
     def update(self, instance, validated_data):
-        print("validated_date ------> ",validated_data)
+        # print("validated_date ------> ",validated_data)
         user = User.objects.filter(username=validated_data.get("seller")).first()
         seller_profile = user.seller_profiles.first()
         print("seller profile and category instance: ",instance,seller_profile)
         collection_type = validated_data.pop("collection_type")
         condition_type = validated_data.pop("condition_type",None)
-        
+        selectedProducts = validated_data.pop("selectedProducts")
         # parent = Category.objects.get(id=validated_data["parent"]) 
 
     
@@ -563,10 +569,10 @@ class CategoriesSerializer2(serializers.ModelSerializer):
             instance.parent = validated_data["parent"]
             if collection_type == "automated":
                 instance.condition_type = condition_type
-            # if 'delete_image' in validated_data:
-            #     instance.image.delete(save=False)
-            # elif 'image' in validated_data:
-            #     instance.image = validated_data['image']
+            if 'delete_image' in validated_data:
+                instance.image.delete(save=False)
+            elif 'image' in validated_data:
+                instance.image = validated_data['image']
             instance.save()
             
             
