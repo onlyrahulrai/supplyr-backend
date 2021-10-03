@@ -244,7 +244,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        print("validated Data ____________: ",validated_data)
+        # print("validated Data ____________: ",validated_data)
         images = validated_data['images']
         del validated_data['images']    #Otherwise saving will break, as there are just image IDs in this field instead of instances
         tags_data = validated_data.pop("tags")
@@ -300,7 +300,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     
     @transaction.atomic
     def update(self, instance, validated_data):
-        print("update validated data is this >>>>>>>>>>> : ",validated_data)
+        # print("update validated data is this >>>>>>>>>>> : ",validated_data)
         
         ######### Add or (Create then Add) tags in product #########
         
@@ -329,7 +329,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         super().update(instance, validated_data)
         variants_data = validated_data['variants_data']
         is_multi_variant = variants_data['multiple']
-        print("VD", variants_data['data'])
+        # print("VD", variants_data['data'])
         variants_before = set(product.variants.filter(is_active = True).values_list('id', flat=True))  
         variants_serializer = VariantSerializer(data = variants_data['data'], many=is_multi_variant)
         if variants_serializer.is_valid(raise_exception=True):
@@ -480,7 +480,7 @@ class CategoriesSerializer2(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         value = super().to_internal_value(data)
-        print(" Validated data is this >>>>>>>>>>>>>>> ",data)
+        # print(" Validated data is this >>>>>>>>>>>>>>> ",data)
         
         # sub_categories_raw_data = json.loads(data['sub_categories'])
         # sub_categories_data = map(lambda sc: {_key: sc[_key] for _key in ['name', 'id',"seller"] if _key in sc}, sub_categories_raw_data) # By default, 'id' field for sub categories was omitted., hence needed to include it
@@ -524,7 +524,7 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         selectedProducts = validated_data.pop("selectedProducts")
         # condition = validated_data.pop("condition")
         
-        print("Selecteds products is >>>>>>>>>>>>>>",type(selectedProducts))
+        # print("Selecteds products is >>>>>>>>>>>>>>",type(selectedProducts))
         collection_type = validated_data.pop("collection_type")
         rules = validated_data.pop("rules")
         
@@ -534,8 +534,17 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         if collection_type == "automated":
             category = Category.objects.create(seller=seller,collection_type=collection_type,condition_type=condition_type,**validated_data)
             
-            for rule in rules:
-                AutoCategoryRule.objects.create(category=category,attribute_name=rule.get("attribute_name"),comparison_type=rule.get("comparison_type"),attribute_value=rule.get("attribute_value"))
+            for rule in rules: 
+                attribute_value = None
+                if rule.get("attribute_name") == "weight":
+                    attribute_value = float(rule.get("attribute_value")) / 1000 if rule.get("attribute_unit") == "mg" else (float(rule.get("attribute_value")) * 1000 if rule.get("attribute_unit") == "kg" else float(rule.get("attribute_value")))
+                else:
+                    attribute_value = rule.get("attribute_value")
+                AutoCategoryRule.objects.create(category=category,attribute_name=rule.get("attribute_name"),comparison_type=rule.get("comparison_type"),attribute_value=attribute_value,attribute_unit=rule.get("attribute_unit",None))
+
+
+
+                # AutoCategoryRule.objects.create(category=category,**rule)
                 
         elif collection_type == "manual":
             category = Category.objects.create(seller=seller,collection_type=collection_type,**validated_data)
@@ -543,6 +552,11 @@ class CategoriesSerializer2(serializers.ModelSerializer):
             selected_products = Product.objects.filter(pk__in = selectedProducts, owner=seller, is_active = True)
             for selected_product in selected_products:
                 selected_product.sub_categories.add(category)
+                
+        if(category.parent):
+            seller.operational_fields.add(category)
+        else:
+            pass
         
      
         # for sub_category in sub_categories_data:
@@ -551,10 +565,10 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         return category
 
     def update(self, instance, validated_data):
-        # print("validated_date ------> ",validated_data)
+        print("validated_date ------>?>>>>> ",validated_data)
         user = User.objects.filter(username=validated_data.get("seller")).first()
         seller_profile = user.seller_profiles.first()
-        print("seller profile and category instance: ",instance,seller_profile)
+        # print("seller profile and category instance: ",instance,seller_profile)
         collection_type = validated_data.pop("collection_type")
         condition_type = validated_data.pop("condition_type",None)
         selectedProducts = validated_data.pop("selectedProducts")
@@ -580,7 +594,7 @@ class CategoriesSerializer2(serializers.ModelSerializer):
             auto_category_rule_initial = list(instance.auto_category_rule.all().values_list('id', flat=True))
             auto_category_rule_final = []
             rules_data = validated_data.pop("rules")
-            print("rules data----> ",rules_data)
+            # print("rules data----> ",rules_data)
             for rule_data in rules_data:
                 if "id" in rule_data.keys():
                     rule = AutoCategoryRule(category=instance,**rule_data)
@@ -658,9 +672,7 @@ class SubCategorySerializer2(serializers.ModelSerializer):
         except:
             parent = "(Category)"
         return parent
-    
-   
-    
+     
     class Meta:
         model = Category
         fields = [
@@ -670,9 +682,15 @@ class SubCategorySerializer2(serializers.ModelSerializer):
         ]
 
 class AutoCategoryRuleSerializer(serializers.ModelSerializer):
+    attribute_value = serializers.SerializerMethodField()
+    def get_attribute_value(self,auto):
+        if auto.attribute_name == "weight":
+            return float(auto.attribute_value) * 1000 if auto.attribute_unit == "mg" else float(auto.attribute_value) / 1000 if auto.attribute_unit == "kg" else auto.attribute_value
+        return auto.attribute_value
+
     class Meta:
         model = AutoCategoryRule
-        fields = ["id","attribute_name","attribute_value","comparison_type"]
+        fields = ["id","attribute_name","attribute_value","comparison_type","attribute_unit"]
 
 class TagsSerializer(serializers.ModelSerializer):
     label = serializers.SerializerMethodField()
