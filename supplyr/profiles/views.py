@@ -149,7 +149,7 @@ class SellerView(views.APIView, APISourceMixin):
     def post(self, request, *args, **kwargs):
         code = request.data['connection_code']
         print(code)
-        if seller := SellerProfile.objects.filter(connection_code__iexact = code, is_active= True, is_approved=True).first():
+        if seller := SellerProfile.objects.filter(connection_code__iexact = code, is_active= True, status=SellerProfile.SellerStatusChoice.APPROVED).first():
             BuyerSellerConnection.objects.get_or_create(seller=seller, is_active=True, buyer = self.request.user.get_buyer_profile())
             return Response({'success': True})
         else:
