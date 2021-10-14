@@ -1,4 +1,9 @@
+from re import sub
+from rest_framework.response import Response
+from supplyr.inventory.models import Category
+from supplyr.inventory.serializers import CategoriesSerializer2
 from django.http import JsonResponse
+from django.http.response import HttpResponse
 from django.shortcuts import redirect, render
 from django.contrib.auth import authenticate, logout, login
 from django.contrib.auth.decorators import login_required
@@ -15,13 +20,12 @@ from supplyr.profiles.models import SellerProfile
 from .filters import SellerProfileFilter
 from supplyr.profiles.models import SellerProfile
 import json
-from .forms import LoginForm
+from .forms import CategoryCreateForm, LoginForm
 from supplyr.profiles.serializers import SellerProfilingSerializer
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework import permissions
 from .utils import CustomPageNumber
-
-
+from rest_framework.decorators import api_view
 
 
 @login_required(login_url="login")
@@ -116,3 +120,86 @@ def seller_profiles(request):
         result_page = paginator.paginate_queryset(filters.qs, request)
         serializer = SellerProfilingSerializer(result_page,many=True)
         return paginator.get_paginated_response(serializer.data)
+    
+@login_required(login_url="login")
+@admin_only
+def categories_list(request):
+    categories = Category.objects.filter(is_active=True,parent=None,seller=None)
+    serializer = CategoriesSerializer2(categories,many=True)
+    context = {
+        "categories":serializer.data
+    }
+    return render(request,"categories.html",context)
+
+@login_required(login_url="login")
+@admin_only
+def category_action(request,pk=None):
+    context = {
+        "title":"Create action"
+    }
+    return render(request,"category_form.html",context)
+
+@login_required(login_url="login")
+@admin_only
+def category_detail(request,pk=None):
+    if request.method == "GET":
+        category = get_object_or_404(Category,pk=pk)
+        serializer = CategoriesSerializer2(category)
+        return JsonResponse(serializer.data)
+    
+@csrf_exempt
+@login_required(login_url="login")
+@admin_only
+def category_create(request):
+    if request.method == "POST":
+        sub_categories = json.loads(request.POST.get("sub_categories"))
+        form = CategoryCreateForm(request.POST,request.FILES)
+        if form.is_valid():
+            parent = form.save()
+            for sub_category in sub_categories:
+                create_sub_category = Category.objects.create(parent=parent,**sub_category)
+                create_sub_category.save()
+    return JsonResponse({"success":True,"status":200})
+
+@csrf_exempt
+@login_required(login_url="login")
+@admin_only
+def category_update(request,pk=None):
+    if request.method == "POST":
+        category = get_object_or_404(Category,pk=pk)
+        sub_categories = json.loads(request.POST.get("sub_categories"))
+        form = CategoryCreateForm(request.POST,request.FILES,instance=category)
+        if form.is_valid():
+            parent = form.save()
+            sub_categories_initial = list(parent.sub_categories.filter(seller=None).values_list('id', flat=True))
+            sub_categories_final = []
+            for sub_category in sub_categories:
+                try:
+                    if "id" in sub_category.keys():
+                        user = User.objects.filter(username=sub_category.get("seller")).first()
+                        sub_category["seller"] = user.seller_profiles.first()
+                    else:
+                        sub_category["seller"] = None
+                except:
+                    sub_category["seller"] = None
+                    
+                updated_sub_category = Category(parent=parent,**sub_category)
+                updated_sub_category.save()
+                sub_categories_final.append(updated_sub_category.id)
+                
+            sub_categories_to_remove = [sc for sc in sub_categories_initial if sc not in sub_categories_final]
+            Category.objects.filter(id__in=sub_categories_to_remove).update(is_active = False)
+            return JsonResponse({"success":True,"status":200})
+        else:
+            return JsonResponse({"success":False,"status":304})
+
+@csrf_exempt
+@login_required(login_url="login")
+@admin_only
+def category_delete(request,pk=None):
+    if request.method == "DELETE":
+        category = get_object_or_404(Category,pk=pk)
+        category.is_active = False
+        category.save()
+        return JsonResponse({"success":True,"status":200})
+    

@@ -1,5 +1,6 @@
-from django.http import request
-from django.shortcuts import render, get_object_or_404
+from supplyr.utils.api.mixins import UserInfoMixin
+from django.http.response import JsonResponse
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -14,7 +15,7 @@ from supplyr.profiles.models import SellerProfile
 from .models import Product, Variant, ProductImage
 from django.db.models import Prefetch, Q, Count, Sum, Min, Max
 
-class AddProduct(APIView):
+class AddProduct(APIView,UserInfoMixin):
     permission_classes = [IsApproved]
     def post(self, request, *args, **kwargs):
         
@@ -30,8 +31,9 @@ class AddProduct(APIView):
         if product_serializer.is_valid():
             product = product_serializer.save(owner = profile)
 
+        response = self.inject_user_info(product_serializer.data, request.user)
 
-        return Response({"product": product_serializer.data})
+        return Response({"product": response })
 
 class DeleteProduct(APIView):
     permission_classes = [IsApproved]
@@ -75,7 +77,6 @@ class ProductImageUpload(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save(uploaded_by = request.user.seller_profiles.first())
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
 
 class SellerSelfProductListView(ListAPIView):
     """
@@ -173,8 +174,40 @@ class ProductsBulkUpdateView(APIView):
         
         return Response({'success': True})
 
+class CategoriesDetailView(GenericAPIView,mixins.RetrieveModelMixin,mixins.UpdateModelMixin,UserInfoMixin):
+    serializer_class = CategoriesSerializer2
+    permission_classes = [IsApproved]
+    # parser_classes = [FormParser, MultiPartParser]
+    pagination_class = None
+    
+    def get_queryset(self):
+        try:
+            seller_profile = self.request.user.seller_profiles.first()
+        except:
+            seller_profile = None
+        return Category.objects.filter(is_active=True).filter(Q(seller=seller_profile))
+    
+    def get(self, request, *args, **kwargs):
+        # if kwargs.get('pk'):
+        return super().retrieve(request, *args, **kwargs)
+        # return super().list(request, *args, **kwargs)
 
-class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.CreateModelMixin):
+    def post(self, request, *args, **kwargs):
+        print("request data :  -----> ",request.data)
+        response = None
+        if category_id := kwargs.get('pk'):
+            # category_instance = get_object_or_404(Category, id=category_id)
+            response = self.inject_user_info(super().update(request, *args, **kwargs).data, request.user)
+        return Response(response)
+        
+            
+    
+    def delete(self, request, *args, **kwargs):
+        if category_id := kwargs.get('pk'):
+            category = Category.objects.filter(pk=category_id).update(is_active = False)
+            return Response(None, status=204)
+    
+class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.UpdateModelMixin, mixins.CreateModelMixin, UserInfoMixin):
     """
     View for viewing, adding, updating, and deleting categories and subcategories
     """
@@ -184,26 +217,34 @@ class CategoriesView(GenericAPIView, mixins.ListModelMixin, mixins.RetrieveModel
     pagination_class = None
     
     def get_queryset(self):
-        seller_profile = self.request.user.seller_profiles.first()
-        return Category.objects.filter(is_active=True,parent=None).filter(Q(seller=None) | Q(seller=seller_profile))
+        try:
+            seller_profile = self.request.user.seller_profiles.first()
+        except:
+            seller_profile = None
+        return Category.objects.filter(is_active=True,parent=None).filter(Q(seller=seller_profile))
          
 
     def get(self, request, *args, **kwargs):
-        if kwargs.get('pk'):
-            return super().retrieve(request, *args, **kwargs)
+        # if kwargs.get('pk'):
+        #     return super().retrieve(request, *args, **kwargs)
         return super().list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        if category_id := kwargs.get('pk'):
-            # category_instance = get_object_or_404(Category, id=category_id)
-            return super().update(request, *args, **kwargs)
-        return super().create(request, *args, **kwargs)
+        print("requested data ------>:",request.data)
+        # if category_id := kwargs.get('pk'):
+        #     # category_instance = get_object_or_404(Category, id=category_id)
+        #     response =  super().update(request, *args, **kwargs)
+        # else: 
+        #     response = super().create(request, *args, **kwargs)
+        response = self.inject_user_info(super().create(request, *args, **kwargs).data, request.user)
+        return Response(response)
+        
+            
     
-    def delete(self, request, *args, **kwargs):
-        if category_id := kwargs.get('pk'):
-            category = Category.objects.filter(pk=category_id).update(is_active = False)
-            return Response(None, status=204)
-
+    # def delete(self, request, *args, **kwargs):
+    #     if category_id := kwargs.get('pk'):
+    #         category = Category.objects.filter(pk=category_id).update(is_active = False)
+    #         return Response(None, status=204)
 
 class UpdateFavouritesView(APIView):
     permission_classes = [IsAuthenticated, IsFromBuyerAPI]

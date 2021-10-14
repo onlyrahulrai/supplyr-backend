@@ -132,7 +132,7 @@ class BuyerAddress(models.Model):
 
     is_default = models.BooleanField(default=False)
 
-    owner = models.ForeignKey('profiles.BuyerProfile', on_delete=models.CASCADE)
+    owner = models.ForeignKey('profiles.BuyerProfile', on_delete=models.CASCADE,related_name="buyer_address")
     is_active = models.BooleanField(default=True)
 
     class Meta:

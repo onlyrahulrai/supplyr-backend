@@ -413,11 +413,13 @@ class UpdateMobileNumberConfirmView(GenericAPIView,UserInfoMixin):
         if otp := user.verification_otps.filter(mobile_number=new_mobile, code=code, id=otp_id, created_at__gt=timezone.now() - timedelta(minutes=settings.MOBILE_VERIFICATION_OTP_EXPIRY_MINUTES)).first():
             user.mobile_number = new_mobile
             user.save()
-                
-            return Response({
+            
+            res = {
                 'success': True, 
                 "message": _("Mobile Number has been set with a new number.")
-            })
+            }
+                
+            return Response(self.inject_user_info(res,request.user))
             
         else:
             return Response({

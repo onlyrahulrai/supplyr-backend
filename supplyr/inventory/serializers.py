@@ -1,11 +1,14 @@
 import os
 import json
+from django.http import request
+from django_extensions.db import fields
 from rest_framework import serializers
-from .models import Product, Variant, ProductImage, Category
+from .models import AutoCategoryRule, Product, Tags, User, Variant, ProductImage, Category, Vendors
 from supplyr.profiles.models import SellerProfile
 from django.conf import settings
 from django.db import transaction
 from django.db.models.functions import Coalesce
+from django.db.models import Q
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -150,6 +153,8 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     variants_data = serializers.SerializerMethodField('get_variants_data')
     owner = ProductOwnerSerializer(read_only=True)
     images = serializers.SerializerMethodField(read_only=True)
+    tags = serializers.SerializerMethodField()
+    vendors = serializers.SerializerMethodField()
     sub_categories = serializers.SerializerMethodField()
     is_favourite = serializers.SerializerMethodField()
 
@@ -161,6 +166,14 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
             return buyer_profile and buyer_profile.favourite_products.filter(id= product.id).exists()
         return None
 
+    def get_tags(self,product):
+        tags = product.tags.all()
+        return TagsSerializer(tags,many=True).data
+    
+    def get_vendors(self,product):
+        vendors = product.vendors
+        return VendorsSerializer(vendors).data
+
     def get_sub_categories(self, product):
         sub_categories = product.sub_categories.all()
         return SubCategorySerializer2(sub_categories, many=True).data
@@ -170,6 +183,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         serializer = self.ProductImageReadOnlySerializer(qs, many=True)
         return serializer.data
 
+    
 
     def get_variants_data(self, instance):
         multiple = instance.has_multiple_variants()
@@ -181,7 +195,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     
     def to_internal_value(self, data):
         internal_value = super().to_internal_value(data)
-        # print('internal_value', data)
+        print('internal Product value    -------->  ', data)
 
         variants_raw_data = data.get('variants_data')
         is_multi_variant = variants_raw_data.get('multiple')
@@ -205,13 +219,24 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
             'multiple': is_multi_variant,
             'data': variants_field_data
         }
+        
 
         images = data.get('images')
         sub_categories = data.get('sub_categories')
+        tags = data.get("tags")
+        vendors = data.get("vendors")
+        weight_unit = data.get("weight_unit")
+        weight_value = float(data.get("weight_value")) / 1000 if weight_unit == "mg"  else (float(data.get("weight_value")) * 1000 if weight_unit == "kg" else float(data.get("weight_value")))
+        country = data.get("country")
 
         internal_value.update({
             'variants_data': variants_final_data,
             'images': images,
+            "weight_unit":weight_unit,
+            "weight_value":weight_value,
+            "tags":tags,
+            "vendors":vendors,
+            "country":country,
             'sub_categories': sub_categories,   #SerializerMethodField is readOnly. So need to include it here manually to save it
         })
 
@@ -219,13 +244,30 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-
+        # print("validated Data ____________: ",validated_data)
         images = validated_data['images']
         del validated_data['images']    #Otherwise saving will break, as there are just image IDs in this field instead of instances
+        tags_data = validated_data.pop("tags")
         sub_categories = validated_data.pop('sub_categories')
         variants_data = validated_data.pop('variants_data')
+        
+        ######### Add or (Create then Add) tags in product #########
+        
+        tags = [(Tags.objects.create(name=tag.get("label"),seller=validated_data.get("owner")).id) if(tag.get("new")) else tag.get("id") for tag in list(tags_data)]
+        
+        ######### Add or (Create then Add) tags in product #########
+        
+        ######### Add or (Create then Add) vendors in product #########
+        vendor_data = validated_data.pop("vendors")
+        
+        vendor = Vendors.objects.create(name=vendor_data.get("label"),seller=validated_data.get("owner")) if(vendor_data.get("new")) else Vendors.objects.get(id=vendor_data.get("id"))
+      
+        validated_data["vendors"] = vendor
+        ######### Add or (Create then Add) vendors in product #########
 
         product = Product.objects.create(**validated_data)
+        
+        product.tags.set(tags)
 
         product.sub_categories.set(sub_categories)
         is_multi_variant = variants_data['multiple']
@@ -258,6 +300,28 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     
     @transaction.atomic
     def update(self, instance, validated_data):
+        # print("update validated data is this >>>>>>>>>>> : ",validated_data)
+        
+        ######### Add or (Create then Add) tags in product #########
+        
+        tags_data = validated_data.get("tags")
+        del validated_data['tags']
+                
+        tags = [(Tags.objects.create(name=tag.get("label"),seller=validated_data.get("owner")).id) if(tag.get("new")) else tag.get("id") for tag in list(tags_data)]
+                
+        instance.tags.set(tags)
+        
+        ######### Add or (Create then Add) tags in product #########
+        
+        ######### Add or (Create then Add) vendors in product #########
+        vendor_data = validated_data.pop("vendors")
+        
+        vendor = Vendors.objects.create(name=vendor_data.get("label"),seller=validated_data.get("owner")) if(vendor_data.get("new")) else Vendors.objects.get(id=vendor_data.get("id"))
+        
+        validated_data["vendors"] = vendor
+        ######### Add or (Create then Add) vendors in product #########
+        
+        
         product = instance
         images = validated_data['images']
         del validated_data['images']    #Otherwise saving will break, as there are just image IDs in this field instead of instances
@@ -265,7 +329,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         super().update(instance, validated_data)
         variants_data = validated_data['variants_data']
         is_multi_variant = variants_data['multiple']
-        print("VD", variants_data['data'])
+        # print("VD", variants_data['data'])
         variants_before = set(product.variants.filter(is_active = True).values_list('id', flat=True))  
         variants_serializer = VariantSerializer(data = variants_data['data'], many=is_multi_variant)
         if variants_serializer.is_valid(raise_exception=True):
@@ -312,7 +376,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'title', 'slug', 'description', 'owner', 'images', 'variants_data', 'sub_categories', 'is_favourite']
+        fields = ['id', 'title', 'slug', 'description', 'owner', 'images', 'variants_data',"vendors","tags", 'sub_categories', 'is_favourite',"weight_unit","weight_value","country"]
         # depth = 1
 
 
@@ -360,16 +424,52 @@ class CategoriesSerializer2(serializers.ModelSerializer):
     
     sub_categories = serializers.SerializerMethodField()
     def get_sub_categories(self, category):
-        sub_categories = category.sub_categories.filter(is_active=True)
+        try:
+            sub_categories = category.sub_categories.filter(is_active=True).filter(Q(seller = self.context['request'].user.seller_profiles.first()))
+        except:
+            sub_categories = category.sub_categories.filter(is_active=True).filter(seller=None)
         return SubCategorySerializer(sub_categories, many=True).data
+    
+    seller = serializers.SerializerMethodField()
+    def get_seller(self,category):
+        name = None
+        try:
+            name = category.seller.owner.username
+        except:
+            name = None
+        return name
+    no_of_product = serializers.SerializerMethodField()
+    def get_no_of_product(self,category):
+        return category.products.filter(is_active=True).count()
+    
+    rules = serializers.SerializerMethodField()
+    def get_rules(self,category):
+        auto_category_rules = category.auto_category_rule.filter(is_active=True)
+        return AutoCategoryRuleSerializer(auto_category_rules,many=True).data
+        
+    action = serializers.SerializerMethodField()
+    def get_action(self,category):
+        return category.collection_type
+    
+    condition = serializers.SerializerMethodField()
+    def get_condition(self,category):
+        return category.condition_type
+    
 
     class Meta:
         model = Category
         fields = [
-            'name',
             'id',
+            'name',
+            "description",
+            "action",
+            "condition",
+            'seller',
             'sub_categories',
-            'image'
+            'image',
+            "no_of_product",
+            "rules",
+            "parent",
         ]
         extra_kwargs = {
             'image': {
@@ -380,11 +480,29 @@ class CategoriesSerializer2(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         value = super().to_internal_value(data)
-        sub_categories_raw_data = json.loads(data['sub_categories'])
-        sub_categories_data = map(lambda sc: {_key: sc[_key] for _key in ['name', 'id'] if _key in sc}, sub_categories_raw_data) # By default, 'id' field for sub categories was omitted., hence needed to include it
-        value['sub_categories'] = sub_categories_data # By default,  'id' field for sub categories was omitted.
+        # print(" Validated data is this >>>>>>>>>>>>>>> ",data)
+        
+        # sub_categories_raw_data = json.loads(data['sub_categories'])
+        # sub_categories_data = map(lambda sc: {_key: sc[_key] for _key in ['name', 'id',"seller"] if _key in sc}, sub_categories_raw_data) # By default, 'id' field for sub categories was omitted., hence needed to include it
+        
+        value["selectedProducts"] = json.loads(data["selectedProducts"])
+        value["seller"] = data["seller"]
+        action = data.get("action")
+        condition = data.get("condition")
+        rules = json.loads(data.get("rules"))
+        description = data.get("description")
+        
+        # value['sub_categories'] = sub_categories_data # By default,  'id' field for sub categories was omitted.
+        
         if 'delete_image' in data:
             value['delete_image'] = data['delete_image']
+        value.update({
+            "collection_type":action,
+            "condition_type":condition if condition else None,
+            "rules":list(rules) if rules else [],
+            "description":description
+        })
+        
         return value
 
     def to_representation(self, instance):
@@ -395,51 +513,166 @@ class CategoriesSerializer2(serializers.ModelSerializer):
 
     def create(self, validated_data):
         # Not very secure, for staff use only. Will need to add more security if it needs to be open to public, like popping ID field
-        seller =  self.context['request'].user.seller_profiles.first()
-        sub_categories_data = validated_data.pop('sub_categories')
-        if self.context['request'].user.is_staff:
-            category = Category.objects.create(seller=None,**validated_data)
+        
+        
+       
+        # sub_categories_data = validated_data.pop('sub_categories')
+        
+        print("Category Data ----> ",validated_data)
+        
+        user = validated_data.pop("seller")
+        selectedProducts = validated_data.pop("selectedProducts")
+        # condition = validated_data.pop("condition")
+        
+        # print("Selecteds products is >>>>>>>>>>>>>>",type(selectedProducts))
+        collection_type = validated_data.pop("collection_type")
+        rules = validated_data.pop("rules")
+        
+        condition_type = validated_data.pop("condition_type")
+        
+        seller = User.objects.filter(username=user).first().seller_profiles.first()
+        if collection_type == "automated":
+            category = Category.objects.create(seller=seller,collection_type=collection_type,condition_type=condition_type,**validated_data)
+            
+            for rule in rules: 
+                attribute_value = None
+                if rule.get("attribute_name") == "weight":
+                    attribute_value = float(rule.get("attribute_value")) / 1000 if rule.get("attribute_unit") == "mg" else (float(rule.get("attribute_value")) * 1000 if rule.get("attribute_unit") == "kg" else float(rule.get("attribute_value")))
+                else:
+                    attribute_value = rule.get("attribute_value")
+                AutoCategoryRule.objects.create(category=category,attribute_name=rule.get("attribute_name"),comparison_type=rule.get("comparison_type"),attribute_value=attribute_value,attribute_unit=rule.get("attribute_unit",None))
+
+
+
+                # AutoCategoryRule.objects.create(category=category,**rule)
+                
+        elif collection_type == "manual":
+            category = Category.objects.create(seller=seller,collection_type=collection_type,**validated_data)
+            
+            selected_products = Product.objects.filter(pk__in = selectedProducts, owner=seller, is_active = True)
+            for selected_product in selected_products:
+                selected_product.sub_categories.add(category)
+                
+        if(category.parent):
+            seller.operational_fields.add(category)
         else:
-            category = Category.objects.create(seller=seller,**validated_data)
-        for sub_category in sub_categories_data:
-            Category.objects.create(parent=category, **sub_category)
+            pass
+        
+     
+        # for sub_category in sub_categories_data:
+        #     Category.objects.create(parent=category,seller=seller,**sub_category)
 
         return category
 
     def update(self, instance, validated_data):
-        instance.name = validated_data['name']
-        if 'delete_image' in validated_data:
-            instance.image.delete(save=False)
-        elif 'image' in validated_data:
-            instance.image = validated_data['image']
-        instance.save()
+        print("validated_date ------>?>>>>> ",validated_data)
+        user = User.objects.filter(username=validated_data.get("seller")).first()
+        seller_profile = user.seller_profiles.first()
+        # print("seller profile and category instance: ",instance,seller_profile)
+        collection_type = validated_data.pop("collection_type")
+        condition_type = validated_data.pop("condition_type",None)
+        selectedProducts = validated_data.pop("selectedProducts")
+        # parent = Category.objects.get(id=validated_data["parent"]) 
 
-        sub_categories_initial = list(instance.sub_categories.values_list('id', flat=True))
-        sub_categories_final = []
-        sub_categories_data = validated_data.pop('sub_categories')
-        for sc_data in sub_categories_data:
-            sc = Category(parent=instance, **sc_data)
-            sc.save()
-            sub_categories_final.append(sc.id)
+    
+        
+        if instance.seller == seller_profile:
+            instance.name = validated_data['name']
+            instance.description = validated_data["description"]
+            instance.collection_type = collection_type
+            instance.parent = validated_data["parent"]
+            if collection_type == "automated":
+                instance.condition_type = condition_type
+            if 'delete_image' in validated_data:
+                instance.image.delete(save=False)
+            elif 'image' in validated_data:
+                instance.image = validated_data['image']
+            instance.save()
             
-        sub_categories_to_remove = [sc for sc in sub_categories_initial if sc not in sub_categories_final]
-        Category.objects.filter(id__in=sub_categories_to_remove).update(is_active = False)
+            
+        if collection_type == "automated":
+            auto_category_rule_initial = list(instance.auto_category_rule.all().values_list('id', flat=True))
+            auto_category_rule_final = []
+            rules_data = validated_data.pop("rules")
+            # print("rules data----> ",rules_data)
+            for rule_data in rules_data:
+                if "id" in rule_data.keys():
+                    rule = AutoCategoryRule(category=instance,**rule_data)
+                else:
+                    rule_data.pop("setFocus")
+                    rule = AutoCategoryRule(category=instance,**rule_data)
+                rule.save()
+                auto_category_rule_final.append(rule.id)
+                        
+            rules_to_remove = [rule for rule in auto_category_rule_initial if rule not in auto_category_rule_final]
+            AutoCategoryRule.objects.filter(id__in=rules_to_remove).update(is_active = False)
+
+        # sub_categories_initial = list(instance.sub_categories.filter(Q(seller=None) | Q(seller=self.context['request'].user.seller_profiles.first())).values_list('id', flat=True))
+        # print(sub_categories_initial)
+        # sub_categories_final = []
+        # sub_categories_data = validated_data.pop('sub_categories')
+        # for sc_data in list(sub_categories_data):
+        #     try:
+        #         if "id" in sc_data.keys():
+        #             user = User.objects.filter(username=sc_data.get("seller")).first()
+        #             sc_data["seller"] = user.seller_profiles.first()
+        #             print("sub-category updated")
+        #         else:
+        #             sc_data["seller"] = self.context['request'].user.seller_profiles.first()
+        #             print("sub-category created")
+        #     except:
+        #         sc_data["seller"] = None
+            
+        #     print("sub-category updated",sc_data)
+        #     sc = Category(parent=instance, **sc_data)
+        #     sc.save()
+        #     sub_categories_final.append(sc.id)
+            
+            
+        # sub_categories_to_remove = [sc for sc in sub_categories_initial if sc not in sub_categories_final]
+        # Category.objects.filter(id__in=sub_categories_to_remove).update(is_active = False)
         return instance
 
         
 class SubCategorySerializer(serializers.ModelSerializer):
+    seller = serializers.SerializerMethodField()
+    def get_seller(self,category):
+        name = None
+        try:
+            name = category.seller.owner.username
+        except:
+            name = None
+        return name
+    
+    no_of_product = serializers.SerializerMethodField()
+    def get_no_of_product(self,category):
+        return category.products.filter(is_active=True).count()
+    
+    
+    action = serializers.SerializerMethodField()
+    def get_action(self,category):
+        return category.collection_type
+    
     class Meta:
         model = Category
         fields = [
             'id',
-            'name'
+            'name',
+            "seller",
+            "no_of_product",
+            "action"
         ]
 
 class SubCategorySerializer2(serializers.ModelSerializer):
     category = serializers.SerializerMethodField()
     def get_category(self,category):
-        return category.parent.name
-    
+        parent = None
+        try:
+            parent = category.parent.name
+        except:
+            parent = "(Category)"
+        return parent
+     
     class Meta:
         model = Category
         fields = [
@@ -447,3 +680,30 @@ class SubCategorySerializer2(serializers.ModelSerializer):
             'name',
             'category'
         ]
+
+class AutoCategoryRuleSerializer(serializers.ModelSerializer):
+    attribute_value = serializers.SerializerMethodField()
+    def get_attribute_value(self,auto):
+        if auto.attribute_name == "weight":
+            return float(auto.attribute_value) * 1000 if auto.attribute_unit == "mg" else float(auto.attribute_value) / 1000 if auto.attribute_unit == "kg" else auto.attribute_value
+        return auto.attribute_value
+
+    class Meta:
+        model = AutoCategoryRule
+        fields = ["id","attribute_name","attribute_value","comparison_type","attribute_unit"]
+
+class TagsSerializer(serializers.ModelSerializer):
+    label = serializers.SerializerMethodField()
+    def get_label(self,tags):
+        return tags.name
+    class Meta:
+        model = Tags
+        fields = ["id","label"]
+        
+class VendorsSerializer(serializers.ModelSerializer):
+    label = serializers.SerializerMethodField()
+    def get_label(self,vendors):
+        return vendors.name
+    class Meta:
+        model = Vendors
+        fields = ["id","label"]

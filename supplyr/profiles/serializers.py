@@ -3,8 +3,8 @@ from rest_framework import serializers
 from .models import BuyerAddress, BuyerProfile, SellerProfile, SalespersonProfile
 from django.contrib.auth import get_user_model
 from typing import Dict
-from supplyr.inventory.models import Category
-from supplyr.inventory.serializers import SubCategorySerializer2, SubCategorySerializer
+from supplyr.inventory.models import Category, Tags
+from supplyr.inventory.serializers import CategoriesSerializer2, SubCategorySerializer2, SubCategorySerializer, TagsSerializer, VendorsSerializer
 
 
 User = get_user_model()
@@ -31,14 +31,37 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
     sub_categories = serializers.SerializerMethodField()
     def get_sub_categories(self, profile):
         sub_categories = profile.operational_fields.all()
-        sub_categories_serializer = SubCategorySerializer2(sub_categories, many=True)
+        parent_category_list = []
+        
+        for sub_category in sub_categories:
+            if sub_category.parent not in parent_category_list:
+                parent_category_list.append(sub_category.parent)
+        
+        category_list = list(sub_categories) + parent_category_list
+
+        sub_categories_serializer = SubCategorySerializer2(category_list, many=True)
         return sub_categories_serializer.data
+    
+    
+    tags = serializers.SerializerMethodField()
+    def get_tags(self,profile):
+        tags = profile.tags.all()
+        tag_serializer = TagsSerializer(tags,many=True)
+        return tag_serializer.data
+    
+    vendors = serializers.SerializerMethodField()
+    def get_vendors(self,profile):
+        vendors = profile.vendors.all()
+        vendors_serializer = VendorsSerializer(vendors,many=True)
+        return vendors_serializer.data
 
     class Meta:
         model = SellerProfile
         fields = [
             'business_name',
             'id',
+            "tags",
+            "vendors",
             'sub_categories',
             'connection_code',
             ]
@@ -51,21 +74,30 @@ class CategoriesSerializer(serializers.ModelSerializer):
     """
     sub_categories = serializers.SerializerMethodField()
     def get_sub_categories(self, category):
-        sub_categories = category.sub_categories.filter(is_active=True)
+        sub_categories = category.sub_categories.filter(is_active=True).filter(Q(seller=None) | Q(seller=self.context.get("seller")))
         return SubCategorySerializer(sub_categories, many=True).data
     # sub_categories = SubCategorySerializer(many=True)
+    
+    seller = serializers.SerializerMethodField()
+    def get_seller(self,category):
+        name = None
+        try:
+            name = category.seller.owner.name
+        except:
+            name = None
+        return name
 
     class Meta:
         model = Category
         fields = [
             'name',
             'id',
+            "seller",
             'sub_categories'
         ]
         depth = 1
 
 def _get_seller_profiling_data(user: User) -> Dict:
-
     existing_profile = user.seller_profiles.first()
     entity_details = None
     profiling_data = None
@@ -77,8 +109,10 @@ def _get_seller_profiling_data(user: User) -> Dict:
     ### Category Information
     # categories = Category.objects.filter(is_active=True).exclude(sub_categories = None)
     categories = Category.objects.filter(is_active=True,parent=None).filter(Q(seller=None) | Q(seller=existing_profile))
-    cat_serializer = CategoriesSerializer(categories, many=True)
+    cat_serializer = CategoriesSerializer(categories, many=True,context={"seller":existing_profile})
     cat_serializer_data = cat_serializer.data
+    
+   
 
     categories_data = {
             'categories': cat_serializer_data,
@@ -127,6 +161,7 @@ class UserDetailsSerializer(serializers.ModelSerializer):
         """
         Profiling data for people who are still filling the profiling form
         """
+       
         return _get_seller_profiling_data(user) 
 
     

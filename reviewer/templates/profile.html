@@ -174,9 +174,10 @@
                   <div class="form-group">
                     <h4 class="mb-2">Operational fields</h4>
                       {% with subcategories=seller_profile.operational_fields.all%}
-					            {% regroup subcategories by category as subcategories_list %}
+					            {% regroup subcategories by parent as parent_list %}
                       <ul class="shadow  p-2 rounded text-bold">
-                        {% for category in subcategories_list %}
+                        {% for category in parent_list %}
+
                           <li>{{ category.grouper.name }}
                           <ul>
                             {% for subcategory in category.list %}

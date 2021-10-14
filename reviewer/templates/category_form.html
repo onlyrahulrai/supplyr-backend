@@ -1,4 +1,5 @@
 {% extends 'layouts/base.html' %} {% block title %} {{title}} {% endblock title %}
+{% load static %}
 {% load crispy_forms_tags %}
 {% block content %}
 
@@ -17,10 +18,10 @@
               <h3 class="mb-0">{{title}}</h3>
             </div>
             <div class="col text-right">
-              <button type="button" class="btn btn-outline-danger mb-2">
+              <a href="{% url "categories" %}" class="btn btn-outline-danger mb-2">
                 <i class="ni ni-fat-remove"></i>  
-                Cancle
-                </button>
+                Cancel
+                </a>
             </div>
           </div>
         </div>
@@ -44,19 +45,28 @@
                         {% csrf_token %}
                         <div class="mb-3">
                           <label for="exampleFormControlInput1" class="form-label">Name:</label>
-                          <input type="text" class="form-control" name="category_name">
+                          <input type="text" class="form-control" id="category-name" name="category_name" required>
+                          <span id="category-name-validation" class="text-sm d-none" style="color:#dc3545;">This field is required</span>
                         </div>
                         <div class="mb-3">
-                          <label for="exampleFormControlInput1" class="form-label">Image:</label>
-                          <input class="form-control" type="file" id="formFile">
-                        </div>
-                        <div class="mb-3">
-                          <label for="exampleFormControlInput1" class="form-label">Subcategory Name:</label>
-                          <input type="text" class="form-control" name="subcategory_name">
+                          <label for="exampleFormControlInput1" class="form-label" id="category-img-field">
+                            Image:
+                          </label>
+                          <input class="form-control" type="file" id="category-img" id="formFile" required>
+                          <span id="category-img-validation" class="text-sm d-none" style="color:#dc3545;">This field is required</span>
                         </div>
                         
+                        
+                        <div class="mb-3">
+                          <label for="exampleFormControlInput1" class="form-label">Subcategory Name:</label>
+                          <div class="sub_category-container">
+                            <ul class="sub_category-list pl-0 mb-0" style="list-style-type:none"></ul>
+                          </div>
+                
+                          <input type="text" class="form-control" id="sub_categories" name="subcategory_name">
+                        </div>
                         <hr class="mt-1 mb-2">
-                        <button type="submit" class="btn btn-primary mb-3">Create</button>
+                        <button type="button" id="catgeory-form-button" class="btn btn-primary mb-3">Submit</button>
                     </form>
                 </div>
             </div>
@@ -66,8 +76,10 @@
     </div>
   </div>
 
+  <script src="/static/js/category.js"></script>
   {% endblock content %}
 
+  
   <!-- Specific JS goes HERE -->
   {% block javascripts %}{% endblock javascripts %}
 </div>

@@ -133,6 +133,7 @@ window.addEventListener("load", function () {
 });
 
 function fetchData(url){
+    console.log(url)
     fetch(url, {
         method: "GET",
         headers: {
@@ -209,7 +210,11 @@ function paginator(data){
 
 // It's handle the pagination each button click Start
 function paginationAction(page){
-    url += `&page=${page}`
-    fetchData(url)
+    if(url.includes("&")){
+        fetchUrl = `${url}/&page=${page}`
+    }else{
+        fetchUrl = `${url}?page=${page}`
+    }
+    fetchData(fetchUrl)
 }
 // It's handle the pagination each button click End
