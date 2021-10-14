@@ -3,6 +3,8 @@ import json
 from django.http import request
 from django_extensions.db import fields
 from rest_framework import serializers
+
+from supplyr.core.model_utils import get_auto_category_ORM_filters
 from .models import AutoCategoryRule, Product, Tags, User, Variant, ProductImage, Category, Vendors
 from supplyr.profiles.models import SellerProfile
 from django.conf import settings
@@ -248,19 +250,22 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         images = validated_data['images']
         del validated_data['images']    #Otherwise saving will break, as there are just image IDs in this field instead of instances
         tags_data = validated_data.pop("tags")
-        sub_categories = validated_data.pop('sub_categories')
         variants_data = validated_data.pop('variants_data')
+        seller = validated_data.get("owner")
+        sub_categories = validated_data.pop("sub_categories")
+        
+        
         
         ######### Add or (Create then Add) tags in product #########
         
-        tags = [(Tags.objects.create(name=tag.get("label"),seller=validated_data.get("owner")).id) if(tag.get("new")) else tag.get("id") for tag in list(tags_data)]
+        tags = [(Tags.objects.create(name=tag.get("label"),seller=seller).id) if(tag.get("new")) else tag.get("id") for tag in list(tags_data)]
         
         ######### Add or (Create then Add) tags in product #########
         
         ######### Add or (Create then Add) vendors in product #########
         vendor_data = validated_data.pop("vendors")
         
-        vendor = Vendors.objects.create(name=vendor_data.get("label"),seller=validated_data.get("owner")) if(vendor_data.get("new")) else Vendors.objects.get(id=vendor_data.get("id"))
+        vendor = Vendors.objects.create(name=vendor_data.get("label"),seller=seller) if(vendor_data.get("new")) else Vendors.objects.get(id=vendor_data.get("id"))
       
         validated_data["vendors"] = vendor
         ######### Add or (Create then Add) vendors in product #########
@@ -268,8 +273,9 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         product = Product.objects.create(**validated_data)
         
         product.tags.set(tags)
-
+        
         product.sub_categories.set(sub_categories)
+        
         is_multi_variant = variants_data['multiple']
 
         variants_serializer = VariantSerializer(data = variants_data['data'], many=is_multi_variant)
@@ -295,31 +301,68 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
                     image_order += 1
 
                     image.generate_sizes()
+                    
+        ######### Sub categories start #########
+        print("sub_categories type>>> ",type(sub_categories))
+        sub_categories_initial = list(product.sub_categories.values_list("id",flat=True))
+        sub_categories_remove = []
+        categories = seller.operational_fields.filter(collection_type="automated")
+        for category in categories:
+            rule = get_auto_category_ORM_filters(category) 
+            print("rule was >>>>> ",rule)
+            if Product.objects.filter(id=product.id).filter(rule).exists():
+                sub_categories_initial.append(category.id)
+            else:
+                sub_categories_remove.append(category.id)
+                
+        print(" \n\n\n sub_categories >>> ",sub_categories)
+        product.sub_categories.set(sub_categories_initial)
+        
+        ######### Sub categories end #########
 
         return product
     
     @transaction.atomic
     def update(self, instance, validated_data):
-        # print("update validated data is this >>>>>>>>>>> : ",validated_data)
+        print("update validated data is this >>>>>>>>>>> : ",validated_data)
         
         ######### Add or (Create then Add) tags in product #########
-        
+        seller = validated_data.get("owner")
         tags_data = validated_data.get("tags")
         del validated_data['tags']
                 
-        tags = [(Tags.objects.create(name=tag.get("label"),seller=validated_data.get("owner")).id) if(tag.get("new")) else tag.get("id") for tag in list(tags_data)]
+        tags = [(Tags.objects.create(name=tag.get("label"),seller=seller).id) if(tag.get("new")) else tag.get("id") for tag in list(tags_data)]
                 
         instance.tags.set(tags)
+        
         
         ######### Add or (Create then Add) tags in product #########
         
         ######### Add or (Create then Add) vendors in product #########
         vendor_data = validated_data.pop("vendors")
         
-        vendor = Vendors.objects.create(name=vendor_data.get("label"),seller=validated_data.get("owner")) if(vendor_data.get("new")) else Vendors.objects.get(id=vendor_data.get("id"))
+        vendor = Vendors.objects.create(name=vendor_data.get("label"),seller=seller) if(vendor_data.get("new")) else Vendors.objects.get(id=vendor_data.get("id"))
         
         validated_data["vendors"] = vendor
         ######### Add or (Create then Add) vendors in product #########
+        
+        ######### Add Sub categories in product #########
+        
+        sub_categories_add = validated_data.pop("sub_categories")
+        sub_categories_remove = []
+        categories = seller.operational_fields.filter(collection_type="automated")
+        for category in categories:
+            rule = get_auto_category_ORM_filters(category) 
+            print("rule was >>>>> ",rule)
+            if Product.objects.filter(id=instance.id).filter(rule).exists():
+                sub_categories_add.append(category.id)
+            else:
+                sub_categories_remove.append(category.id) 
+                 
+        
+        instance.sub_categories.set([sc for sc in sub_categories_add if sc not in sub_categories_remove])
+        
+        ######### Add Sub categories in product #########
         
         
         product = instance
@@ -390,7 +433,6 @@ class ProductImageSerializer(serializers.ModelSerializer):
             ]
         read_only_fields = ['id']
 
-
 class VariantDetailsSerializer(serializers.ModelSerializer):
 
     class ProductShortDetailsSerializer(serializers.ModelSerializer):
@@ -418,7 +460,6 @@ class VariantDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Variant
         exclude=['created_at']
-
 
 class CategoriesSerializer2(serializers.ModelSerializer):
     
@@ -514,8 +555,6 @@ class CategoriesSerializer2(serializers.ModelSerializer):
     def create(self, validated_data):
         # Not very secure, for staff use only. Will need to add more security if it needs to be open to public, like popping ID field
         
-        
-       
         # sub_categories_data = validated_data.pop('sub_categories')
         
         print("Category Data ----> ",validated_data)
@@ -542,7 +581,11 @@ class CategoriesSerializer2(serializers.ModelSerializer):
                     attribute_value = rule.get("attribute_value")
                 AutoCategoryRule.objects.create(category=category,attribute_name=rule.get("attribute_name"),comparison_type=rule.get("comparison_type"),attribute_value=attribute_value,attribute_unit=rule.get("attribute_unit",None))
 
-
+            query = get_auto_category_ORM_filters(category)
+            print(f"\n\n\n query is {query} \n\n\n")
+            products = Product.objects.filter(owner=seller).filter(query)
+            for product in products:
+                product.sub_categories.add(category)
 
                 # AutoCategoryRule.objects.create(category=category,**rule)
                 
@@ -565,7 +608,7 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         return category
 
     def update(self, instance, validated_data):
-        print("validated_date ------>?>>>>> ",validated_data)
+        print(" \n\n\n Product Update is Called \n\n\n")
         user = User.objects.filter(username=validated_data.get("seller")).first()
         seller_profile = user.seller_profiles.first()
         # print("seller profile and category instance: ",instance,seller_profile)
@@ -573,8 +616,6 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         condition_type = validated_data.pop("condition_type",None)
         selectedProducts = validated_data.pop("selectedProducts")
         # parent = Category.objects.get(id=validated_data["parent"]) 
-
-    
         
         if instance.seller == seller_profile:
             instance.name = validated_data['name']
@@ -606,6 +647,21 @@ class CategoriesSerializer2(serializers.ModelSerializer):
                         
             rules_to_remove = [rule for rule in auto_category_rule_initial if rule not in auto_category_rule_final]
             AutoCategoryRule.objects.filter(id__in=rules_to_remove).update(is_active = False)
+            
+            query = get_auto_category_ORM_filters(instance)
+            products = Product.objects.filter(query,owner=seller_profile)
+            print("query products: ",products)
+            
+            category_product_initial = list(instance.products.filter(owner=seller_profile).values_list("id",flat=True))
+            category_product_final = []
+            for product in products:
+                product.sub_categories.add(instance)
+                category_product_final.append(product.id)
+                
+            category_product_to_remove = [sc for sc in category_product_initial if sc not in category_product_final]
+            category_remove_products = Product.objects.filter(id__in=category_product_to_remove)
+            for category_remove_product in category_remove_products:
+                category_remove_product.sub_categories.remove(instance)
 
         # sub_categories_initial = list(instance.sub_categories.filter(Q(seller=None) | Q(seller=self.context['request'].user.seller_profiles.first())).values_list('id', flat=True))
         # print(sub_categories_initial)
@@ -628,12 +684,10 @@ class CategoriesSerializer2(serializers.ModelSerializer):
         #     sc.save()
         #     sub_categories_final.append(sc.id)
             
-            
         # sub_categories_to_remove = [sc for sc in sub_categories_initial if sc not in sub_categories_final]
         # Category.objects.filter(id__in=sub_categories_to_remove).update(is_active = False)
         return instance
 
-        
 class SubCategorySerializer(serializers.ModelSerializer):
     seller = serializers.SerializerMethodField()
     def get_seller(self,category):

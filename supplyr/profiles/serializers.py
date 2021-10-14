@@ -30,7 +30,7 @@ class ChoiceField(serializers.ChoiceField):
 class ShortEntityDetailsSerializer(serializers.ModelSerializer):
     sub_categories = serializers.SerializerMethodField()
     def get_sub_categories(self, profile):
-        sub_categories = profile.operational_fields.all()
+        sub_categories = profile.operational_fields.filter(is_active=True)
         parent_category_list = []
         
         for sub_category in sub_categories:
@@ -294,6 +294,7 @@ class SellerShortDetailsSerializer(serializers.ModelSerializer):
 
     sub_categories = serializers.SerializerMethodField()
     def get_sub_categories(self, profile):
+        print("\n\n\n profile is \n\n\n",profile)
         sub_categories = profile.operational_fields.filter(products__owner = profile, products__is_active=True).distinct()
         sub_categories_serializer = SubCategorySerializer2(sub_categories, many=True)
         return sub_categories_serializer.data

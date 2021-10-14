@@ -1,5 +1,5 @@
 from django.urls import path, include
-from supplyr.core.views import SellerDashboardStats, UpdateMobileNumberConfirmView, UpdateMobileNumberView, UserDetailsView, CustomLoginView, SendMobileVerificationOTP, VerifyMobileVerificationOTP, ChangeEmailView, ChangeMobileNumberView,RequestForgetPassword,PasswordResetEmailConfirmView, PasswordResetMobileConfirmView
+from supplyr.core.views import *
 
 urlpatterns = [
     path('login/', CustomLoginView.as_view()),
@@ -13,6 +13,7 @@ urlpatterns = [
     path('auth/', include('dj_rest_auth.urls')),
     path('user-details/', UserDetailsView.as_view()),
     path('seller-dashboard-stats/', SellerDashboardStats.as_view(), name='seller_dashboard_stats'),
+    path('seller-state-orders/', SellerStateOrders.as_view(), name='seller_state_orders'),
     path("request-forget-password/",RequestForgetPassword.as_view(),name="request-forget-password"),
     path('password-reset-email-confirm/', PasswordResetEmailConfirmView.as_view(),
         name='password-reset-email-confirm'),

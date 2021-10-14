@@ -144,6 +144,9 @@ class BuyerAddress(models.Model):
         super().save(*args, **kwargs)
         if self.is_default:
             BuyerAddress.objects.filter(is_active=True, owner_id=self.owner_id).exclude(pk=self.pk).update(is_default=False)
+            
+    def __str__(self):
+        return f'{self.owner}'
 
 class BuyerSellerConnection(models.Model):
     """Model definition for BuyerSellerConnection."""

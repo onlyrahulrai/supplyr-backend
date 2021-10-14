@@ -41,6 +41,9 @@ class Order(models.Model):
         verbose_name = 'Order'
         verbose_name_plural = 'Orders'
         ordering = ['-created_at']
+        
+    def __str__(self):
+        return f"{self.buyer} {self.seller}"
 
 
 class OrderItem(models.Model):

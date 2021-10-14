@@ -1,3 +1,5 @@
+from django.db.models.expressions import F
+from rest_framework.generics import GenericAPIView
 from supplyr.core.functions import check_and_link_manually_created_profiles
 from supplyr.orders.models import Order
 from django.contrib.auth import get_user_model
@@ -23,8 +25,8 @@ from rest_framework import status
 from .serializers import CustomPasswordResetSerializer, PasswordResetConfirmSerializer
 from django.utils.decorators import method_decorator
 from django.views.decorators.debug import sensitive_post_parameters
-from rest_framework.generics import GenericAPIView
 from django.utils.translation import ugettext_lazy as _
+from datetime import date
 
 User = get_user_model()
 
@@ -73,6 +75,8 @@ class SellerDashboardStats(APIView):
         order_status_counts = {}
         for status_count in _order_status_counts:
             order_status_counts[status_count['status']] = status_count['count']
+            
+        print("order status is: >>> ",order_status_counts)
 
         # Including those status whose count may be zero, hence not returned by db query
         for status in Order.OrderStatusChoice.choices:
@@ -426,3 +430,50 @@ class UpdateMobileNumberConfirmView(GenericAPIView,UserInfoMixin):
                 'success': False, 'message': 'Invalid or expired OTP'
             })
         
+class SellerStateOrders(APIView):
+    '''
+    This is responsibale for returning the seller state orders
+    '''
+    permission_classes = [IsFromSellerAPI]
+
+    def get(self, request, *args, **kwargs):
+        seller_profile = request.user.get_seller_profile()
+        date_today = timezone.localtime().date()
+        date_yesterday = date_today - timezone.timedelta(days=1)
+        date_before_7_days = date_today - timezone.timedelta(days=7)
+        date_before_28_days = date_today.month
+        date_before_6_month = date_today - timezone.timedelta(days=168)
+        date_year = date_today.year
+        filters = {}
+        
+        if search := self.request.GET.get("duration"):
+            if search == "today":
+                filters["created_at__date"] = date_today
+            elif search == "yesterday":
+                filters["created_at__date"] = date_yesterday
+            elif search == "year":
+                filters["created_at__year"] = date_year
+            elif search == "week":
+                filters["created_at__gt"] = date_before_7_days 
+            elif search == "month":
+                filters["created_at__month"] = date_before_28_days
+            elif search == "six_month":
+                filters["created_at__gt"] = date_before_6_month
+            elif search == "custom":
+                start_date = self.request.GET.get("start_date",None)
+                end_date = self.request.GET.get("end_date",None)
+                if start_date and end_date:
+                    DATE_FORMAT = '%Y-%m-%d'
+                    
+                    start_date = start_date.split("/")
+                    start_date = date(int(start_date[2]),int(start_date[0]),int(start_date[1]))
+                    sd_filter = start_date.strftime(DATE_FORMAT)
+                    
+                    end_date = end_date.split("/")
+                    end_date = date(int(end_date[2]),int(end_date[0]),int(end_date[1]))
+                    ed_filter = end_date.strftime(DATE_FORMAT)
+                    print(start_date,end_date)
+                    filters["created_at__range"] = (sd_filter,ed_filter) 
+                
+        response = Order.objects.filter(seller=seller_profile,is_active=True,**filters).values(state=F("address__state")).annotate(state_orders_count=Count("state"),revenue=Sum("total_amount")).order_by("-state_orders_count")
+        return Response(response,status=status.HTTP_200_OK)

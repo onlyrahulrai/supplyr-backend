@@ -49,7 +49,7 @@ class DeleteProduct(APIView):
             })
         return Response({"success": False}, status=400)
 
-class ProductDetails(APIView):
+class ProductDetails(APIView,UserInfoMixin):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
@@ -61,7 +61,8 @@ class ProductDetails(APIView):
                 product = get_object_or_404(Product, id=product_id, is_active = True)
 
         product_serializer = ProductDetailsSerializer(product, context={'request' : request})
-        return Response(product_serializer.data)
+        response = self.inject_user_info(product_serializer.data,request.user)
+        return Response(response)
 
 class ProductImageUpload(APIView):
     permission_classes = [IsApproved]
