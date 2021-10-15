@@ -24,7 +24,7 @@ var search="";
 // It is used to hide the filter Start
 resetFilter.addEventListener("click",function(){
     resetFilter.classList.add("d-none")
-    url = "/v1/reviewer/seller_profiles/"
+    url = "/reviewer/seller_profiles/"
     filterForm[0].classList.remove("show","active")
     fetchData(url)
     status = ""
@@ -51,12 +51,12 @@ for(var i = 0;i<thead_th.length;i++){
 
         if(order === "asc"){
             thead_th[id].setAttribute("data-sort","desc")
-            url = `/v1/reviewer/seller_profiles/?search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}&status=${status}&sort=${name}`;
+            url = `/reviewer/seller_profiles/?search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}&status=${status}&sort=${name}`;
 
         } 
         else if(order === "desc"){
             thead_th[id].setAttribute("data-sort","asc")
-            url = `/v1/reviewer/seller_profiles/?search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}&status=${status}&sort=-${name}`;
+            url = `/reviewer/seller_profiles/?search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}&status=${status}&sort=-${name}`;
         }
         for(var i = 0;i<thead_th.length;i++){
             thead_th[i].classList.remove("table-column-color")
@@ -83,7 +83,7 @@ for(var i=0;i<tabBtn.length;i++){
         const action = this.dataset.action;
         tabBody.setAttribute("id",action)
         tabBody.setAttribute("aria-labelledby",action)
-        url = `/v1/reviewer/seller_profiles/?status=${action}&search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}`;
+        url = `/reviewer/seller_profiles/?status=${action}&search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}`;
         fetchData(url)
         status = action
         resetFilter.classList.remove("d-none")
@@ -103,7 +103,7 @@ function debounce(func, timeout = 1000){
   }
 function saveInput(){
     search = searchInput.value.replace(" ","+");
-    url = `/v1/reviewer/seller_profiles/?search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}&status=${status}`;
+    url = `/reviewer/seller_profiles/?search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}&status=${status}`;
     fetchData(url)
 }
 const processChange = debounce(() => saveInput());
@@ -120,7 +120,7 @@ searchInput.addEventListener("change",function(event){
 
 // It is trigger when any change happen in the form filter Start
 form.addEventListener("change", function(event){
-    url = `/v1/reviewer/seller_profiles/?search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}&status=${status}`;
+    url = `/reviewer/seller_profiles/?search=${search.replace(" ","+")}&entity_category=${entity_category.value}&entity_type=${entity_type.value}&is_gst_enrolled=${gst_enrolled.value}&is_active=${active.value}&status=${status}`;
         fetchData(url)
         table_body.HTML = ""
 })
@@ -128,7 +128,7 @@ form.addEventListener("change", function(event){
 
 // It is used to load data inside a table Start
 window.addEventListener("load", function () {
-    url = "/v1/reviewer/seller_profiles/";
+    url = "/reviewer/seller_profiles/";
     fetchData(url)
 });
 
