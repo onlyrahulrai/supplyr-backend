@@ -2,6 +2,6 @@ from django.apps import AppConfig
 
 
 class ReviewerConfig(AppConfig):
-    name = 'reviewer'
+    name = 'supplyr.reviewer'
     
    

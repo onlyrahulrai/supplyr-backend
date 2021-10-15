@@ -41,7 +41,7 @@ _urlpatterns = [
 
 urlpatterns = [
     re_path('^v1/(?P<api_source>(buyer|seller|sales))/', include(_urlpatterns)),
-    re_path('^v1/reviewer/', include("reviewer.urls")),
+    re_path('^reviewer/', include("supplyr.reviewer.urls")),
     path('admin/', admin.site.urls),
     path('register/', include('dj_rest_auth.registration.urls')),
 
