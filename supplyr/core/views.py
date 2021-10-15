@@ -441,7 +441,7 @@ class SellerStateOrders(APIView):
         date_today = timezone.localtime().date()
         date_yesterday = date_today - timezone.timedelta(days=1)
         date_before_7_days = date_today - timezone.timedelta(days=7)
-        date_before_28_days = date_today.month
+        date_before_28_days = date_today - timezone.timedelta(days=28)
         date_before_6_month = date_today - timezone.timedelta(days=168)
         date_year = date_today.year
         filters = {}
@@ -456,7 +456,7 @@ class SellerStateOrders(APIView):
             elif search == "week":
                 filters["created_at__gt"] = date_before_7_days 
             elif search == "month":
-                filters["created_at__month"] = date_before_28_days
+                filters["created_at__gt"] = date_before_28_days
             elif search == "six_month":
                 filters["created_at__gt"] = date_before_6_month
             elif search == "custom":

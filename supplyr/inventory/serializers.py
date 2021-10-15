@@ -4,7 +4,7 @@ from django.http import request
 from django_extensions.db import fields
 from rest_framework import serializers
 
-from supplyr.core.model_utils import get_auto_category_ORM_filters
+from supplyr.core.model_utils import get_auto_category_ORM_filters, get_wight_in_grams
 from .models import AutoCategoryRule, Product, Tags, User, Variant, ProductImage, Category, Vendors
 from supplyr.profiles.models import SellerProfile
 from django.conf import settings
@@ -228,7 +228,8 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         tags = data.get("tags")
         vendors = data.get("vendors")
         weight_unit = data.get("weight_unit")
-        weight_value = float(data.get("weight_value")) / 1000 if weight_unit == "mg"  else (float(data.get("weight_value")) * 1000 if weight_unit == "kg" else float(data.get("weight_value")))
+        weight_value = get_wight_in_grams(data.get("weight_value"),weight_unit)
+        # weight_value = float(data.get("weight_value")) / 1000 if weight_unit == "mg"  else (float(data.get("weight_value")) * 1000 if weight_unit == "kg" else float(data.get("weight_value")))
         country = data.get("country")
 
         internal_value.update({
@@ -576,7 +577,7 @@ class CategoriesSerializer2(serializers.ModelSerializer):
             for rule in rules: 
                 attribute_value = None
                 if rule.get("attribute_name") == "weight":
-                    attribute_value = float(rule.get("attribute_value")) / 1000 if rule.get("attribute_unit") == "mg" else (float(rule.get("attribute_value")) * 1000 if rule.get("attribute_unit") == "kg" else float(rule.get("attribute_value")))
+                    attribute_value = get_wight_in_grams(float(rule.get("attribute_value"), rule.get("attribute_unit")))
                 else:
                     attribute_value = rule.get("attribute_value")
                 AutoCategoryRule.objects.create(category=category,attribute_name=rule.get("attribute_name"),comparison_type=rule.get("comparison_type"),attribute_value=attribute_value,attribute_unit=rule.get("attribute_unit",None))
@@ -596,10 +597,11 @@ class CategoriesSerializer2(serializers.ModelSerializer):
             for selected_product in selected_products:
                 selected_product.sub_categories.add(category)
                 
-        if(category.parent):
-            seller.operational_fields.add(category)
-        else:
-            pass
+        # if(category.parent):
+        #     seller.operational_fields.add(category)
+        # else:
+        #     pass
+        seller.operational_fields.add(category)
         
      
         # for sub_category in sub_categories_data:
@@ -697,6 +699,10 @@ class SubCategorySerializer(serializers.ModelSerializer):
         except:
             name = None
         return name
+
+    name = serializers.SerializerMethodField()
+    def get_name(self,category):
+        return category.name
     
     no_of_product = serializers.SerializerMethodField()
     def get_no_of_product(self,category):
@@ -739,7 +745,8 @@ class AutoCategoryRuleSerializer(serializers.ModelSerializer):
     attribute_value = serializers.SerializerMethodField()
     def get_attribute_value(self,auto):
         if auto.attribute_name == "weight":
-            return float(auto.attribute_value) * 1000 if auto.attribute_unit == "mg" else float(auto.attribute_value) / 1000 if auto.attribute_unit == "kg" else auto.attribute_value
+            return get_wight_in_grams(auto.attribute_value,auto.attribute_unit)
+            # return float(auto.attribute_value) * 1000 if auto.attribute_unit == "mg" else float(auto.attribute_value) / 1000 if auto.attribute_unit == "kg" else auto.attribute_value
         return auto.attribute_value
 
     class Meta:

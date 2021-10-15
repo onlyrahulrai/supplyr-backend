@@ -83,3 +83,5 @@ def get_auto_category_ORM_filters(category):
             
     return query
 
+def get_wight_in_grams(weight_value, weight_unit):
+    return float(weight_value) / 1000 if weight_unit == "mg" else (float(weight_value) * 1000 if weight_unit == "kg" else float(weight_value))
