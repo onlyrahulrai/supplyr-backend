@@ -101,7 +101,7 @@ WSGI_APPLICATION = 'supplyr.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'supplyr',
+        'NAME': 'amojo',
         'PASSWORD': 'z238@hp',
         'OPTIONS': {
             # Tell MySQLdb to connect with 'utf8mb4' character set
