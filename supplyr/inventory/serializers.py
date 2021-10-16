@@ -577,7 +577,7 @@ class CategoriesSerializer2(serializers.ModelSerializer):
             for rule in rules: 
                 attribute_value = None
                 if rule.get("attribute_name") == "weight":
-                    attribute_value = get_wight_in_grams(float(rule.get("attribute_value"), rule.get("attribute_unit")))
+                    attribute_value = get_wight_in_grams(float(rule.get("attribute_value")), rule.get("attribute_unit"))
                 else:
                     attribute_value = rule.get("attribute_value")
                 AutoCategoryRule.objects.create(category=category,attribute_name=rule.get("attribute_name"),comparison_type=rule.get("comparison_type"),attribute_value=attribute_value,attribute_unit=rule.get("attribute_unit",None))

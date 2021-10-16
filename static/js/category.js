@@ -23,7 +23,7 @@ if (updateUrl.includes("update")) {
     .slice(updateUrl.slice(0, updateUrl.lastIndexOf("/")).lastIndexOf("/") + 1)
     .replace("/", "");
   if (categoryId) {
-    fetch(`/v1/reviewer/categories/detail/${categoryId}/`)
+    fetch(`/reviewer/categories/detail/${categoryId}/`)
       .then((res) => res.json())
       .then((data) => {
         categoryName.value = data.name;
@@ -74,9 +74,9 @@ categoryFormButton.addEventListener("click", function (event) {
   if (categoryName.value && categoryImg.files[0]) {
     if (categoryId) {
       form_data.append("id", categoryId);
-      url = `/v1/reviewer/categories/update/${categoryId}/`;
+      url = `/reviewer/categories/update/${categoryId}/`;
     } else {
-      url = "/v1/reviewer/categories/create/";
+      url = "/reviewer/categories/create/";
     }
     form_data.append("name", categoryName.value);
     form_data.append("sub_categories", JSON.stringify(subCategoryData));
@@ -89,7 +89,7 @@ categoryFormButton.addEventListener("click", function (event) {
         const alertBox = document.getElementById("alert-box");
         alertBox.style.display = "block";
         setTimeout(() => {
-          window.location.href = "/v1/reviewer/categories/";
+          window.location.href = "/reviewer/categories/";
         }, 1000);
       })
       .catch((error) => console.log(error));

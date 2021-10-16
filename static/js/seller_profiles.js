@@ -166,7 +166,7 @@ function displayTable(data) {
                 </td>
                 <td class="status" style="text-transform: capitalize;
                 ">${data.results[i].status.replace(/_/g," ")}</td>
-                <td><a class="btn btn-sm btn-info btn-sm" href="/v1/reviewer/customer/${data.results[i].id}">View</a></td>
+                <td><a class="btn btn-sm btn-info btn-sm" href="/reviewer/customer/${data.results[i].id}">View</a></td>
             </tr>
         `;
         tbody += child
