@@ -49,7 +49,7 @@ for (i = 0; i < approvalButton.length; i++) {
 }
 
 function approved(sellerProfileId, action,comment,user) {
-  var url = "/v1/reviewer/approve-seller/";
+  var url = "/reviewer/approve-seller/";
   fetch(url, {
     method: "POST",
     headers: {
