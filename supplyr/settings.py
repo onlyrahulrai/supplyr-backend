@@ -207,7 +207,7 @@ ACCOUNT_USER_DISPLAY= lambda user: user.name
 MOBILE_VERIFICATION_OTP_EXPIRY_MINUTES = 10
 
 
-URL_FRONTEND = 'https://supplyr.tk/'
+URL_FRONTEND = 'https://amojo.com/'
 
 AUTHENTICATION_BACKENDS = [
     # Needed to login by username in Django admin, regardless of `allauth`
