@@ -4,7 +4,7 @@
             <div class="history-container left">
                 <div class="content">
                     <h6>{{review.created_at}}</h6>
-                    <p class="m-0">{{review.comments|truncatewords:10}}</p>
+                    <p class="m-0">{{review.comments|safe|truncatewords:10}}</p>
                     <hr class="mt-1 mb-1">
                     <div class="d-flex justify-content-between">
                         <h5>

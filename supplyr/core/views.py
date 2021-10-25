@@ -1,3 +1,4 @@
+import datetime
 from django.db.models.expressions import F
 from rest_framework.generics import GenericAPIView
 from supplyr.core.functions import check_and_link_manually_created_profiles
@@ -463,17 +464,19 @@ class SellerStateOrders(APIView):
                 start_date = self.request.GET.get("start_date",None)
                 end_date = self.request.GET.get("end_date",None)
                 if start_date and end_date:
-                    DATE_FORMAT = '%Y-%m-%d'
+                    # DATE_FORMAT = '%Y-%m-%d'
+                    DATE_FORMAT = "%a, %d %b %Y %H:%M:%S %Z"
+                    # start_date = start_date.split("/")
+                    # start_date = date(int(start_date[2]),int(start_date[0]),int(start_date[1]))
+                    # sd_filter = start_date.strftime(DATE_FORMAT)
                     
-                    start_date = start_date.split("/")
-                    start_date = date(int(start_date[2]),int(start_date[0]),int(start_date[1]))
-                    sd_filter = start_date.strftime(DATE_FORMAT)
-                    
-                    end_date = end_date.split("/")
-                    end_date = date(int(end_date[2]),int(end_date[0]),int(end_date[1]))
-                    ed_filter = end_date.strftime(DATE_FORMAT)
-                    print(start_date,end_date)
-                    filters["created_at__range"] = (sd_filter,ed_filter) 
+                    # end_date = end_date.split("/")
+                    # end_date = date(int(end_date[2]),int(end_date[0]),int(end_date[1]))
+                    # ed_filter = end_date.strftime(DATE_FORMAT)
+                    start_date = datetime.datetime.strptime(start_date,DATE_FORMAT)
+                    end_date = datetime.datetime.strptime(end_date,DATE_FORMAT)
+                    print("start date",start_date,"end date",end_date)
+                    filters["created_at__range"] = (start_date,end_date) 
                 
         response = Order.objects.filter(seller=seller_profile,is_active=True,**filters).values(state=F("address__state")).annotate(state_orders_count=Count("state"),revenue=Sum("total_amount")).order_by("-state_orders_count")
         return Response(response,status=status.HTTP_200_OK)
