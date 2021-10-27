@@ -15,14 +15,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, re_path, include
-from django.views.generic.base import TemplateView
-from rest_framework import routers
 from django.conf.urls.static import static
 from django.conf import settings
+from django.views.generic import RedirectView
 # from rest_framework_simplejwt.views import TokenRefreshView
 # from rest_framework.authtoken.views import obtain_auth_token
 
-from supplyr.core.views import UserDetailsView, CustomLoginView
 
 # router = routers.DefaultRouter()
 # router.register(r'users', UserDetailsViewSet)
@@ -42,6 +40,7 @@ _urlpatterns = [
 urlpatterns = [
     re_path('^v1/(?P<api_source>(buyer|seller|sales))/', include(_urlpatterns)),
     re_path('^reviewer/', include("supplyr.reviewer.urls")),
+    path('', RedirectView.as_view(pattern_name='dashboard', permanent=False)),
     path('admin/', admin.site.urls),
     path('register/', include('dj_rest_auth.registration.urls')),
 
