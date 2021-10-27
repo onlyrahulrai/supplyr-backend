@@ -16,7 +16,7 @@ class SellerProfileReview(models.Model):
     seller = models.ForeignKey(SellerProfile,on_delete=models.CASCADE,null=True,blank=True,related_name="seller_profile_review")
     is_approved = models.BooleanField(default=False)
     status = EnumField(default="new",choices=SellerProfile.SellerStatusChoice,blank=True,null=True)
-    comments = models.CharField(max_length=200,null=True,blank=True)
+    comments = models.TextField(null=True,blank=True)
     created_at = models.DateTimeField(default=timezone.now)
     
     @property
