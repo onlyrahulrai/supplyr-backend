@@ -1,3 +1,4 @@
+from supplyr.inventory.utils import CustomPageNumberPagination
 from supplyr.utils.api.mixins import UserInfoMixin
 from django.http.response import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -8,8 +9,8 @@ from rest_framework import status, mixins
 from rest_framework.generics import ListAPIView, GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
-from supplyr.core.permissions import IsApproved, IsFromBuyerAPI, IsFromBuyerOrSalesAPI
-from .serializers import ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer, VariantDetailsSerializer, CategoriesSerializer2
+from supplyr.core.permissions import IsApproved, IsFromBuyerAPI, IsFromBuyerOrSalesAPI, IsFromSellerAPI
+from .serializers import BuyerSellerConnectionSerializers, ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer, VariantDetailsSerializer, CategoriesSerializer2
 from supplyr.inventory.models import Category
 from supplyr.profiles.models import SellerProfile
 from .models import Product, Variant, ProductImage
@@ -271,3 +272,18 @@ class UpdateFavouritesView(APIView):
             return Response({'success': False, 'message': str(e)}, status=500)
 
 
+class BuyerSellerConnectionAPIView(APIView):
+    permission_classes = [IsApproved]
+    
+    def get(self,request,*args,**kwargs):
+        seller = request.user.seller_profiles.first()
+        query = request.GET.get("search",None)
+        if(query):
+            buyers = seller.connections.filter((Q(buyer__business_name__icontains=query) | Q(buyer__owner__email__icontains=query)) & Q(is_active=True))
+        else:
+            buyers = seller.connections.filter(is_active=True)
+        paginator = CustomPageNumberPagination()
+        paginator.page_size = 2
+        result_page = paginator.paginate_queryset(buyers, request)
+        serializers = BuyerSellerConnectionSerializers(result_page,many=True)
+        return paginator.get_paginated_response(serializers.data)

@@ -346,3 +346,7 @@ class ApplyForApproval(views.APIView,UserInfoMixin):
         seller_profile.save()
         response = self.inject_user_info({'success': True}, request.user)
         return Response(response)
+    
+
+    
+    

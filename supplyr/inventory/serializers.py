@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from supplyr.core.model_utils import get_auto_category_ORM_filters, get_wight_in_grams
 from .models import AutoCategoryRule, Product, Tags, User, Variant, ProductImage, Category, Vendors
-from supplyr.profiles.models import SellerProfile
+from supplyr.profiles.models import BuyerSellerConnection, SellerProfile
 from django.conf import settings
 from django.db import transaction
 from django.db.models.functions import Coalesce
@@ -762,9 +762,21 @@ class TagsSerializer(serializers.ModelSerializer):
         fields = ["id","label"]
         
 class VendorsSerializer(serializers.ModelSerializer):
+    
     label = serializers.SerializerMethodField()
     def get_label(self,vendors):
         return vendors.name
     class Meta:
         model = Vendors
         fields = ["id","label"]
+        
+        
+class  BuyerSellerConnectionSerializers(serializers.ModelSerializer):
+    buyer = serializers.SerializerMethodField()
+    def get_buyer(self,seller):
+        return {"id":seller.buyer.id,"email":seller.buyer.owner.email,"business_name":seller.buyer.business_name,"buyer_name":seller.buyer.owner.name}
+    
+     
+    class Meta:
+        model = BuyerSellerConnection
+        fields = ["buyer"] 
