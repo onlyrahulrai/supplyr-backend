@@ -1,3 +1,4 @@
+from rest_framework import generics
 from supplyr.inventory.utils import CustomPageNumberPagination
 from supplyr.utils.api.mixins import UserInfoMixin
 from django.http.response import JsonResponse
@@ -10,7 +11,7 @@ from rest_framework.generics import ListAPIView, GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from supplyr.core.permissions import IsApproved, IsFromBuyerAPI, IsFromBuyerOrSalesAPI, IsFromSellerAPI
-from .serializers import BuyerSellerConnectionSerializers, ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer, VariantDetailsSerializer, CategoriesSerializer2
+from .serializers import BuyerSellerConnectionSerializers, ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer, SellerBuyerConnectionDetailSerializer, VariantDetailsSerializer, CategoriesSerializer2
 from supplyr.inventory.models import Category
 from supplyr.profiles.models import SellerProfile
 from .models import Product, Variant, ProductImage
@@ -287,3 +288,18 @@ class BuyerSellerConnectionAPIView(APIView):
         result_page = paginator.paginate_queryset(buyers, request)
         serializers = BuyerSellerConnectionSerializers(result_page,many=True)
         return paginator.get_paginated_response(serializers.data)
+    
+class BuyerDiscountAPI(generics.GenericAPIView,mixins.RetrieveModelMixin,mixins.UpdateModelMixin):
+    permission_classes = [IsApproved]
+    serializer_class = SellerBuyerConnectionDetailSerializer
+    
+    def get_queryset(self):
+        return self.request.user.seller_profiles.first().connections.filter(is_active=True)
+     
+    def get(self,request,*args,**kwargs):
+        if(kwargs.get("pk")):
+            return self.retrieve(request,*args,**kwargs)
+        
+    def put(self,request,*args,**kwargs):
+        print(request.data)
+        return self.update(request,*args,**kwargs)

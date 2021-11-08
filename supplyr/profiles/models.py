@@ -153,6 +153,7 @@ class BuyerSellerConnection(models.Model):
 
     buyer = models.ForeignKey('profiles.BuyerProfile', on_delete=models.RESTRICT, related_name='connections')
     seller = models.ForeignKey('profiles.SellerProfile', on_delete=models.RESTRICT, related_name='connections')
+    generic_discount = models.DecimalField(decimal_places=2,max_digits=6,null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     deactivated_at = models.DateTimeField(blank=True, null=True)

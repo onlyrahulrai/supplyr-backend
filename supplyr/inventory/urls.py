@@ -15,5 +15,6 @@ urlpatterns = [
     
     path('cart-items-info/', VariantDetailView.as_view(), name='variants_details'),
     path('update-favourites/', UpdateFavouritesView.as_view()),
-    path("seller-buyers/",BuyerSellerConnectionAPIView.as_view(),name="seller-buyers")
+    path("seller-buyers/",BuyerSellerConnectionAPIView.as_view(),name="seller-buyers"),
+    path("buyer-discount/<str:pk>/",BuyerDiscountAPI.as_view(),name="buyer-discount")
 ]

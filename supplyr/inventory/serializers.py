@@ -247,7 +247,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        # print("validated Data ____________: ",validated_data)
+        print("validated Data ____________: ",validated_data)
         images = validated_data['images']
         del validated_data['images']    #Otherwise saving will break, as there are just image IDs in this field instead of instances
         tags_data = validated_data.pop("tags")
@@ -779,4 +779,18 @@ class  BuyerSellerConnectionSerializers(serializers.ModelSerializer):
      
     class Meta:
         model = BuyerSellerConnection
-        fields = ["buyer"] 
+        fields = ["id","buyer","generic_discount"] 
+        
+class SellerBuyerConnectionDetailSerializer(serializers.ModelSerializer):    
+    buyer = serializers.SerializerMethodField()
+    def get_buyer(self,connection):
+        return connection.buyer.business_name
+    
+    seller = serializers.SerializerMethodField()
+    def get_seller(self,connection):
+        return connection.seller.business_name
+    
+    class Meta:
+        model = BuyerSellerConnection
+        fields = ["id","buyer","seller","generic_discount"]
+        extra_kwargs = {"generic_discount": {"required": True},"buyer":{"read_only":True},"seller":{"read_only":True}}
