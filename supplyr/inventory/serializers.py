@@ -98,13 +98,27 @@ class VariantSerializer(serializers.ModelSerializer):
         if not variant['option3_name']:
             del variant['option3_name']
             del variant['option3_value']
-
+            
+        if variant["allow_inventory_tracking"]:
+            variant["allow_inventory_tracking"] = "yes"
+        else:
+            variant["allow_inventory_tracking"] = "no"
+            
+        if variant["allow_overselling"]:
+            variant["allow_overselling"] = "yes"
+        else:
+            variant["allow_overselling"] = "no"
+            
         return variant
 
     def to_internal_value(self, data):
         internal_value = super().to_internal_value(data)
+        print("\n\n\n varient data \n\n\n ",data)
         if id := data.get('id'):
             internal_value['id'] = id
+            
+        internal_value["allow_inventory_tracking"] = True if data.get("allow_inventory_tracking") == "yes" else False
+        internal_value["allow_overselling"] = True if data.get("allow_overselling") == "yes" else False
         return internal_value
 
     def create(self, validated_data):

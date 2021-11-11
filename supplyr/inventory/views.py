@@ -21,7 +21,7 @@ class AddProduct(APIView,UserInfoMixin):
     permission_classes = [IsApproved]
     def post(self, request, *args, **kwargs):
         
-        # print(request.data)
+        print("\n\n\n product data \n\n\n",request.data)
         profile = request.user.seller_profiles.first()
         
         if product_id := request.data.get('id'):
@@ -271,7 +271,6 @@ class UpdateFavouritesView(APIView):
         except Exception as e:
             print("Enterrd excepitopn", str(e))
             return Response({'success': False, 'message': str(e)}, status=500)
-
 
 class BuyerSellerConnectionAPIView(APIView):
     permission_classes = [IsApproved]

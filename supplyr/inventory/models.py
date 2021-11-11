@@ -218,6 +218,10 @@ class Variant(Model):
 
     option3_name = models.CharField(max_length=50, blank=True, null=True)
     option3_value = models.CharField(max_length=150, blank=True, null=True)
+    
+    # Allow Disallow Inventory Tracking 
+    allow_inventory_tracking = models.BooleanField(default=False)
+    allow_overselling = models.BooleanField(default=False,null=True)
 
     quantity = models.PositiveIntegerField(default=0)
     minimum_order_quantity = models.PositiveIntegerField(default=1)
