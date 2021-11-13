@@ -131,6 +131,11 @@ class Product(Model):
     weight_unit = EnumField(choices=WeightUnit.choices,blank=True,null=True)
     weight_value = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
     country = EnumField(choices=COUNTRY_CHOICES,null=True,blank=True)
+    
+    # Allow Disallow Inventory Tracking 
+    allow_inventory_tracking = models.BooleanField(default=False)
+    allow_overselling = models.BooleanField(default=False,null=True)
+    
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
@@ -218,10 +223,6 @@ class Variant(Model):
 
     option3_name = models.CharField(max_length=50, blank=True, null=True)
     option3_value = models.CharField(max_length=150, blank=True, null=True)
-    
-    # Allow Disallow Inventory Tracking 
-    allow_inventory_tracking = models.BooleanField(default=False)
-    allow_overselling = models.BooleanField(default=False,null=True)
 
     quantity = models.PositiveIntegerField(default=0)
     minimum_order_quantity = models.PositiveIntegerField(default=1)

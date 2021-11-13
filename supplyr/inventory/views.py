@@ -21,7 +21,7 @@ class AddProduct(APIView,UserInfoMixin):
     permission_classes = [IsApproved]
     def post(self, request, *args, **kwargs):
         
-        print("\n\n\n product data \n\n\n",request.data)
+        # print("\n\n\n product data \n\n\n",request.data)
         profile = request.user.seller_profiles.first()
         
         if product_id := request.data.get('id'):
