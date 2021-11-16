@@ -448,7 +448,7 @@ class VariantDetailsSerializer(serializers.ModelSerializer):
         seller_name = serializers.CharField(source='owner.business_name')
         class Meta:
             model = Product
-            fields = ['title', 'has_multiple_variants', 'id', 'seller_name']
+            fields = ['title', 'has_multiple_variants', 'id', 'seller_name',"allow_inventory_tracking","allow_overselling"]
 
     featured_image = serializers.SerializerMethodField()
     def get_featured_image(self, variant):
