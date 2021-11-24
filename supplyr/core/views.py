@@ -403,7 +403,7 @@ class UpdateMobileNumberView(APIView,UserInfoMixin):
         else:
             return generate_and_send_mobile_verification_otp(user,new_mobile)
         
-class UpdateMobileNumberConfirmView(GenericAPIView,UserInfoMixin):
+class UpdateMobileNumberConfirmView(APIView,UserInfoMixin):
     '''
         It handles the mobile number verification after requesting their mobile number change.By taking the these arguments otp_id,new_mobile,code etc as post request.
     '''
