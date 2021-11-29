@@ -11,9 +11,9 @@ from rest_framework.generics import ListAPIView, GenericAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from supplyr.core.permissions import IsApproved, IsFromBuyerAPI, IsFromBuyerOrSalesAPI, IsFromSellerAPI
-from .serializers import BuyerSellerConnectionSerializers, ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer, SellerBuyerConnectionDetailSerializer, VariantDetailsSerializer, CategoriesSerializer2
+from .serializers import *
 from supplyr.inventory.models import Category
-from supplyr.profiles.models import SellerProfile
+from supplyr.profiles.models import BuyerProfile,  SellerProfile
 from .models import Product, Variant, ProductImage
 from django.db.models import Prefetch, Q, Count, Sum, Min, Max
 
@@ -273,7 +273,7 @@ class UpdateFavouritesView(APIView):
             return Response({'success': False, 'message': str(e)}, status=500)
 
 class BuyerSellerConnectionAPIView(APIView):
-    permission_classes = [IsApproved]
+    permission_classes = [IsApproved,IsFromSellerAPI]
     
     def get(self,request,*args,**kwargs):
         seller = request.user.seller_profiles.first()
@@ -283,10 +283,23 @@ class BuyerSellerConnectionAPIView(APIView):
         else:
             buyers = seller.connections.filter(is_active=True)
         paginator = CustomPageNumberPagination()
-        paginator.page_size = 2
+        paginator.page_size = 8
         result_page = paginator.paginate_queryset(buyers, request)
         serializers = BuyerSellerConnectionSerializers(result_page,many=True)
         return paginator.get_paginated_response(serializers.data)
+
+class SellerBuyersDetailAPIView(APIView):
+    permission_classes = [IsApproved,IsFromSellerAPI]
+    
+    def get(self,request,*args,**kwargs):
+        if pk := kwargs.get("pk",None):
+            object = request.user.seller_profiles.first().connections.filter(Q(buyer__business_name=pk)).first()
+            buyer = get_object_or_404(BuyerProfile,pk=object.buyer.id)
+            serializer = BuyerDetailSerializer(buyer)
+            return Response(serializer.data,status=status.HTTP_200_OK)
+
+
+    
     
 class BuyerDiscountAPI(generics.GenericAPIView,mixins.RetrieveModelMixin,mixins.UpdateModelMixin):
     permission_classes = [IsApproved]

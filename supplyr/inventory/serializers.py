@@ -5,12 +5,21 @@ from django_extensions.db import fields
 from rest_framework import serializers
 
 from supplyr.core.model_utils import get_auto_category_ORM_filters, get_wight_in_grams
+
+
 from .models import AutoCategoryRule, Product, Tags, User, Variant, ProductImage, Category, Vendors
-from supplyr.profiles.models import BuyerSellerConnection, SellerProfile
+from supplyr.profiles.models import BuyerAddress, BuyerProfile, BuyerSellerConnection, SellerProfile
 from django.conf import settings
 from django.db import transaction
 from django.db.models.functions import Coalesce
 from django.db.models import Q
+
+class ChoiceField(serializers.ChoiceField):
+
+    def to_representation(self, obj):
+        if obj == '' and self.allow_blank:
+            return obj
+        return self._choices[obj]
 
 
 class ProductListSerializer(serializers.ModelSerializer):
@@ -802,3 +811,29 @@ class SellerBuyerConnectionDetailSerializer(serializers.ModelSerializer):
         model = BuyerSellerConnection
         fields = ["id","buyer","seller","generic_discount"]
         extra_kwargs = {"generic_discount": {"required": True},"buyer":{"read_only":True},"seller":{"read_only":True}}
+        
+class BuyerAddressSerializer(serializers.ModelSerializer):
+    state = ChoiceField(choices=BuyerAddress.STATE_CHOICES)
+    class Meta:
+        model = BuyerAddress
+        fields = ["id","name","line1","line2","pin","city","state"]
+        
+    
+        
+class BuyerDetailSerializer(serializers.ModelSerializer):
+    
+    owner = serializers.SerializerMethodField()
+    def get_owner(self,buyer):
+        return buyer.owner.name
+    
+   
+    address = serializers.SerializerMethodField()
+    def get_address(self,buyer):
+        addresses = buyer.buyer_address.filter(is_active=True)
+        return BuyerAddressSerializer(addresses,many=True).data
+    
+   
+    
+    class Meta:
+        model = BuyerProfile
+        fields = ["id","owner","business_name","address"]
