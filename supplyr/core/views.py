@@ -202,8 +202,6 @@ class RequestForgetPassword(GenericAPIView):
             user = User.objects.filter(mobile_number=mobile_number).first()
             return generate_and_send_mobile_verification_otp(user)
         elif email:
-            try:
-                user = get_object_or_404(User,email=email)
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
 
@@ -213,8 +211,6 @@ class RequestForgetPassword(GenericAPIView):
                         {"message": _("Password reset e-mail has been sent."),"email":email,"success":True},
                         status=status.HTTP_200_OK
                     )
-            except Exception as err:
-                return Response({"email":f"Email {email} doesn't exist!"},status=status.HTTP_400_BAD_REQUEST)
 
 class PasswordResetEmailConfirmView(GenericAPIView, UserInfoMixin):
     '''
