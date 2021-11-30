@@ -202,15 +202,15 @@ class RequestForgetPassword(GenericAPIView):
             user = User.objects.filter(mobile_number=mobile_number).first()
             return generate_and_send_mobile_verification_otp(user)
         elif email:
-                serializer = self.get_serializer(data=request.data)
-                serializer.is_valid(raise_exception=True)
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
 
-                serializer.save()
-                    # Return the success message with OK HTTP status
-                return Response(
-                        {"message": _("Password reset e-mail has been sent."),"email":email,"success":True},
-                        status=status.HTTP_200_OK
-                    )
+            serializer.save()
+                # Return the success message with OK HTTP status
+            return Response(
+                    {"message": _("Password reset e-mail has been sent."),"email":email,"success":True},
+                    status=status.HTTP_200_OK
+                )
 
 class PasswordResetEmailConfirmView(GenericAPIView, UserInfoMixin):
     '''
