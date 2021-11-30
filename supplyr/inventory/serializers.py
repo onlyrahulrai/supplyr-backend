@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from supplyr.core.model_utils import get_auto_category_ORM_filters, get_wight_in_grams
 from .models import AutoCategoryRule, Product, Tags, User, Variant, ProductImage, Category, Vendors
-from supplyr.profiles.models import SellerProfile
+from supplyr.profiles.models import BuyerSellerConnection, SellerProfile
 from django.conf import settings
 from django.db import transaction
 from django.db.models.functions import Coalesce
@@ -98,13 +98,17 @@ class VariantSerializer(serializers.ModelSerializer):
         if not variant['option3_name']:
             del variant['option3_name']
             del variant['option3_value']
-
+            
+            
         return variant
 
     def to_internal_value(self, data):
         internal_value = super().to_internal_value(data)
+        print("\n\n\n varient data \n\n\n ",data)
         if id := data.get('id'):
             internal_value['id'] = id
+            
+       
         return internal_value
 
     def create(self, validated_data):
@@ -197,7 +201,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     
     def to_internal_value(self, data):
         internal_value = super().to_internal_value(data)
-        print('internal Product value    -------->  ', data)
+        print('\n\n\n\ internal Product value    -------->  ', data)
 
         variants_raw_data = data.get('variants_data')
         is_multi_variant = variants_raw_data.get('multiple')
@@ -231,8 +235,12 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         weight_value = get_wight_in_grams(data.get("weight_value"),weight_unit)
         # weight_value = float(data.get("weight_value")) / 1000 if weight_unit == "mg"  else (float(data.get("weight_value")) * 1000 if weight_unit == "kg" else float(data.get("weight_value")))
         country = data.get("country")
+        allow_inventory_tracking = data.get("allow_inventory_tracking")
+        allow_overselling = data.get("allow_overselling")
 
         internal_value.update({
+            "allow_inventory_tracking":allow_inventory_tracking,
+            "allow_overselling":allow_overselling,
             'variants_data': variants_final_data,
             'images': images,
             "weight_unit":weight_unit,
@@ -247,7 +255,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        # print("validated Data ____________: ",validated_data)
+        print("validated Data ____________: ",validated_data)
         images = validated_data['images']
         del validated_data['images']    #Otherwise saving will break, as there are just image IDs in this field instead of instances
         tags_data = validated_data.pop("tags")
@@ -325,7 +333,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
     
     @transaction.atomic
     def update(self, instance, validated_data):
-        print("update validated data is this >>>>>>>>>>> : ",validated_data)
+        print(" \n\n\n\ update validated data is this >>>>>>>>>>> : ",validated_data)
         
         ######### Add or (Create then Add) tags in product #########
         seller = validated_data.get("owner")
@@ -420,7 +428,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'title', 'slug', 'description', 'owner', 'images', 'variants_data',"vendors","tags", 'sub_categories', 'is_favourite',"weight_unit","weight_value","country"]
+        fields = ['id', 'title', 'slug', 'description', 'owner', 'images', 'variants_data',"vendors","tags", 'sub_categories', 'is_favourite',"weight_unit","weight_value","country","allow_inventory_tracking","allow_overselling"]
         # depth = 1
 
 
@@ -440,7 +448,7 @@ class VariantDetailsSerializer(serializers.ModelSerializer):
         seller_name = serializers.CharField(source='owner.business_name')
         class Meta:
             model = Product
-            fields = ['title', 'has_multiple_variants', 'id', 'seller_name']
+            fields = ['title', 'has_multiple_variants', 'id', 'seller_name',"allow_inventory_tracking","allow_overselling"]
 
     featured_image = serializers.SerializerMethodField()
     def get_featured_image(self, variant):
@@ -762,9 +770,35 @@ class TagsSerializer(serializers.ModelSerializer):
         fields = ["id","label"]
         
 class VendorsSerializer(serializers.ModelSerializer):
+    
     label = serializers.SerializerMethodField()
     def get_label(self,vendors):
         return vendors.name
     class Meta:
         model = Vendors
         fields = ["id","label"]
+        
+        
+class  BuyerSellerConnectionSerializers(serializers.ModelSerializer):
+    buyer = serializers.SerializerMethodField()
+    def get_buyer(self,seller):
+        return {"id":seller.buyer.id,"email":seller.buyer.owner.email,"business_name":seller.buyer.business_name,"buyer_name":seller.buyer.owner.name}
+    
+     
+    class Meta:
+        model = BuyerSellerConnection
+        fields = ["id","buyer","generic_discount"] 
+        
+class SellerBuyerConnectionDetailSerializer(serializers.ModelSerializer):    
+    buyer = serializers.SerializerMethodField()
+    def get_buyer(self,connection):
+        return connection.buyer.business_name
+    
+    seller = serializers.SerializerMethodField()
+    def get_seller(self,connection):
+        return connection.seller.business_name
+    
+    class Meta:
+        model = BuyerSellerConnection
+        fields = ["id","buyer","seller","generic_discount"]
+        extra_kwargs = {"generic_discount": {"required": True},"buyer":{"read_only":True},"seller":{"read_only":True}}

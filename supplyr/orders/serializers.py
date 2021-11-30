@@ -59,8 +59,10 @@ class OrderSerializer(serializers.ModelSerializer):
             variant = Variant.objects.filter(id=item['variant_id'], is_active=True).first()
             if not variant:
                 unhandled_errors =  True
-            if variant.quantity < item['quantity']:
-                raise ValidationError({"cart": "Selcted quantities of some products no longer available."})
+                
+            if variant.product.allow_inventory_tracking == True and variant.product.allow_overselling == False:
+                if variant.quantity < item['quantity']:
+                    raise ValidationError({"cart": "Selcted quantities of some products no longer available."})
                 # handled_errors = "Selcted quantities of some products no longer available."
             
             if unhandled_errors:

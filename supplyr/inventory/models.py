@@ -131,6 +131,11 @@ class Product(Model):
     weight_unit = EnumField(choices=WeightUnit.choices,blank=True,null=True)
     weight_value = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
     country = EnumField(choices=COUNTRY_CHOICES,null=True,blank=True)
+    
+    # Allow Disallow Inventory Tracking 
+    allow_inventory_tracking = models.BooleanField(default=False)
+    allow_overselling = models.BooleanField(default=False,null=True)
+    
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
