@@ -127,7 +127,7 @@ class Product(Model):
     owner = models.ForeignKey('profiles.SellerProfile', related_name='products', on_delete=models.CASCADE)
     vendors = models.ForeignKey('inventory.vendors', related_name='products', on_delete=models.CASCADE,blank=True,null=True)
     sub_categories = models.ManyToManyField('inventory.Category', related_name='products')
-    tags = models.ManyToManyField('inventory.Tags', related_name='products')
+    tags = models.ManyToManyField('inventory.Tags', related_name='products',blank=True)
     weight_unit = EnumField(choices=WeightUnit.choices,blank=True,null=True)
     weight_value = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
     country = EnumField(choices=COUNTRY_CHOICES,null=True,blank=True)
@@ -224,7 +224,7 @@ class Variant(Model):
     option3_name = models.CharField(max_length=50, blank=True, null=True)
     option3_value = models.CharField(max_length=150, blank=True, null=True)
 
-    quantity = models.PositiveIntegerField(default=0)
+    quantity = models.IntegerField(default=0)
     minimum_order_quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
     actual_price = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
