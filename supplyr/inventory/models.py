@@ -224,7 +224,7 @@ class Variant(Model):
     option3_name = models.CharField(max_length=50, blank=True, null=True)
     option3_value = models.CharField(max_length=150, blank=True, null=True)
 
-    quantity = models.PositiveIntegerField(default=0)
+    quantity = models.IntegerField(default=0)
     minimum_order_quantity = models.PositiveIntegerField(default=1)
     price = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
     actual_price = models.DecimalField(decimal_places=2, max_digits=12, blank=True, null=True)
