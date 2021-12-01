@@ -229,8 +229,8 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
         images = data.get('images')
         sub_categories = data.get('sub_categories')
-        tags = data.get("tags")
-        vendors = data.get("vendors")
+        tags = data.get("tags",None)
+        vendors = data.get("vendors",None)
         weight_unit = data.get("weight_unit")
         weight_value = get_wight_in_grams(data.get("weight_value"),weight_unit)
         # weight_value = float(data.get("weight_value")) / 1000 if weight_unit == "mg"  else (float(data.get("weight_value")) * 1000 if weight_unit == "kg" else float(data.get("weight_value")))
@@ -255,7 +255,7 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        print("validated Data ____________: ",validated_data)
+        print("\n\n\n validated Data ____________: ",validated_data)
         images = validated_data['images']
         del validated_data['images']    #Otherwise saving will break, as there are just image IDs in this field instead of instances
         tags_data = validated_data.pop("tags")
@@ -274,9 +274,10 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         ######### Add or (Create then Add) vendors in product #########
         vendor_data = validated_data.pop("vendors")
         
-        vendor = Vendors.objects.create(name=vendor_data.get("label"),seller=seller) if(vendor_data.get("new")) else Vendors.objects.get(id=vendor_data.get("id"))
-      
-        validated_data["vendors"] = vendor
+        if vendor_data:
+            vendor = Vendors.objects.create(name=vendor_data.get("label"),seller=seller) if(vendor_data.get("new")) else Vendors.objects.get(id=vendor_data.get("id"))
+        
+            validated_data["vendors"] = vendor
         ######### Add or (Create then Add) vendors in product #########
 
         product = Product.objects.create(**validated_data)
@@ -350,9 +351,11 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         ######### Add or (Create then Add) vendors in product #########
         vendor_data = validated_data.pop("vendors")
         
-        vendor = Vendors.objects.create(name=vendor_data.get("label"),seller=seller) if(vendor_data.get("new")) else Vendors.objects.get(id=vendor_data.get("id"))
-        
-        validated_data["vendors"] = vendor
+        if vendor_data:
+            vendor,created = Vendors.objects.get_or_create(name=vendor_data.get("label"),seller=seller)
+            # vendor = Vendors.objects.create(name=vendor_data.get("label"),seller=seller) if(vendor_data.get("new")) else Vendors.objects.get(id=vendor_data.get("id"))
+            
+            validated_data["vendors"] = vendor
         ######### Add or (Create then Add) vendors in product #########
         
         ######### Add Sub categories in product #########
