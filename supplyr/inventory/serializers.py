@@ -25,7 +25,7 @@ class ChoiceField(serializers.ChoiceField):
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'slug', 'featured_image', 'price', 'actual_price', 'sale_price_minimum', 'sale_price_maximum', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count', 'default_variant_id', 'price_range', 'actual_price_range', 'minimum_order_quantity']
+        fields = ['id', 'title', 'slug', 'featured_image', 'price', 'actual_price', 'sale_price_minimum', 'sale_price_maximum', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count', 'default_variant_id', 'price_range', 'actual_price_range', 'minimum_order_quantity',"allow_inventory_tracking","allow_overselling"]
 
 
     featured_image = serializers.SerializerMethodField()
