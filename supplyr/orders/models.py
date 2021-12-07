@@ -53,6 +53,7 @@ class OrderItem(models.Model):
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=12, decimal_places=2)
     actual_price = models.DecimalField(max_digits=12, decimal_places=2)
+    is_active = models.BooleanField(default=True)
 
     @property
     def featured_image(self):

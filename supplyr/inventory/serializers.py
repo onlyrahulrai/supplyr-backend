@@ -25,8 +25,17 @@ class ChoiceField(serializers.ChoiceField):
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'slug', 'featured_image', 'price', 'actual_price', 'sale_price_minimum', 'sale_price_maximum', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count', 'default_variant_id', 'price_range', 'actual_price_range', 'minimum_order_quantity',"allow_inventory_tracking","allow_overselling"]
+        fields = ['id', 'title', 'slug', 'featured_image', 'price', 'actual_price', 'sale_price_minimum', 'sale_price_maximum', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count','variants_data' , 'default_variant_id', 'price_range', 'actual_price_range', 'minimum_order_quantity',"allow_inventory_tracking","allow_overselling"]
 
+    variants_data = serializers.SerializerMethodField()
+    def get_variants_data(self,product):
+        variants = product.variants.filter(is_active=True)
+        if product.has_multiple_variants():
+            print("multiple variants")
+            data = VariantDetailsSerializer(variants,many=True).data
+        else:
+            data = VariantDetailsSerializer(variants.first()).data
+        return  data
 
     featured_image = serializers.SerializerMethodField()
     def get_featured_image(self, instance):
@@ -107,6 +116,7 @@ class VariantSerializer(serializers.ModelSerializer):
         if not variant['option3_name']:
             del variant['option3_name']
             del variant['option3_value']
+            
             
             
         return variant
@@ -457,7 +467,7 @@ class VariantDetailsSerializer(serializers.ModelSerializer):
         seller_name = serializers.CharField(source='owner.business_name')
         class Meta:
             model = Product
-            fields = ['title', 'has_multiple_variants', 'id', 'seller_name',"allow_inventory_tracking","allow_overselling"]
+            fields = ["id",'title', 'has_multiple_variants', 'id', 'seller_name',"allow_inventory_tracking","allow_overselling"]
 
     featured_image = serializers.SerializerMethodField()
     def get_featured_image(self, variant):
@@ -837,3 +847,4 @@ class BuyerDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = BuyerProfile
         fields = ["id","owner","business_name","address"]
+        

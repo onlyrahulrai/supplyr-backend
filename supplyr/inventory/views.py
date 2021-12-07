@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status, mixins
-from rest_framework.generics import ListAPIView, GenericAPIView
+from rest_framework.generics import ListAPIView, GenericAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 
 from supplyr.core.permissions import IsApproved, IsFromBuyerAPI, IsFromBuyerOrSalesAPI, IsFromSellerAPI, IsFromBuyerSellerOrSalesAPI
@@ -111,6 +111,21 @@ class SellerSelfProductListView(ListAPIView):
                  )
                  # Didn't store annotations and prefetches into their natural names, as the model methods could fail if these has not been generated. 
                  # Hence, stored them with unique names which I am checking in models, to use if exists.
+                 
+class ProductListView(ListAPIView):
+    """
+    Products list of a seller when viewed by himself
+    """
+    permission_classes = [IsApproved]
+    serializer_class = ProductListSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        profile = self.request.user.seller_profiles.first()
+        return Product.objects.filter(owner = profile, is_active = True)
+                 
+
+
 
 class SellerProductListView(ListAPIView):
     """
@@ -299,8 +314,8 @@ class SellerBuyersDetailAPIView(APIView):
             return Response(serializer.data,status=status.HTTP_200_OK)
 
 
-    
-    
+
+
 class BuyerDiscountAPI(generics.GenericAPIView,mixins.RetrieveModelMixin,mixins.UpdateModelMixin):
     permission_classes = [IsApproved]
     serializer_class = SellerBuyerConnectionDetailSerializer

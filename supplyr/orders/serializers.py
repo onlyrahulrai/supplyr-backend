@@ -44,6 +44,7 @@ class OrderSerializer(serializers.ModelSerializer):
         return None
 
     def to_internal_value(self, data):
+        print(f"\n\n\n requested data is {data} \n\n\n")
         unhandled_errors = False
         # handled_errors = False
         total_amount = 0
@@ -51,12 +52,16 @@ class OrderSerializer(serializers.ModelSerializer):
         if 'buyer_id' in data and self.context['request'].user.salesperson_status == 'ready':
             buyer_id = data.pop('buyer_id')
             buyer_profile_id =  buyer_id
+        elif "buyer_id" in data and self.context["request"].user.seller_status == "approved":
+            buyer_id = data.pop("buyer_id")
+            buyer_profile_id = buyer_id
         else:
             buyer_profile_id = self.context['request'].user.get_buyer_profile().id
         print(data['items'])
         for item in data['items']:
             error = None
             variant = Variant.objects.filter(id=item['variant_id'], is_active=True).first()
+            
             if not variant:
                 unhandled_errors =  True
                 
@@ -113,6 +118,26 @@ class OrderSerializer(serializers.ModelSerializer):
         
         return order
             
+    def update(self, instance, validated_data):
+        print("validated data >>>>> ",validated_data)
+        items = validated_data.pop("items")
+        order = super().update(instance, validated_data)
+        
+        orderitem_initial = list(instance.items.filter(is_active=True).values_list("id",flat=True))
+        
+        orderitem_final = []
+        
+        for item in items:
+            print(f" \n\n\n Order item {item} \n\n\n")
+            _orderitem = order.items.filter(is_active=True)
+            orderitem,created = OrderItem.objects.update_or_create(order=order,**item)
+            orderitem_final.append(orderitem.id)
+        
+        orderitem_to_remove = [oi  for oi in orderitem_initial if oi not in orderitem_final]
+        
+        OrderItem.objects.filter(id__in=orderitem_to_remove).update(is_active=False)
+        
+        return order
 
 class OrderListSerializer(serializers.ModelSerializer, SerializerAPISourceMixin):
     featured_image = serializers.SerializerMethodField()

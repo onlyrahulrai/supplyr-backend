@@ -9,6 +9,11 @@ urlpatterns = [
         name='order'
     ),
     path(
+        '<str:pk>/update/',
+        OrderView.as_view(),
+        name='order'
+    ),
+    path(
         'list/',
         OrderListView.as_view(),
         name='orders_list'

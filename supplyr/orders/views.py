@@ -13,7 +13,7 @@ from django.db.models import F
 
 class OrderView(mixins.ListModelMixin,
                   mixins.CreateModelMixin,
-                  generics.GenericAPIView):
+                  generics.GenericAPIView,mixins.UpdateModelMixin):
     """
     List, create, retrieve and cancel orders from buyer app
     """
@@ -29,7 +29,8 @@ class OrderView(mixins.ListModelMixin,
         return self.list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        print("OOO ", args, kwargs)
+        if(kwargs.get("pk")):
+            return self.update(request,*args,**kwargs)
         return self.create(request, *args, **kwargs)
 
     # def get_queryset(self):
