@@ -19,12 +19,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
     #     if im := order.featured_image:
     #         return order.featured_image.image_md.url
 
-    # title = serializers.CharField(source='product_variant.product.title')
     product_variant = VariantDetailsSerializer(read_only=True)
     product_variant_id = serializers.PrimaryKeyRelatedField(queryset=Variant.objects.all(), source='product_variant', write_only=True)
     class Meta: 
         model = OrderItem
-        fields = ['quantity', 'price', 'actual_price', 'product_variant', 'product_variant_id']
+        fields = ["id", 'quantity', 'price', 'actual_price', 'product_variant', 'product_variant_id']
+
+
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
@@ -98,6 +99,7 @@ class OrderSerializer(serializers.ModelSerializer):
     def create(self, validated_data): 
         # Validation TBA: Prevent any extra field in api call, like is_cancelled, created_at etc which should not be set by user api call 
         # validation TBA: check if buyer n seller are connected
+        
         items = validated_data.pop('items')
         print("VDDDDD ", validated_data)
         # address = BuyerAddress.objectaddressed_data)
@@ -117,9 +119,7 @@ class OrderSerializer(serializers.ModelSerializer):
                 product_variant.save()
         
         return order
-            
     def update(self, instance, validated_data):
-        print("validated data >>>>> ",validated_data)
         items = validated_data.pop("items")
         order = super().update(instance, validated_data)
         
