@@ -28,11 +28,19 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True)
+    
+    
+    # items = OrderItemSerializer(many=True)
+    items = serializers.SerializerMethodField()
+    def get_items(self,order):
+        orderitem = order.items.filter(is_active=True)
+        print(f"\n\n\n orderitem queryset >>>>> {orderitem} \n\n\n")
+        return OrderItemSerializer(orderitem,many=True).data
 
     class Meta:
         model = Order
-        exclude = ['is_active']
+        fields = ["id","items","buyer","seller","created_by","total_amount","address","status","created_at","cancelled_at","cancelled_by"]
+        # exclude = ['is_active']
         read_only_fields = ['cancelled_at']
 
     def _get_api_source(self):
@@ -94,7 +102,9 @@ class OrderSerializer(serializers.ModelSerializer):
             
 
         data['buyer'] = buyer_profile_id
-        return super().to_internal_value(data)
+        value = super().to_internal_value(data)
+        value["items"] = data["items"]
+        return value
 
     def create(self, validated_data): 
         # Validation TBA: Prevent any extra field in api call, like is_cancelled, created_at etc which should not be set by user api call 
@@ -112,6 +122,7 @@ class OrderSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             order = Order.objects.create(**validated_data)
             for item in items:
+                variant_id = item.pop("variant_id")
                 _item = OrderItem.objects.create(**item, order = order)
 
                 product_variant = _item.product_variant
@@ -128,9 +139,16 @@ class OrderSerializer(serializers.ModelSerializer):
         orderitem_final = []
         
         for item in items:
-            print(f" \n\n\n Order item {item} \n\n\n")
-            _orderitem = order.items.filter(is_active=True)
-            orderitem,created = OrderItem.objects.update_or_create(order=order,**item)
+            # print(f" \n\n\n Order item {item} \n\n\n")
+            variant_id = item.pop("variant_id")
+            if item.get("id"):
+                print("id is exists")
+                orderitem = OrderItem(order=order,**item)
+            else:
+                orderitem = OrderItem.objects.create(order=order,**item)
+                
+            orderitem.save()
+
             orderitem_final.append(orderitem.id)
         
         orderitem_to_remove = [oi  for oi in orderitem_initial if oi not in orderitem_final]
@@ -225,7 +243,11 @@ class OrderHistorySerializer(serializers.ModelSerializer):
 class OrderDetailsSerializer(SellerOrderListSerializer):
 
     address = BuyerAddressSerializer()
-    items = OrderItemSerializer(many=True)
+    
+    items = serializers.SerializerMethodField()
+    def get_items(self,order):
+        return OrderItemSerializer(order.items.filter(is_active=True),many=True).data
+    
     history = OrderHistorySerializer(many=True)
     order_time = serializers.SerializerMethodField()
     created_by_user = serializers.SerializerMethodField()
