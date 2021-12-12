@@ -19,19 +19,28 @@ class OrderItemSerializer(serializers.ModelSerializer):
     #     if im := order.featured_image:
     #         return order.featured_image.image_md.url
 
-    # title = serializers.CharField(source='product_variant.product.title')
     product_variant = VariantDetailsSerializer(read_only=True)
     product_variant_id = serializers.PrimaryKeyRelatedField(queryset=Variant.objects.all(), source='product_variant', write_only=True)
     class Meta: 
         model = OrderItem
-        fields = ['quantity', 'price', 'actual_price', 'product_variant', 'product_variant_id']
+        fields = ["id", 'quantity', 'price', 'actual_price', 'product_variant', 'product_variant_id']
+
+
 
 class OrderSerializer(serializers.ModelSerializer):
-    items = OrderItemSerializer(many=True)
+    
+    
+    # items = OrderItemSerializer(many=True)
+    items = serializers.SerializerMethodField()
+    def get_items(self,order):
+        orderitem = order.items.filter(is_active=True)
+        print(f"\n\n\n orderitem queryset >>>>> {orderitem} \n\n\n")
+        return OrderItemSerializer(orderitem,many=True).data
 
     class Meta:
         model = Order
-        exclude = ['is_active']
+        fields = ["id","items","buyer","seller","created_by","total_amount","address","status","created_at","cancelled_at","cancelled_by"]
+        # exclude = ['is_active']
         read_only_fields = ['cancelled_at']
 
     def _get_api_source(self):
@@ -44,6 +53,7 @@ class OrderSerializer(serializers.ModelSerializer):
         return None
 
     def to_internal_value(self, data):
+        print(f"\n\n\n requested data is {data} \n\n\n")
         unhandled_errors = False
         # handled_errors = False
         total_amount = 0
@@ -51,12 +61,16 @@ class OrderSerializer(serializers.ModelSerializer):
         if 'buyer_id' in data and self.context['request'].user.salesperson_status == 'ready':
             buyer_id = data.pop('buyer_id')
             buyer_profile_id =  buyer_id
+        elif "buyer_id" in data and self.context["request"].user.seller_status == "approved":
+            buyer_id = data.pop("buyer_id")
+            buyer_profile_id = buyer_id
         else:
             buyer_profile_id = self.context['request'].user.get_buyer_profile().id
         print(data['items'])
         for item in data['items']:
             error = None
             variant = Variant.objects.filter(id=item['variant_id'], is_active=True).first()
+            
             if not variant:
                 unhandled_errors =  True
                 
@@ -88,11 +102,14 @@ class OrderSerializer(serializers.ModelSerializer):
             
 
         data['buyer'] = buyer_profile_id
-        return super().to_internal_value(data)
+        value = super().to_internal_value(data)
+        value["items"] = data["items"]
+        return value
 
     def create(self, validated_data): 
         # Validation TBA: Prevent any extra field in api call, like is_cancelled, created_at etc which should not be set by user api call 
         # validation TBA: check if buyer n seller are connected
+        
         items = validated_data.pop('items')
         print("VDDDDD ", validated_data)
         # address = BuyerAddress.objectaddressed_data)
@@ -105,6 +122,7 @@ class OrderSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             order = Order.objects.create(**validated_data)
             for item in items:
+                variant_id = item.pop("variant_id")
                 _item = OrderItem.objects.create(**item, order = order)
 
                 product_variant = _item.product_variant
@@ -112,7 +130,32 @@ class OrderSerializer(serializers.ModelSerializer):
                 product_variant.save()
         
         return order
-            
+    def update(self, instance, validated_data):
+        items = validated_data.pop("items")
+        order = super().update(instance, validated_data)
+        
+        orderitem_initial = list(instance.items.filter(is_active=True).values_list("id",flat=True))
+        
+        orderitem_final = []
+        
+        for item in items:
+            # print(f" \n\n\n Order item {item} \n\n\n")
+            variant_id = item.pop("variant_id")
+            if item.get("id"):
+                print("id is exists")
+                orderitem = OrderItem(order=order,**item)
+            else:
+                orderitem = OrderItem.objects.create(order=order,**item)
+                
+            orderitem.save()
+
+            orderitem_final.append(orderitem.id)
+        
+        orderitem_to_remove = [oi  for oi in orderitem_initial if oi not in orderitem_final]
+        
+        OrderItem.objects.filter(id__in=orderitem_to_remove).update(is_active=False)
+        
+        return order
 
 class OrderListSerializer(serializers.ModelSerializer, SerializerAPISourceMixin):
     featured_image = serializers.SerializerMethodField()
@@ -200,7 +243,11 @@ class OrderHistorySerializer(serializers.ModelSerializer):
 class OrderDetailsSerializer(SellerOrderListSerializer):
 
     address = BuyerAddressSerializer()
-    items = OrderItemSerializer(many=True)
+    
+    items = serializers.SerializerMethodField()
+    def get_items(self,order):
+        return OrderItemSerializer(order.items.filter(is_active=True),many=True).data
+    
     history = OrderHistorySerializer(many=True)
     order_time = serializers.SerializerMethodField()
     created_by_user = serializers.SerializerMethodField()

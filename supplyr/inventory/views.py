@@ -7,13 +7,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status, mixins
-from rest_framework.generics import ListAPIView, GenericAPIView
+from rest_framework.generics import ListAPIView, GenericAPIView, RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 
-from supplyr.core.permissions import IsApproved, IsFromBuyerAPI, IsFromBuyerOrSalesAPI, IsFromSellerAPI
-from .serializers import BuyerSellerConnectionSerializers, ProductDetailsSerializer, ProductImageSerializer, ProductListSerializer, SellerBuyerConnectionDetailSerializer, VariantDetailsSerializer, CategoriesSerializer2
+from supplyr.core.permissions import IsApproved, IsFromBuyerAPI, IsFromBuyerOrSalesAPI, IsFromSellerAPI, IsFromBuyerSellerOrSalesAPI
+from .serializers import *
 from supplyr.inventory.models import Category
-from supplyr.profiles.models import SellerProfile
+from supplyr.profiles.models import BuyerProfile,  SellerProfile
 from .models import Product, Variant, ProductImage
 from django.db.models import Prefetch, Q, Count, Sum, Min, Max
 
@@ -111,6 +111,21 @@ class SellerSelfProductListView(ListAPIView):
                  )
                  # Didn't store annotations and prefetches into their natural names, as the model methods could fail if these has not been generated. 
                  # Hence, stored them with unique names which I am checking in models, to use if exists.
+                 
+class ProductListView(ListAPIView):
+    """
+    Products list of a seller when viewed by himself
+    """
+    permission_classes = [IsApproved]
+    serializer_class = ProductListSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        profile = self.request.user.seller_profiles.first()
+        return Product.objects.filter(owner = profile, is_active = True)
+                 
+
+
 
 class SellerProductListView(ListAPIView):
     """
@@ -148,7 +163,7 @@ class VariantDetailView(ListAPIView):
     Passed a list of variant IDs, it will return a list of detailed variants information
     Made for used in cart where list of variant IOs is maintained on frontend and details need to be fetched from backend.
     """
-    permission_classes = [IsFromBuyerOrSalesAPI]
+    permission_classes = [IsFromBuyerSellerOrSalesAPI]
     serializer_class = VariantDetailsSerializer
     pagination_class = None
 
@@ -273,7 +288,7 @@ class UpdateFavouritesView(APIView):
             return Response({'success': False, 'message': str(e)}, status=500)
 
 class BuyerSellerConnectionAPIView(APIView):
-    permission_classes = [IsApproved]
+    permission_classes = [IsApproved,IsFromSellerAPI]
     
     def get(self,request,*args,**kwargs):
         seller = request.user.seller_profiles.first()
@@ -283,11 +298,24 @@ class BuyerSellerConnectionAPIView(APIView):
         else:
             buyers = seller.connections.filter(is_active=True)
         paginator = CustomPageNumberPagination()
-        paginator.page_size = 2
+        paginator.page_size = 8
         result_page = paginator.paginate_queryset(buyers, request)
         serializers = BuyerSellerConnectionSerializers(result_page,many=True)
         return paginator.get_paginated_response(serializers.data)
+
+class SellerBuyersDetailAPIView(APIView):
+    permission_classes = [IsApproved,IsFromSellerAPI]
     
+    def get(self,request,*args,**kwargs):
+        if pk := kwargs.get("pk",None):
+            object = request.user.seller_profiles.first().connections.filter(Q(buyer__business_name=pk)).first()
+            buyer = get_object_or_404(BuyerProfile,pk=object.buyer.id)
+            serializer = BuyerDetailSerializer(buyer)
+            return Response(serializer.data,status=status.HTTP_200_OK)
+
+
+
+
 class BuyerDiscountAPI(generics.GenericAPIView,mixins.RetrieveModelMixin,mixins.UpdateModelMixin):
     permission_classes = [IsApproved]
     serializer_class = SellerBuyerConnectionDetailSerializer

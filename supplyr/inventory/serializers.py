@@ -5,19 +5,37 @@ from django_extensions.db import fields
 from rest_framework import serializers
 
 from supplyr.core.model_utils import get_auto_category_ORM_filters, get_wight_in_grams
+
+
 from .models import AutoCategoryRule, Product, Tags, User, Variant, ProductImage, Category, Vendors
-from supplyr.profiles.models import BuyerSellerConnection, SellerProfile
+from supplyr.profiles.models import BuyerAddress, BuyerProfile, BuyerSellerConnection, SellerProfile
 from django.conf import settings
 from django.db import transaction
 from django.db.models.functions import Coalesce
 from django.db.models import Q
 
+class ChoiceField(serializers.ChoiceField):
+
+    def to_representation(self, obj):
+        if obj == '' and self.allow_blank:
+            return obj
+        return self._choices[obj]
+
 
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'title', 'slug', 'featured_image', 'price', 'actual_price', 'sale_price_minimum', 'sale_price_maximum', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count', 'default_variant_id', 'price_range', 'actual_price_range', 'minimum_order_quantity']
+        fields = ['id', 'title', 'slug', 'featured_image', 'price', 'actual_price', 'sale_price_minimum', 'sale_price_maximum', 'has_multiple_variants', 'quantity', 'quantity_all_variants', 'variants_count','variants_data' , 'default_variant_id', 'price_range', 'actual_price_range', 'minimum_order_quantity',"allow_inventory_tracking","allow_overselling"]
 
+    variants_data = serializers.SerializerMethodField()
+    def get_variants_data(self,product):
+        variants = product.variants.filter(is_active=True)
+        if product.has_multiple_variants():
+            print("multiple variants")
+            data = VariantDetailsSerializer(variants,many=True).data
+        else:
+            data = VariantDetailsSerializer(variants.first()).data
+        return  data
 
     featured_image = serializers.SerializerMethodField()
     def get_featured_image(self, instance):
@@ -98,6 +116,7 @@ class VariantSerializer(serializers.ModelSerializer):
         if not variant['option3_name']:
             del variant['option3_name']
             del variant['option3_value']
+            
             
             
         return variant
@@ -451,7 +470,7 @@ class VariantDetailsSerializer(serializers.ModelSerializer):
         seller_name = serializers.CharField(source='owner.business_name')
         class Meta:
             model = Product
-            fields = ['title', 'has_multiple_variants', 'id', 'seller_name',"allow_inventory_tracking","allow_overselling"]
+            fields = ["id",'title',"slug", 'has_multiple_variants', 'id', 'seller_name',"allow_inventory_tracking","allow_overselling"]
 
     featured_image = serializers.SerializerMethodField()
     def get_featured_image(self, variant):
@@ -805,3 +824,30 @@ class SellerBuyerConnectionDetailSerializer(serializers.ModelSerializer):
         model = BuyerSellerConnection
         fields = ["id","buyer","seller","generic_discount"]
         extra_kwargs = {"generic_discount": {"required": True},"buyer":{"read_only":True},"seller":{"read_only":True}}
+        
+class BuyerAddressSerializer(serializers.ModelSerializer):
+    state = ChoiceField(choices=BuyerAddress.STATE_CHOICES)
+    class Meta:
+        model = BuyerAddress
+        fields = ["id","name","line1","line2","pin","city","state"]
+        
+    
+        
+class BuyerDetailSerializer(serializers.ModelSerializer):
+    
+    owner = serializers.SerializerMethodField()
+    def get_owner(self,buyer):
+        return buyer.owner.name
+    
+   
+    address = serializers.SerializerMethodField()
+    def get_address(self,buyer):
+        addresses = buyer.buyer_address.filter(is_active=True)
+        return BuyerAddressSerializer(addresses,many=True).data
+    
+   
+    
+    class Meta:
+        model = BuyerProfile
+        fields = ["id","owner","business_name","address"]
+        

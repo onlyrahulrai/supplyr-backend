@@ -18,6 +18,8 @@ from django.urls import path, re_path, include
 from django.conf.urls.static import static
 from django.conf import settings
 from django.views.generic import RedirectView
+from rest_framework.schemas import get_schema_view
+from rest_framework.documentation import include_docs_urls
 # from rest_framework_simplejwt.views import TokenRefreshView
 # from rest_framework.authtoken.views import obtain_auth_token
 
@@ -38,6 +40,12 @@ _urlpatterns = [
 
 
 urlpatterns = [
+    path("api/",include_docs_urls(title="Supplyr API",description="B2B service API"),name="Supplyr backend docs"),
+    path("schema/",get_schema_view(
+        title="Supplyr API",
+        description="B2B service API",
+        version="1.0.0"
+    ),name="schema"),
     re_path('^v1/(?P<api_source>(buyer|seller|sales))/', include(_urlpatterns)),
     re_path('^reviewer/', include("supplyr.reviewer.urls")),
     path('', RedirectView.as_view(pattern_name='dashboard', permanent=False)),

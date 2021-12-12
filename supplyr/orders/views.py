@@ -13,7 +13,7 @@ from django.db.models import F
 
 class OrderView(mixins.ListModelMixin,
                   mixins.CreateModelMixin,
-                  generics.GenericAPIView):
+                  generics.GenericAPIView,mixins.UpdateModelMixin):
     """
     List, create, retrieve and cancel orders from buyer app
     """
@@ -29,21 +29,9 @@ class OrderView(mixins.ListModelMixin,
         return self.list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        print("OOO ", args, kwargs)
+        if(kwargs.get("pk")):
+            return self.update(request,*args,**kwargs)
         return self.create(request, *args, **kwargs)
-
-    # def get_queryset(self):
-    #     profile = self.request.user.buyer_profiles.first()
-    #     return BuyerAddress.objects.filter(is_active=True, owner = profile).order_by('-is_default')
-
-    # def perform_create(self, serializer):
-    #     owner = self.request.user.buyer_profiles.first()
-    #     serializer.save(owner = owner)
-    
-    # def perform_destroy(self, instance):
-    #     instance.is_active = False
-    #     instance.save()
-
 
 class OrderListView(mixins.ListModelMixin, generics.GenericAPIView, APISourceMixin):
     serializer_class = OrderListSerializer
