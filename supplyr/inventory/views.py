@@ -308,7 +308,7 @@ class SellerBuyersDetailAPIView(APIView):
     
     def get(self,request,*args,**kwargs):
         if pk := kwargs.get("pk",None):
-            object = request.user.seller_profiles.first().connections.filter(Q(buyer__business_name=pk)).first()
+            object = request.user.seller_profiles.first().connections.filter(Q(buyer__pk=pk)).first()
             buyer = get_object_or_404(BuyerProfile,pk=object.buyer.id)
             serializer = BuyerDetailSerializer(buyer)
             return Response(serializer.data,status=status.HTTP_200_OK)
