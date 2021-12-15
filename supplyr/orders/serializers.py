@@ -197,10 +197,14 @@ class SellerOrderListSerializer(OrderListSerializer):
     buyer_name = serializers.SerializerMethodField()
     def get_buyer_name(self, order):
         return order.buyer.business_name
+    
+    buyer_id = serializers.SerializerMethodField()
+    def get_buyer_id(self,order):
+        return order.buyer.id
 
     class Meta:
         model = Order
-        fields = ['id', 'order_date', 'buyer_name', 'order_status', 'total_amount', 'featured_image',]
+        fields = ['id', 'order_date', 'buyer_name',"buyer_id" ,'order_status', 'total_amount', 'featured_image',]
 
 class SalespersonOrderListSerializer(OrderListSerializer):
 
