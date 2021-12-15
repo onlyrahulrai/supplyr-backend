@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from typing import Dict
 from supplyr.inventory.models import Category, Tags
 from supplyr.inventory.serializers import CategoriesSerializer2, SubCategorySerializer2, SubCategorySerializer, TagsSerializer, VendorsSerializer
-
+from supplyr.orders.models import OrderStatusVariable
 
 User = get_user_model()
 
@@ -55,12 +55,17 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
         vendors_serializer = VendorsSerializer(vendors,many=True)
         return vendors_serializer.data
 
+    order_status_variables = serializers.SerializerMethodField()
+    def get_order_status_variables(self,profile):
+        return {'dispatched': profile.order_status_variables.values_list('name', flat=True)}
+
     class Meta:
         model = SellerProfile
         fields = [
             'business_name',
             'id',
             "tags",
+            "order_status_variables",
             "vendors",
             'sub_categories',
             'connection_code',

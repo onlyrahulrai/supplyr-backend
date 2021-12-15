@@ -1,7 +1,7 @@
 from re import T
 from django.db import models
 from django_mysql.models import EnumField
-
+from supplyr.profiles.models import SellerProfile
 
 class Order(models.Model):
 
@@ -82,5 +82,24 @@ class OrderHistory(models.Model):
     class Meta:
         verbose_name_plural = 'Order Histories'
         ordering = ('-created_at',)
+
+
+class OrderStatusVariable(models.Model):
+    name = models.CharField(max_length=100)
+    # stage
+    description = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    sellers = models.ManyToManyField(SellerProfile, related_name='order_status_variables')
+
+# class OrderStatusVariableSellerMapping(models.Model):
+#     variable = models.ForeignKey(OrderStatusVariable, related_name="status_variable_mappings")
+#     seller = models.ForeignKey(SellerProfile, related_name="order_status_variable_mappings")
+#     created_at = models.DateTimeField(auto_now_add=True)
+
+class OrderStatusVariableValue(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='status_variable_values')
+    variable = models.ForeignKey(OrderStatusVariable, on_delete=models.RESTRICT, related_name="values")
+    value = models.TextField(blank=True, null=True)
+
 
 
