@@ -9,7 +9,6 @@ from datetime import timedelta
 
 from .models import *
 from supplyr.inventory.models import Variant
-from supplyr.profiles.models import BuyerAddress
 from supplyr.profiles.serializers import BuyerAddressSerializer
 from supplyr.inventory.serializers import VariantDetailsSerializer
 
@@ -24,8 +23,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
     class Meta: 
         model = OrderItem
         fields = ["id", 'quantity', 'price', 'actual_price', 'product_variant', 'product_variant_id']
-
-
 
 class OrderSerializer(serializers.ModelSerializer):
     
@@ -216,7 +213,6 @@ class SalespersonOrderListSerializer(OrderListSerializer):
         model = Order
         fields = ['id', 'order_date', 'buyer_name', 'order_status', 'total_amount', 'featured_image',]
 
-
 class OrderHistorySerializer(serializers.ModelSerializer):
 
     created_by_user = serializers.SerializerMethodField()
@@ -266,6 +262,9 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
     def get_items(self,order):
         return OrderItemSerializer(order.items.filter(is_active=True),many=True).data
     
+    invoice = serializers.SerializerMethodField()
+    
+    
     history = OrderHistorySerializer(many=True)
     order_time = serializers.SerializerMethodField()
     created_by_user = serializers.SerializerMethodField()
@@ -286,10 +285,31 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
             return order.salesperson.seller.business_name
         else:
             return order.buyer.business_name
+        
+    def get_invoice(self,order):    
+        return GenerateInvoiceSerializer(order.invoices.first()).data
 
     def get_status_variable_values(self, order):
         return StatusVariableValueSerializer(order.status_variable_values.all(), many=True).data
 
     class Meta:
         model = Order
-        fields=['order_date', 'order_time', 'seller_name', 'buyer_name', 'order_status', 'total_amount', 'items', 'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
+        fields=['order_date', 'order_time', 'seller_name', 'buyer_name', 'order_status', 'total_amount', 'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
+        
+class GenerateInvoiceSerializer(serializers.ModelSerializer):
+    
+    def create(self, validated_data):
+        invoice,created = Invoice.objects.get_or_create(**validated_data)
+        prefix = self.context["request"].user.seller_profiles.first().invoice_prefix
+        if prefix:
+            invoice.invoice_number = f'{prefix}{invoice.id}/21-22'
+        else:
+            invoice.invoice_number = f'{invoice.id}/21-22'
+        invoice.save()
+        return invoice
+    
+    class Meta:
+        model = Invoice
+        fields = ["id","order","invoice_number","created_at"]
+        
+    

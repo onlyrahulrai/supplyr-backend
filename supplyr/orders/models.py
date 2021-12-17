@@ -82,6 +82,17 @@ class OrderHistory(models.Model):
     class Meta:
         verbose_name_plural = 'Order Histories'
         ordering = ('-created_at',)
+        
+        
+class Invoice(models.Model):
+    invoice_number = models.CharField(max_length=50,null=True,blank=True)
+    order = models.ForeignKey(Order,on_delete=models.CASCADE,related_name="invoices")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    
+    class Meta:
+        verbose_name_plural = 'Invoices'
 
 
 class OrderStatusVariable(models.Model):
