@@ -240,6 +240,20 @@ class OrderHistorySerializer(serializers.ModelSerializer):
         model = OrderHistory
         fields = ['status', 'created_by_user', 'created_by_entity', 'time', 'date']
 
+class StatusVariableValueSerializer(serializers.ModelSerializer):
+    
+    variable_name = serializers.SerializerMethodField()
+    def get_variable_name(self, instance):
+        return instance.variable.name
+
+    status = serializers.SerializerMethodField()
+    def get_status(self, instance):
+        return "dispatched"
+        
+    class Meta:
+        model = OrderStatusVariableValue
+        fields = ['status', 'variable_name', 'value']
+
 class OrderDetailsSerializer(SellerOrderListSerializer):
 
     address = BuyerAddressSerializer()
@@ -252,6 +266,7 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
     order_time = serializers.SerializerMethodField()
     created_by_user = serializers.SerializerMethodField()
     created_by_entity = serializers.SerializerMethodField()
+    status_variable_values = serializers.SerializerMethodField()
 
     def get_order_date(self, order):
         return order.created_at.astimezone().strftime("%b %d, %Y")
@@ -268,6 +283,9 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
         else:
             return order.buyer.business_name
 
+    def get_status_variable_values(self, order):
+        return StatusVariableValueSerializer(order.status_variable_values.all(), many=True).data
+
     class Meta:
         model = Order
-        fields=['order_date', 'order_time', 'seller_name', 'buyer_name', 'order_status', 'total_amount', 'items', 'address', 'history', 'created_by_user', 'created_by_entity']
+        fields=['order_date', 'order_time', 'seller_name', 'buyer_name', 'order_status', 'total_amount', 'items', 'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']

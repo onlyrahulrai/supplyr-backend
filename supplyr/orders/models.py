@@ -1,13 +1,15 @@
 from re import T
 from django.db import models
+from django_extensions.db.fields import AutoSlugField
 from django_mysql.models import EnumField
-
+from supplyr.profiles.models import SellerProfile
 
 class Order(models.Model):
 
     class OrderStatusChoice(models.TextChoices):
         AWAITING_APPROVAL = 'awaiting_approval', 'Awaiting Approval'
         APPROVED = 'approved', 'Approved'
+        PROCESSED = 'processed', 'Processed'
         CANCELLED = 'cancelled', 'Cancelled'
         DISPATCHED = 'dispatched', 'Dispatched'
         DELIVERED = 'delivered', 'Delivered'
@@ -70,6 +72,17 @@ class OrderItem(models.Model):
         verbose_name = 'OrderItem'
         verbose_name_plural = 'OrderItems'
 
+class OrderStatusChoices(models.Model):
+    name = models.CharField(max_length=40)
+    slug = AutoSlugField(max_length=40, editable=True, populate_from=['name'], unique=True)
+    serial = models.IntegerField(blank=True, null=True)
+
+    class Meta:
+        ordering = ('serial',)
+    
+    def __str__(self):
+        return self.name
+
 class OrderHistory(models.Model):
     order = models.ForeignKey(Order, on_delete=models.RESTRICT, related_name='history')
     status = EnumField(choices=Order.OrderStatusChoice.choices)
@@ -82,5 +95,34 @@ class OrderHistory(models.Model):
     class Meta:
         verbose_name_plural = 'Order Histories'
         ordering = ('-created_at',)
+
+
+class OrderStatusVariable(models.Model):
+    class DataTypeChoices(models.TextChoices):
+        TEXT = 'text', 'Text'
+        DATE = 'date', 'Date'
+        INTEGER = 'integer', 'Integer'
+        DECIMAL = 'decimal', 'Decimal'
+
+    name = models.CharField(max_length=100)
+    data_type = EnumField(choices=DataTypeChoices.choices, default=DataTypeChoices.TEXT)
+    linked_order_status = models.ForeignKey(OrderStatusChoices, on_delete=models.RESTRICT)
+    description = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    sellers = models.ManyToManyField(SellerProfile, related_name='order_status_variables')
+
+    def __str__(self):
+        return self.name
+
+# class OrderStatusVariableSellerMapping(models.Model):
+#     variable = models.ForeignKey(OrderStatusVariable, related_name="status_variable_mappings")
+#     seller = models.ForeignKey(SellerProfile, related_name="order_status_variable_mappings")
+#     created_at = models.DateTimeField(auto_now_add=True)
+
+class OrderStatusVariableValue(models.Model):
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='status_variable_values')
+    variable = models.ForeignKey(OrderStatusVariable, on_delete=models.RESTRICT, related_name="values")
+    value = models.TextField(blank=True, null=True)
+
 
 

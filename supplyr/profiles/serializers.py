@@ -5,7 +5,8 @@ from django.contrib.auth import get_user_model
 from typing import Dict
 from supplyr.inventory.models import Category, Tags
 from supplyr.inventory.serializers import CategoriesSerializer2, SubCategorySerializer2, SubCategorySerializer, TagsSerializer, VendorsSerializer
-
+from supplyr.orders.models import OrderStatusVariable
+from itertools import groupby
 
 User = get_user_model()
 
@@ -26,6 +27,11 @@ class ChoiceField(serializers.ChoiceField):
     #             return key
     #     self.fail('invalid_choice', input=data)
 
+class OrderStatusVariableForSeller(serializers.ModelSerializer):
+    linked_order_status = serializers.CharField(source="linked_order_status.slug")
+    class Meta:
+        model = OrderStatusVariable
+        fields = ( 'name', 'id', 'data_type', 'linked_order_status')
 
 class ShortEntityDetailsSerializer(serializers.ModelSerializer):
     sub_categories = serializers.SerializerMethodField()
@@ -55,12 +61,20 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
         vendors_serializer = VendorsSerializer(vendors,many=True)
         return vendors_serializer.data
 
+    order_status_variables = serializers.SerializerMethodField()
+    def get_order_status_variables(self,profile):
+        data = OrderStatusVariableForSeller(profile.order_status_variables.all(), many=True).data
+        data_grouped = groupby(data, key = lambda x: x['linked_order_status'])
+        data_grouped = {k: list(v) for k,v in data_grouped}
+        return data_grouped
+
     class Meta:
         model = SellerProfile
         fields = [
             'business_name',
             'id',
             "tags",
+            "order_status_variables",
             "vendors",
             'sub_categories',
             'connection_code',
