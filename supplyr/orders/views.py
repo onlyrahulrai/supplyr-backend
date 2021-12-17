@@ -3,7 +3,7 @@ from django.db import transaction
 from django.shortcuts import render
 from rest_framework import generics, mixins
 from rest_framework.views import APIView
-from .models import Order, OrderHistory
+from .models import Order, OrderHistory, OrderStatusVariableValue
 from .serializers import *
 from supplyr.core.permissions import IsFromBuyerAPI, IsApproved, IsFromSellerAPI
 from rest_framework.permissions import IsAuthenticated
@@ -91,8 +91,10 @@ class OrdersBulkUpdateView(APIView):
 
         order_ids = request.data.get('order_ids')
 
-        if operation == 'change_status':
-            new_status = request.data.get('data')
+        if operation in ['change_status', 'change_status_with_variables']:
+            data = request.data.get('data')
+            
+            new_status = data['status'] if operation == 'change_status_with_variables' else data
 
             # if new_status not in Order.OrderStatusChoice.choices:
             #     return Response({'success': False, 'message': 'Invalid Status'})
@@ -104,6 +106,12 @@ class OrdersBulkUpdateView(APIView):
                 orders.update(status = new_status)
                 for order in _orders:
                     OrderHistory.objects.create(order = order, status = new_status, created_by = request.user, seller = profile)
+
+                if operation == 'change_status_with_variables':
+                    variables = data['variables']
+                    for order in _orders:
+                        for variable_id in variables.keys():
+                            OrderStatusVariableValue.objects.update_or_create(variable_id = variable_id, order = order, defaults = {'value': variables[variable_id]})
 
         return Response({'success': True})
 
