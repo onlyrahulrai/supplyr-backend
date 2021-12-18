@@ -5,6 +5,7 @@ import random
 import string
 from os.path import splitext
 from django.utils import timezone
+from supplyr.profiles.data import STATE_CHOICES
 
 def get_document_upload_path(instance, filename, document_category):
     file, ext = splitext(filename)
@@ -46,6 +47,7 @@ class SellerProfile(models.Model):
     tan_number = models.CharField(max_length=15, blank=True, null=True)
     gst_certificate = models.FileField(upload_to=get_gst_upload_path, max_length=150, blank=True, null=True)
     operational_fields = models.ManyToManyField('inventory.Category', blank=True)
+    invoice_prefix = models.CharField(max_length=12,null=True,blank=True)
     status = EnumField(default="new",choices=SellerStatusChoice.choices, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     connection_code = models.CharField(max_length=15)
@@ -120,7 +122,7 @@ class ManuallyCreatedBuyer(models.Model):
 
 
 class BuyerAddress(models.Model):
-    STATE_CHOICES = (('KA', 'Karnataka'), ('AP', 'Andhra Pradesh'), ('KL', 'Kerala'), ('TN', 'Tamil Nadu'), ('MH', 'Maharashtra'), ('UP', 'Uttar Pradesh'), ('GA', 'Goa'), ('GJ', 'Gujarat'), ('RJ', 'Rajasthan'), ('HP', 'Himachal Pradesh'), ('JK', 'Jammu and Kashmir'), ('TG', 'Telangana'), ('AR', 'Arunachal Pradesh'), ('AS', 'Assam'), ('BR', 'Bihar'), ('CG', 'Chattisgarh'), ('HR', 'Haryana'), ('JH', 'Jharkhand'), ('MP', 'Madhya Pradesh'), ('MN', 'Manipur'), ('ML', 'Meghalaya'), ('MZ', 'Mizoram'), ('NL', 'Nagaland'), ('OR', 'Orissa'), ('PB', 'Punjab'), ('SK', 'Sikkim'), ('TR', 'Tripura'), ('UA', 'Uttarakhand'), ('WB', 'West Bengal'), ('AN', 'Andaman and Nicobar'), ('CH', 'Chandigarh'), ('DN', 'Dadra and Nagar Haveli'), ('DD', 'Daman and Diu'), ('DL', 'Delhi'), ('LD', 'Lakshadweep'), ('PY', 'Pondicherry'))
+    STATE_CHOICES = STATE_CHOICES
     
     name = models.CharField(max_length=100)
     line1 = models.CharField(max_length=200)

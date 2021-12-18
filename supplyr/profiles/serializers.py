@@ -63,6 +63,7 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
 
     order_status_variables = serializers.SerializerMethodField()
     def get_order_status_variables(self,profile):
+        # Group by order status
         data = OrderStatusVariableForSeller(profile.order_status_variables.all(), many=True).data
         data_grouped = groupby(data, key = lambda x: x['linked_order_status'])
         data_grouped = {k: list(v) for k,v in data_grouped}

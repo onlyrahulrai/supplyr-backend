@@ -95,6 +95,17 @@ class OrderHistory(models.Model):
     class Meta:
         verbose_name_plural = 'Order Histories'
         ordering = ('-created_at',)
+        
+        
+class Invoice(models.Model):
+    invoice_number = models.CharField(max_length=50,null=True,blank=True)
+    order = models.ForeignKey(Order,on_delete=models.CASCADE,related_name="invoices")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    
+    class Meta:
+        verbose_name_plural = 'Invoices'
 
 
 class OrderStatusVariable(models.Model):
@@ -105,6 +116,7 @@ class OrderStatusVariable(models.Model):
         DECIMAL = 'decimal', 'Decimal'
 
     name = models.CharField(max_length=100)
+    slug = AutoSlugField(max_length=100, editable=True, populate_from=['name'])
     data_type = EnumField(choices=DataTypeChoices.choices, default=DataTypeChoices.TEXT)
     linked_order_status = models.ForeignKey(OrderStatusChoices, on_delete=models.RESTRICT)
     description = models.TextField(blank=True, null=True)

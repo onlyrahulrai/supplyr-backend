@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
 
-from .models import Order, OrderItem, OrderHistory, OrderStatusChoices, OrderStatusVariable, OrderStatusVariableValue
+
+from .models import Invoice, Order, OrderItem, OrderHistory, OrderStatusChoices, OrderStatusVariable, OrderStatusVariableValue
 
 
 @admin.register(Order)
@@ -54,8 +55,12 @@ class OrderStatusVariableValueAdmin(admin.ModelAdmin):
     list_display = ('id', 'order', 'variable', 'value')
     list_filter = ('order', 'variable')
 
+
 @admin.register(OrderStatusChoices)
 class OrderStatusChoicesAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'slug', 'serial')
     search_fields = ('name', 'slug')
     prepopulated_fields = {'slug': ['name']}
+    
+    
+admin.site.register(Invoice)

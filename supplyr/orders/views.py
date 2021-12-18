@@ -4,7 +4,7 @@ from django.shortcuts import render
 from rest_framework import generics, mixins
 from rest_framework.views import APIView
 from .models import Order, OrderHistory, OrderStatusVariableValue
-from .serializers import OrderSerializer, OrderListSerializer, OrderDetailsSerializer, SalespersonOrderListSerializer, SellerOrderListSerializer
+from .serializers import *
 from supplyr.core.permissions import IsFromBuyerAPI, IsApproved, IsFromSellerAPI
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -32,6 +32,21 @@ class OrderView(mixins.ListModelMixin,
         if(kwargs.get("pk")):
             return self.update(request,*args,**kwargs)
         return self.create(request, *args, **kwargs)
+
+class GenerateInvoiceView(generics.GenericAPIView,mixins.CreateModelMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = Invoice.objects.filter(is_active=True)
+    serializer_class = GenerateInvoiceSerializer
+    
+    # def perform_create(self, serializer):
+    #     invoice = serializer.save()
+    #     seller_prefix = self.request.user.seller_profiles.first().prefix
+    #     invoice.invoice_number = f'{seller_prefix}{invoice.id}'
+    #     invoice.save()
+    #     return invoice
+    
+    def post(self,request,*args,**kwargs):
+        return self.create(request,*args,**kwargs)
 
 class OrderListView(mixins.ListModelMixin, generics.GenericAPIView, APISourceMixin):
     serializer_class = OrderListSerializer
