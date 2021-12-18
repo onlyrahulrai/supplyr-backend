@@ -116,6 +116,7 @@ class OrderStatusVariable(models.Model):
         DECIMAL = 'decimal', 'Decimal'
 
     name = models.CharField(max_length=100)
+    slug = AutoSlugField(max_length=100, editable=True, populate_from=['name'])
     data_type = EnumField(choices=DataTypeChoices.choices, default=DataTypeChoices.TEXT)
     linked_order_status = models.ForeignKey(OrderStatusChoices, on_delete=models.RESTRICT)
     description = models.TextField(blank=True, null=True)
