@@ -48,6 +48,7 @@ class OrderStatusVariableAdmin(admin.ModelAdmin):
     list_filter = ('is_active',)
     # raw_id_fields = ('sellers',)
     search_fields = ('name',)
+    prepopulated_fields = {'slug': ['name']}
 
 
 @admin.register(OrderStatusVariableValue)
