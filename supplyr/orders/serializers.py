@@ -246,13 +246,17 @@ class StatusVariableValueSerializer(serializers.ModelSerializer):
     def get_variable_name(self, instance):
         return instance.variable.name
 
+    variable_slug = serializers.SerializerMethodField()
+    def get_variable_slug(self, instance):
+        return instance.variable.slug
+
     status = serializers.SerializerMethodField()
     def get_status(self, instance):
         return "dispatched"
         
     class Meta:
         model = OrderStatusVariableValue
-        fields = ['status', 'variable_name', 'value']
+        fields = ['status', 'variable_name', 'value', 'variable_slug']
 
 class OrderDetailsSerializer(SellerOrderListSerializer):
 

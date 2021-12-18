@@ -44,7 +44,7 @@ admin.site.register(OrderHistory)
 
 @admin.register(OrderStatusVariable)
 class OrderStatusVariableAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'description', 'is_active')
+    list_display = ('id', 'name', 'description', 'is_active', 'slug')
     list_filter = ('is_active',)
     # raw_id_fields = ('sellers',)
     search_fields = ('name',)
