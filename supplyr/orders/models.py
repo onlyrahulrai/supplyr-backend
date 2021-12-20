@@ -112,8 +112,7 @@ class OrderStatusVariable(models.Model):
     class DataTypeChoices(models.TextChoices):
         TEXT = 'text', 'Text'
         DATE = 'date', 'Date'
-        INTEGER = 'integer', 'Integer'
-        DECIMAL = 'decimal', 'Decimal'
+        NUMBER = 'number', 'Number'
 
     name = models.CharField(max_length=100)
     slug = AutoSlugField(max_length=100, editable=True, populate_from=['name'])

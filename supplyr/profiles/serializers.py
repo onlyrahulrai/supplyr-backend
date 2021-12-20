@@ -65,8 +65,9 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
     def get_order_status_variables(self,profile):
         # Group by order status
         data = OrderStatusVariableForSeller(profile.order_status_variables.all(), many=True).data
-        data_grouped = groupby(data, key = lambda x: x['linked_order_status'])
-        data_grouped = {k: list(v) for k,v in data_grouped}
+        data_sorted = sorted(data, key=lambda x: x['linked_order_status'])
+        _data_grouped = groupby(data_sorted, key = lambda x: x['linked_order_status'])
+        data_grouped = {k: list(v) for k,v in _data_grouped}
         return data_grouped
 
     class Meta:
