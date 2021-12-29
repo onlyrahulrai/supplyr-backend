@@ -1,6 +1,6 @@
 from django.db.models.query_utils import Q
 from django.http.response import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from rest_framework import generics, mixins, views
@@ -19,7 +19,7 @@ from rest_framework import status
 from supplyr.utils.api.mixins import UserInfoMixin
 from django.db import transaction
 from collections import OrderedDict
-from .models import SellerProfile
+
 
 User = get_user_model()
 
@@ -72,6 +72,20 @@ class SellerProfilingView(views.APIView, UserInfoMixin):
             return Response(serializer_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class SellerProfileSettings(views.APIView,UserInfoMixin):
+    permission_classes = [IsFromSellerAPI]
+    
+    def put(self,request,*args,**kwargs):
+        print("requested data ----> ",request.data)
+        if request.data.get("setting") == "profile-setting":
+            seller_profile = request.user.seller_profiles.first()
+            serializer = SellerProfilingSerializer(seller_profile,data=request.data.get("data"),partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                serialized_data = self.inject_user_info(serializer.data,request.user)
+                return Response(serialized_data,status=status.HTTP_200_OK)
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+        
 
 class ResendEmailConfirmation(views.APIView):
     permission_classes = [IsAuthenticated] 

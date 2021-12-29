@@ -1,8 +1,10 @@
+from os import name
 from .views import AddressView
 from django.urls import path
 from .views import *
 
 urlpatterns = [
+    path("seller-profile-settings/",SellerProfileSettings.as_view(),name="seller-profile-settings"),
     path('resend-verification-email/', ResendEmailConfirmation.as_view(), name='resend-email-confirmation'),
     path('user-profiling/', SellerProfilingView.as_view()),
     path('user-profiling-documents/', ProfilingDocumentsUploadView.as_view()),

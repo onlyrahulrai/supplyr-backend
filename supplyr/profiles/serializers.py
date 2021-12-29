@@ -77,6 +77,8 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
             'id',
             "tags",
             "order_status_variables",
+            "default_currency",
+            "currency_representation",
             "vendors",
             'sub_categories',
             'connection_code',
@@ -268,6 +270,8 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
             'is_gst_enrolled',
             'gst_number',
             'pan_number',
+            "default_currency",
+            "currency_representation",
             'tan_number',
             'gst_certificate',
             "status"

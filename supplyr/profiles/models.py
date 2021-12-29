@@ -5,7 +5,7 @@ import random
 import string
 from os.path import splitext
 from django.utils import timezone
-from supplyr.profiles.data import STATE_CHOICES
+from supplyr.profiles.data import STATE_CHOICES,CURRENCY_CHOICES
 
 def get_document_upload_path(instance, filename, document_category):
     file, ext = splitext(filename)
@@ -45,6 +45,10 @@ class SellerProfile(models.Model):
     gst_number = models.CharField(max_length=20, blank=True, null=True)
     pan_number = models.CharField(max_length=15, blank=True, null=True)
     tan_number = models.CharField(max_length=15, blank=True, null=True)
+    
+    default_currency = EnumField(default="INR",choices=CURRENCY_CHOICES)
+    currency_representation = models.CharField(default="₹",max_length=75,null=True,blank=True)
+    
     gst_certificate = models.FileField(upload_to=get_gst_upload_path, max_length=150, blank=True, null=True)
     operational_fields = models.ManyToManyField('inventory.Category', blank=True)
     invoice_prefix = models.CharField(max_length=12,null=True,blank=True)
