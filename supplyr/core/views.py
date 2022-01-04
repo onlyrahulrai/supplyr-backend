@@ -47,7 +47,7 @@ class UserDetailsView(APIView, UserInfoMixin):
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        response_data = self.inject_user_info({"user_settings":TRANSLATABLES}, user)
+        response_data = self.inject_user_info({"user_settings":{"translatables":TRANSLATABLES}}, user)
 
         return Response(response_data)
 
