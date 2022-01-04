@@ -1,6 +1,7 @@
 import datetime
 from django.db.models.expressions import F
 from rest_framework.generics import GenericAPIView, get_object_or_404
+from supplyr.core.app_config import TRANSLATABLES
 from supplyr.core.functions import check_and_link_manually_created_profiles
 from supplyr.orders.models import Order
 from django.contrib.auth import get_user_model
@@ -46,7 +47,7 @@ class UserDetailsView(APIView, UserInfoMixin):
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        response_data = self.inject_user_info({}, user)
+        response_data = self.inject_user_info({"user_settings":TRANSLATABLES}, user)
 
         return Response(response_data)
 

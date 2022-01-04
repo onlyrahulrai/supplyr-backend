@@ -55,7 +55,7 @@ class SellerProfile(models.Model):
     gst_certificate = models.FileField(upload_to=get_gst_upload_path, max_length=150, blank=True, null=True)
     operational_fields = models.ManyToManyField('inventory.Category', blank=True)
     invoice_prefix = models.CharField(max_length=12,null=True,blank=True)
-    translation = models.JSONField(default=translation_default)
+    translations = models.JSONField(default=translation_default)
     status = EnumField(default="new",choices=SellerStatusChoice.choices, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     connection_code = models.CharField(max_length=15)
