@@ -14,6 +14,8 @@ from django.utils.functional import cached_property
 from django_extensions.db.fields import AutoSlugField
 from django_mysql.models import EnumField
 
+from supplyr.profiles.models import BuyerProfile
+
 User = get_user_model()
 
 class Search(models.Lookup):
@@ -293,5 +295,16 @@ class ProductImage(Model):
     class Meta:
         ordering = ['order']
 
+class ProductSpecificBuyerDiscount(models.Model):
+    discount_type_option = (
+        ("amount","Amount"),
+        ("percentage","Percentage")
+    )
+    buyer = models.ForeignKey(BuyerProfile,on_delete=models.CASCADE,related_name="exclusive_products")
+    product = models.ForeignKey(Product,on_delete=models.CASCADE)
+    discount_type = EnumField(choices=discount_type_option)
+    discount = models.DecimalField(decimal_places=2, max_digits=5)
+    # is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 from .signals import *

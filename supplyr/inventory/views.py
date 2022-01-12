@@ -308,15 +308,15 @@ class SellerBuyersDetailAPIView(APIView):
     
     def get(self,request,*args,**kwargs):
         if pk := kwargs.get("pk",None):
-            object = request.user.seller_profiles.first().connections.filter(Q(buyer__pk=pk)).first()
+            object = get_object_or_404(BuyerSellerConnection,seller=request.user.seller_profiles.first(),buyer__pk=pk)
             buyer = get_object_or_404(BuyerProfile,pk=object.buyer.id)
-            serializer = BuyerDetailSerializer(buyer)
+            serializer = BuyerDetailSerializer(buyer,context={'request': request})
             return Response(serializer.data,status=status.HTTP_200_OK)
 
 
 
 
-class BuyerDiscountAPI(generics.GenericAPIView,mixins.RetrieveModelMixin,mixins.UpdateModelMixin):
+class BuyerGenericDiscountAPI(generics.GenericAPIView,mixins.RetrieveModelMixin,mixins.UpdateModelMixin):
     permission_classes = [IsApproved]
     serializer_class = SellerBuyerConnectionDetailSerializer
     
@@ -330,3 +330,23 @@ class BuyerDiscountAPI(generics.GenericAPIView,mixins.RetrieveModelMixin,mixins.
     def put(self,request,*args,**kwargs):
         print(request.data)
         return self.update(request,*args,**kwargs)
+    
+class BuyerProductSpecificDiscountAPI(generics.GenericAPIView,mixins.CreateModelMixin,mixins.UpdateModelMixin,mixins.ListModelMixin,mixins.DestroyModelMixin):
+    permission_classes = [IsFromSellerAPI]
+    serializer_class = BuyerProductSpecificDiscountSerializer
+    queryset = ProductSpecificBuyerDiscount.objects.all()
+    pagination_class = None
+    
+    def get(self,request,*args,**kwargs):
+        return self.list(request,*args,**kwargs)
+    
+    def post(self,request,*args,**kwargs):
+        print(f"\n\n ---- request data ---- {request.data} \n\n")
+        if kwargs.get("pk"):
+            return self.update(request,*args,**kwargs)
+        return self.create(request,*args,**kwargs)
+
+    def delete(self,request,*args,**kwargs):
+        return self.destroy(request,*args,**kwargs)
+    
+    

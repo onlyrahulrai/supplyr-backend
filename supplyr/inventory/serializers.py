@@ -7,12 +7,13 @@ from rest_framework import serializers
 from supplyr.core.model_utils import get_auto_category_ORM_filters, get_wight_in_grams
 
 
-from .models import AutoCategoryRule, Product, Tags, User, Variant, ProductImage, Category, Vendors
+from .models import AutoCategoryRule, Product, Tags, User, Variant, ProductImage, Category, Vendors,ProductSpecificBuyerDiscount
 from supplyr.profiles.models import BuyerAddress, BuyerProfile, BuyerSellerConnection, SellerProfile
 from django.conf import settings
 from django.db import transaction
 from django.db.models.functions import Coalesce
 from django.db.models import Q
+
 
 class ChoiceField(serializers.ChoiceField):
 
@@ -806,14 +807,24 @@ class VendorsSerializer(serializers.ModelSerializer):
         
         
 class  BuyerSellerConnectionSerializers(serializers.ModelSerializer):
-    buyer = serializers.SerializerMethodField()
-    def get_buyer(self,seller):
-        return {"id":seller.buyer.id,"email":seller.buyer.owner.email,"business_name":seller.buyer.business_name,"buyer_name":seller.buyer.owner.name}
+    buyer_id = serializers.PrimaryKeyRelatedField(
+        queryset=BuyerProfile.objects.all(), source='buyer', write_only=True
+    )
+    # def get_buyer(self,seller):
+    #     return {"id":seller.buyer.id,"email":seller.buyer.owner.email,"business_name":seller.buyer.business_name,"buyer_name":seller.buyer.owner.name}
     
+    buyer_name = serializers.SerializerMethodField()
+    def get_buyer_name(self,seller):
+        return seller.buyer.owner.name
+    
+    buyer_email = serializers.SerializerMethodField()
+    def get_buyer_email(self,seller):
+        return seller.buyer.owner.email
      
     class Meta:
         model = BuyerSellerConnection
-        fields = ["id","buyer","generic_discount"] 
+        fields = ["id","buyer","buyer_id","buyer_name","buyer_email","generic_discount"] 
+        depth = 1
         
 class SellerBuyerConnectionDetailSerializer(serializers.ModelSerializer):    
     buyer = serializers.SerializerMethodField()
@@ -846,12 +857,35 @@ class BuyerDetailSerializer(serializers.ModelSerializer):
    
     address = serializers.SerializerMethodField()
     def get_address(self,buyer):
+        print(self.context['request'].user)
         addresses = buyer.buyer_address.filter(is_active=True)
         return BuyerAddressSerializer(addresses,many=True).data
+    
+    global_discount = serializers.SerializerMethodField()
+    def get_global_discount(self,buyer):
+        discount = buyer.connections.filter(seller=self.context["request"].user.seller_profiles.first()).first().generic_discount
+        print(discount)
+        # generic_discount = buyer.connections.filter(seller=self.context["request"].user.id).first().generic_discount
+        return discount
+        
     
    
     
     class Meta:
         model = BuyerProfile
-        fields = ["id","owner","business_name","address"]
+        fields = ["id","owner","business_name","address","global_discount"]
         
+        
+class BuyerProductSpecificDiscountSerializer(serializers.ModelSerializer):
+    
+    buyer_id = serializers.PrimaryKeyRelatedField(
+        queryset=BuyerProfile.objects.all(), source='buyer', write_only=True
+    )
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(), source='product', write_only=True
+    )
+    
+    class Meta:
+        model = ProductSpecificBuyerDiscount
+        fields = ["id","buyer","buyer_id","product","product_id","discount_type","discount"]
+        depth = 1

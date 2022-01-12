@@ -21,5 +21,7 @@ urlpatterns = [
     path("sellers-buyer-detail/<str:pk>/",SellerBuyersDetailAPIView.as_view(),name="sellers-buyer-detail"),
     
     
-    path("buyer-discount/<str:pk>/",BuyerDiscountAPI.as_view(),name="buyer-discount")
+    path("buyer-generic-discount/<str:pk>/",BuyerGenericDiscountAPI.as_view(),name="buyer-discount"),
+    path("buyer-product-specific-discount/",BuyerProductSpecificDiscountAPI.as_view(),name="buyer-product-specific-discount"),
+    path("buyer-product-specific-discount/<str:pk>/",BuyerProductSpecificDiscountAPI.as_view(),name="buyer-product-specific-discount")
 ]
