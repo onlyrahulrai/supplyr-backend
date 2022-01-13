@@ -19,6 +19,7 @@ from rest_framework import status
 from supplyr.utils.api.mixins import UserInfoMixin
 from django.db import transaction
 from collections import OrderedDict
+from supplyr.core.app_config import TRANSLATABLES
 
 
 User = get_user_model()
@@ -82,7 +83,7 @@ class SellerProfileSettings(views.APIView,UserInfoMixin):
             serializer = SellerProfilingSerializer(seller_profile,data=request.data.get("data"),partial=True)
             if serializer.is_valid():
                 serializer.save()
-                serialized_data = self.inject_user_info(serializer.data,request.user)
+                serialized_data = self.inject_user_info({"user_settings":{"translatables":TRANSLATABLES}},request.user)
                 return Response(serialized_data,status=status.HTTP_200_OK)
             return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
         
