@@ -863,6 +863,25 @@ class BuyerDetailSerializer(serializers.ModelSerializer):
         model = BuyerProfile
         fields = ["id","owner","business_name","address","global_discount"]
         
+class BuyerDetailSerializer(serializers.ModelSerializer):
+    
+    owner = serializers.SerializerMethodField()
+    def get_owner(self,buyer):
+        return buyer.owner.name
+    
+   
+    address = serializers.SerializerMethodField()
+    def get_address(self,buyer):
+        addresses = buyer.buyer_address.filter(is_active=True)
+        return BuyerAddressSerializer(addresses,many=True).data
+    
+   
+    
+    class Meta:
+        model = BuyerProfile
+        fields = ["id","owner","business_name","address"]
+        
+        
 ############### Buyer Discount Part Started ###############
 
 class GenericDiscountSerializer(serializers.ModelSerializer):

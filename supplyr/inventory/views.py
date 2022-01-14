@@ -288,6 +288,16 @@ class UpdateFavouritesView(APIView):
             return Response({'success': False, 'message': str(e)}, status=500)
         
 
+class SellerBuyersDetailAPIView(APIView):
+    permission_classes = [IsApproved,IsFromSellerAPI]
+    
+    def get(self,request,*args,**kwargs):
+        if pk := kwargs.get("pk",None):
+            object = request.user.seller_profiles.first().connections.filter(Q(buyer__pk=pk)).first()
+            buyer = get_object_or_404(BuyerProfile,pk=object.buyer.id)
+            serializer = BuyerDetailSerializer(buyer)
+            return Response(serializer.data,status=status.HTTP_200_OK)        
+
 ############## Buyer Discount Start ############
 class BuyerSellerConnectionAPIView(APIView):
     permission_classes = [IsApproved,IsFromSellerAPI]
