@@ -298,7 +298,7 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
 
     class Meta:
         model = Order
-        fields=['order_date', 'order_time', 'seller_name', 'buyer_name', 'order_status', 'total_amount', 'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
+        fields=['order_date', 'order_time', 'seller_name', 'buyer_name',"buyer_id" ,'order_status', 'total_amount', 'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
         
 class GenerateInvoiceSerializer(serializers.ModelSerializer):
     

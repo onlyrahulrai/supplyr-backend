@@ -295,7 +295,7 @@ class SellerBuyersDetailAPIView(APIView):
         if pk := kwargs.get("pk",None):
             object = request.user.seller_profiles.first().connections.filter(Q(buyer__pk=pk)).first()
             buyer = get_object_or_404(BuyerProfile,pk=object.buyer.id)
-            serializer = BuyerDetailSerializer(buyer)
+            serializer = BuyerDetailForDiscountSerializer(buyer)
             return Response(serializer.data,status=status.HTTP_200_OK)        
 
 ############## Buyer Discount Start ############
