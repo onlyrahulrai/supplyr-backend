@@ -7,7 +7,7 @@ from rest_framework import serializers
 from supplyr.core.model_utils import get_auto_category_ORM_filters, get_wight_in_grams
 
 
-from .models import AutoCategoryRule, Product, Tags, User, Variant, ProductImage, Category, Vendors,ProductSpecificBuyerDiscount
+from .models import AutoCategoryRule, Product, Tags, User, Variant, ProductImage, Category, Vendors,BuyerDiscount
 from supplyr.profiles.models import BuyerAddress, BuyerProfile, BuyerSellerConnection, SellerProfile
 from django.conf import settings
 from django.db import transaction
@@ -807,24 +807,14 @@ class VendorsSerializer(serializers.ModelSerializer):
         
         
 class  BuyerSellerConnectionSerializers(serializers.ModelSerializer):
-    buyer_id = serializers.PrimaryKeyRelatedField(
-        queryset=BuyerProfile.objects.all(), source='buyer', write_only=True
-    )
-    # def get_buyer(self,seller):
-    #     return {"id":seller.buyer.id,"email":seller.buyer.owner.email,"business_name":seller.buyer.business_name,"buyer_name":seller.buyer.owner.name}
     
-    buyer_name = serializers.SerializerMethodField()
-    def get_buyer_name(self,seller):
-        return seller.buyer.owner.name
-    
-    buyer_email = serializers.SerializerMethodField()
-    def get_buyer_email(self,seller):
-        return seller.buyer.owner.email
-     
+    buyer = serializers.SerializerMethodField()
+    def get_buyer(self,connection):
+        return {"id":connection.buyer.id,"name":connection.buyer.owner.name,"email":connection.buyer.owner.email,"business_name":connection.buyer.business_name}
+         
     class Meta:
         model = BuyerSellerConnection
-        fields = ["id","buyer","buyer_id","buyer_name","buyer_email","generic_discount"] 
-        depth = 1
+        fields = ["id","buyer"] 
         
 class SellerBuyerConnectionDetailSerializer(serializers.ModelSerializer):    
     buyer = serializers.SerializerMethodField()
@@ -837,16 +827,14 @@ class SellerBuyerConnectionDetailSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = BuyerSellerConnection
-        fields = ["id","buyer","seller","generic_discount"]
-        extra_kwargs = {"generic_discount": {"required": True},"buyer":{"read_only":True},"seller":{"read_only":True}}
+        fields = ["id","buyer","seller"]
+        extra_kwargs = {"buyer":{"read_only":True},"seller":{"read_only":True}}
         
 class BuyerAddressSerializer(serializers.ModelSerializer):
     state = ChoiceField(choices=BuyerAddress.STATE_CHOICES)
     class Meta:
         model = BuyerAddress
         fields = ["id","name","line1","line2","pin","city","state"]
-        
-    
         
 class BuyerDetailSerializer(serializers.ModelSerializer):
     
@@ -875,17 +863,61 @@ class BuyerDetailSerializer(serializers.ModelSerializer):
         model = BuyerProfile
         fields = ["id","owner","business_name","address","global_discount"]
         
+############### Buyer Discount Part Started ###############
+
+class GenericDiscountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BuyerDiscount
+        fields = ["id","seller","buyer","discount_type","discount_value"]
         
-class BuyerProductSpecificDiscountSerializer(serializers.ModelSerializer):
-    
-    buyer_id = serializers.PrimaryKeyRelatedField(
-        queryset=BuyerProfile.objects.all(), source='buyer', write_only=True
-    )
-    product_id = serializers.PrimaryKeyRelatedField(
-        queryset=Product.objects.all(), source='product', write_only=True
-    )
+class ExclusiveProductDiscountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BuyerDiscount
+        fields = ["id","seller","product","buyer","discount_type","discount_value"]
+        
+class ExclusiveProductDiscountDetailSerializer(serializers.ModelSerializer):
+    class ProductShortDetailsSerializer(serializers.ModelSerializer):
+        
+        featured_image = serializers.SerializerMethodField()
+        def get_featured_image(self, product):
+            if product.featured_image:
+                return product.featured_image.image_md.url
+            return None
+        
+        class Meta:
+            model = Product
+            fields = ["id",'title',"featured_image"]
+            
+        
+    product = ProductShortDetailsSerializer()
     
     class Meta:
-        model = ProductSpecificBuyerDiscount
-        fields = ["id","buyer","buyer_id","product","product_id","discount_type","discount"]
-        depth = 1
+        model = BuyerDiscount
+        fields = ["id","product","buyer","seller","discount_type","discount_value"]
+        
+class BuyerDetailForDiscountSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+    def get_name(self,buyer):
+        return buyer.owner.name
+    
+    email = serializers.SerializerMethodField()
+    def get_email(self,buyer):
+        return buyer.owner.email
+    
+    generic_discount = serializers.SerializerMethodField()
+    def get_generic_discount(self,buyer):
+        discount = buyer.buyer_discounts.filter(product=None,variant=None,is_active=True)
+        if len(discount) > 0:
+            return GenericDiscountSerializer(discount.first()).data
+        return None
+    
+    exclusive_products = serializers.SerializerMethodField()
+    def get_exclusive_products(self,buyer):
+        products = buyer.buyer_discounts.filter(~Q(product=None) & Q(variant=None) & Q(is_active=True))
+        return ExclusiveProductDiscountDetailSerializer(products,many=True).data
+    
+    class Meta:
+        model = BuyerProfile
+        fields = ["id","name","email","business_name","generic_discount","exclusive_products"]
+        
+############### Buyer Discount Part End ###############

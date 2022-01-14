@@ -13,7 +13,7 @@ admin.site.register(Variant)
 admin.site.register(ProductImage)
 admin.site.register(Tags)
 admin.site.register(Vendors)
-admin.site.register(ProductSpecificBuyerDiscount)
+admin.site.register(BuyerDiscount)
 
 @admin.register(AutoCategoryRule)
 class AutoCategoryRuleAdmin(admin.ModelAdmin):
