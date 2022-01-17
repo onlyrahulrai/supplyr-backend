@@ -913,8 +913,8 @@ class BuyerDetailForDiscountSerializer(serializers.ModelSerializer):
             return GenericDiscountSerializer(discount.first()).data
         return None
     
-    exclusive_products = serializers.SerializerMethodField()
-    def get_exclusive_products(self,buyer):
+    product_discounts = serializers.SerializerMethodField()
+    def get_product_discounts(self,buyer):
         products = buyer.buyer_discounts.filter(~Q(product=None) & Q(variant=None) & Q(is_active=True))
         return ExclusiveProductDiscountDetailSerializer(products,many=True).data
     
@@ -925,6 +925,6 @@ class BuyerDetailForDiscountSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = BuyerProfile
-        fields = ["id","name","email","business_name","address","generic_discount","exclusive_products"]
+        fields = ["id","name","email","business_name","address","generic_discount","product_discounts"]
         
 ############### Buyer Discount Part End ###############

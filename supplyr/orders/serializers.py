@@ -36,7 +36,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["id","items","buyer","seller","created_by","total_amount","address","status","created_at","cancelled_at","cancelled_by"]
+        fields = ["id","items","buyer","seller","created_by","total_amount","discount","address","status","created_at","cancelled_at","cancelled_by"]
         # exclude = ['is_active']
         read_only_fields = ['cancelled_at']
 
@@ -51,6 +51,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         print(f"\n\n\n requested data is {data} \n\n\n")
+        print("validated data >>>>>>>>>>>> ",data.get("discount"))
         unhandled_errors = False
         # handled_errors = False
         total_amount = 0
@@ -63,7 +64,7 @@ class OrderSerializer(serializers.ModelSerializer):
             buyer_profile_id = buyer_id
         else:
             buyer_profile_id = self.context['request'].user.get_buyer_profile().id
-        print(data['items'])
+        
         for item in data['items']:
             error = None
             variant = Variant.objects.filter(id=item['variant_id'], is_active=True).first()
@@ -89,8 +90,8 @@ class OrderSerializer(serializers.ModelSerializer):
             elif seller_id != variant.product.owner_id:
                 handled_errors = "Incorrect Data ! Sellers of all items do not match"
 
-        
         data['total_amount'] = total_amount
+        data["discount"] = data.get("discount",0)
         data['seller'] = seller_id
 
         if 'request' in self.context:
@@ -128,6 +129,9 @@ class OrderSerializer(serializers.ModelSerializer):
         
         return order
     def update(self, instance, validated_data):
+        print(" ------ validated data ------ ",validated_data)
+        
+        
         items = validated_data.pop("items")
         order = super().update(instance, validated_data)
         
@@ -298,7 +302,7 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
 
     class Meta:
         model = Order
-        fields=['order_date', 'order_time', 'seller_name', 'buyer_name',"buyer_id" ,'order_status', 'total_amount', 'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
+        fields=['order_date', 'order_time', 'seller_name', 'buyer_name',"buyer_id" ,'order_status', 'total_amount',"discount" ,'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
         
 class GenerateInvoiceSerializer(serializers.ModelSerializer):
     
