@@ -22,7 +22,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     product_variant_id = serializers.PrimaryKeyRelatedField(queryset=Variant.objects.all(), source='product_variant', write_only=True)
     class Meta: 
         model = OrderItem
-        fields = ["id", 'quantity', 'price', 'actual_price', 'product_variant', 'product_variant_id']
+        fields = ["id", 'quantity', 'price', 'actual_price',"extra_discount" ,'product_variant', 'product_variant_id']
 
 class OrderSerializer(serializers.ModelSerializer):
     
@@ -36,7 +36,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["id","items","buyer","seller","created_by","total_amount","discount","address","status","created_at","cancelled_at","cancelled_by"]
+        fields = ["id","items","buyer","seller","created_by","total_amount","discount","total_extra_discount","address","status","created_at","cancelled_at","cancelled_by"]
         # exclude = ['is_active']
         read_only_fields = ['cancelled_at']
 
@@ -91,7 +91,7 @@ class OrderSerializer(serializers.ModelSerializer):
                 handled_errors = "Incorrect Data ! Sellers of all items do not match"
 
         data['total_amount'] = total_amount
-        data["discount"] = data.get("discount",0)
+        data["total_extra_discount"] = data.get("total_extra_discount",0)
         data['seller'] = seller_id
 
         if 'request' in self.context:
@@ -302,7 +302,7 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
 
     class Meta:
         model = Order
-        fields=['order_date', 'order_time', 'seller_name', 'buyer_name',"buyer_id" ,'order_status', 'total_amount',"discount" ,'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
+        fields=['order_date', 'order_time', 'seller_name', 'buyer_name',"buyer_id" ,'order_status', 'total_amount',"total_extra_discount",'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
         
 class GenerateInvoiceSerializer(serializers.ModelSerializer):
     
