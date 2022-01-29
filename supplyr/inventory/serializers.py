@@ -811,10 +811,23 @@ class  BuyerSellerConnectionSerializers(serializers.ModelSerializer):
     buyer = serializers.SerializerMethodField()
     def get_buyer(self,connection):
         return {"id":connection.buyer.id,"name":connection.buyer.owner.name,"email":connection.buyer.owner.email,"business_name":connection.buyer.business_name}
+    
+    generic_discount = serializers.SerializerMethodField()
+    def get_generic_discount(self,connection):
+        discount = connection.buyer.buyer_discounts.filter(product=None,variant=None,is_active=True)
+        if len(discount) > 0:
+            return GenericDiscountSerializer(discount.first()).data
+        return None
+    
+    product_discounts = serializers.SerializerMethodField()
+    def get_product_discounts(self,connection):
+        products = connection.buyer.buyer_discounts.filter(~Q(product=None) & Q(variant=None) & Q(is_active=True))
+        return ExclusiveProductDiscountDetailSerializer(products,many=True).data
+
          
     class Meta:
         model = BuyerSellerConnection
-        fields = ["id","buyer"] 
+        fields = ["id","buyer","generic_discount","product_discounts"] 
         
 class SellerBuyerConnectionDetailSerializer(serializers.ModelSerializer):    
     buyer = serializers.SerializerMethodField()
