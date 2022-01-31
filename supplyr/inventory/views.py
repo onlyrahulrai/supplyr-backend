@@ -46,6 +46,11 @@ class DeleteProduct(APIView):
             product = get_object_or_404(Product, pk=product_id, owner = profile)
             product.is_active = False
             product.save()
+            
+            variants = Variant.objects.filter(product=product_id).update(is_active=False)
+            
+            buyerDiscounts = BuyerDiscount.objects.filter(product=product_id).update(is_active=False)
+            
             return Response({
                 "success": True,
             })
