@@ -80,9 +80,10 @@ class OrderSerializer(serializers.ModelSerializer):
             if unhandled_errors:
                 raise serializers.ValidationError({"Data not validated.": ''})
             #Raise exxception
+            
 
-            item['actual_price'] = variant.actual_price
-            item['price'] = variant.price or variant.actual_price
+            item['actual_price'] = float(item.get("actual_price",variant.price or variant.actual_price))
+            item['price'] =  float(item.get("price",variant.actual_price))
             item['product_variant_id'] = item['variant_id']
             total_amount += (item['price'] or item['actual_price'])*item['quantity'] #TODO: Remove the later part after 'or', as it might never get executed
             if not seller_id:
