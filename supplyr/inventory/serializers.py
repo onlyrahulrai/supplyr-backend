@@ -862,19 +862,14 @@ class BuyerDetailSerializer(serializers.ModelSerializer):
         addresses = buyer.buyer_address.filter(is_active=True)
         return BuyerAddressSerializer(addresses,many=True).data
     
-    global_discount = serializers.SerializerMethodField()
-    def get_global_discount(self,buyer):
-        discount = buyer.connections.filter(seller=self.context["request"].user.seller_profiles.first()).first().generic_discount
-        print(discount)
-        # generic_discount = buyer.connections.filter(seller=self.context["request"].user.id).first().generic_discount
-        return discount
+   
         
     
    
     
     class Meta:
         model = BuyerProfile
-        fields = ["id","owner","business_name","address","global_discount"]
+        fields = ["id","owner","business_name","address"]
         
         
         
