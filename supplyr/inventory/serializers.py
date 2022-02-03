@@ -765,7 +765,7 @@ class SubCategorySerializer2(serializers.ModelSerializer):
         try:
             parent = category.parent.name
         except:
-            parent = "(Category)"
+            parent = None
         return parent
      
     class Meta:
