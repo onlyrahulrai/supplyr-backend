@@ -36,7 +36,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["id","items","buyer","seller","created_by","total_amount","discount","total_extra_discount","address","status","created_at","cancelled_at","cancelled_by"]
+        fields = ["id","items","buyer","seller","created_by","total_amount","total_extra_discount","address","status","created_at","cancelled_at","cancelled_by"]
         # exclude = ['is_active']
         read_only_fields = ['cancelled_at']
 

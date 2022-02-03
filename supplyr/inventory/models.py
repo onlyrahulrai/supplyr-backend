@@ -295,10 +295,14 @@ class ProductImage(Model):
         ordering = ['order']
     
 class BuyerDiscount(models.Model):
-    discount_value_type = (
-        ("amount","Amount"),
-        ("percentage","Percentage")
-    )
+    
+    class DiscountValueType(models.TextChoices):
+        AMOUNT = "amount","Amount"
+        PERCENTAGE = "percentage","Percentage"
+    # discount_value_type = (
+    #     ("amount","Amount"),
+    #     ("percentage","Percentage")
+    # )
     
     buyer = models.ForeignKey(BuyerProfile,on_delete=models.CASCADE,related_name="buyer_discounts",null=True,blank=True)
     seller = models.ForeignKey(SellerProfile,on_delete=models.CASCADE,related_name="buyer_discounts",null=True,blank=True)
@@ -306,7 +310,7 @@ class BuyerDiscount(models.Model):
     variant = models.ForeignKey(Variant, on_delete=models.CASCADE,related_name="exclusive_variants",null=True,blank=True)
     product = models.ForeignKey(Product, on_delete=models.CASCADE,related_name="exclusive_products",null=True,blank=True)
     
-    discount_type = EnumField(default="amount",choices=discount_value_type)
+    discount_type = EnumField(default=DiscountValueType.AMOUNT,choices=DiscountValueType.choices)
     discount_value = models.DecimalField(default=0, decimal_places=2, max_digits=5)
     
     is_active = models.BooleanField(default=True)
