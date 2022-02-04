@@ -19,7 +19,10 @@ urlpatterns = [
     path("seller-buyers/",BuyerSellerConnectionAPIView.as_view(),name="seller-buyers"),
     
     path("sellers-buyer-detail/<str:pk>/",SellerBuyersDetailAPIView.as_view(),name="sellers-buyer-detail"),
-    
-    
-    path("buyer-discount/<str:pk>/",BuyerDiscountAPI.as_view(),name="buyer-discount")
+        
+    ######### Buyer discount start ##########
+    path("buyer-details/<str:pk>/",BuyerDetailForDiscountAPIView.as_view(),name="buyer_detail_for_discounts"),
+    path("buyer-discounts/",BuyerDiscountAPIView.as_view(),name="buyer-discounts"),
+    path("buyer-discounts/<str:pk>/",BuyerDiscountAPIView.as_view(),name="buyer-discounts"),
+    ######### Buyer discount end ##########
 ]

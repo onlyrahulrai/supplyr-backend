@@ -29,6 +29,7 @@ class OrderView(mixins.ListModelMixin,
         return self.list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
+        print(" ----- requested data ------ ",request.data)
         if(kwargs.get("pk")):
             return self.update(request,*args,**kwargs)
         return self.create(request, *args, **kwargs)

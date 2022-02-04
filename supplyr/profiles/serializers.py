@@ -34,6 +34,10 @@ class OrderStatusVariableForSeller(serializers.ModelSerializer):
         fields = ( 'name', 'id', 'data_type', 'linked_order_status')
 
 class ShortEntityDetailsSerializer(serializers.ModelSerializer):
+    """
+    To be used by seller app 
+    (may be rename it to SellerProfileSerializer?)
+    """
     sub_categories = serializers.SerializerMethodField()
     def get_sub_categories(self, profile):
         sub_categories = profile.operational_fields.filter(is_active=True)
@@ -315,6 +319,9 @@ class SellerProfilingDocumentsSerializer(serializers.ModelSerializer):
 
 
 class SellerShortDetailsSerializer(serializers.ModelSerializer):
+    '''
+    To be used by buyer app / salesperson app
+    '''
 
     sub_categories = serializers.SerializerMethodField()
     def get_sub_categories(self, profile):

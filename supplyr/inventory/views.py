@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from supplyr.core.permissions import IsApproved, IsFromBuyerAPI, IsFromBuyerOrSalesAPI, IsFromSellerAPI, IsFromBuyerSellerOrSalesAPI
 from .serializers import *
-from supplyr.inventory.models import Category
+from supplyr.inventory.models import Category,BuyerDiscount
 from supplyr.profiles.models import BuyerProfile,  SellerProfile
 from .models import Product, Variant, ProductImage
 from django.db.models import Prefetch, Q, Count, Sum, Min, Max
@@ -46,6 +46,11 @@ class DeleteProduct(APIView):
             product = get_object_or_404(Product, pk=product_id, owner = profile)
             product.is_active = False
             product.save()
+            
+            variants = Variant.objects.filter(product=product_id).update(is_active=False)
+            
+            buyerDiscounts = BuyerDiscount.objects.filter(product=product_id).update(is_active=False)
+            
             return Response({
                 "success": True,
             })
@@ -286,7 +291,19 @@ class UpdateFavouritesView(APIView):
         except Exception as e:
             print("Enterrd excepitopn", str(e))
             return Response({'success': False, 'message': str(e)}, status=500)
+        
 
+class SellerBuyersDetailAPIView(APIView):
+    permission_classes = [IsApproved,IsFromSellerAPI]
+    
+    def get(self,request,*args,**kwargs):
+        if pk := kwargs.get("pk",None):
+            object = request.user.seller_profiles.first().connections.filter(Q(buyer__pk=pk)).first()
+            buyer = get_object_or_404(BuyerProfile,pk=object.buyer.id)
+            serializer = BuyerDetailForDiscountSerializer(buyer)
+            return Response(serializer.data,status=status.HTTP_200_OK)        
+
+############## Buyer Discount Start ############
 class BuyerSellerConnectionAPIView(APIView):
     permission_classes = [IsApproved,IsFromSellerAPI]
     
@@ -302,31 +319,49 @@ class BuyerSellerConnectionAPIView(APIView):
         result_page = paginator.paginate_queryset(buyers, request)
         serializers = BuyerSellerConnectionSerializers(result_page,many=True)
         return paginator.get_paginated_response(serializers.data)
-
-class SellerBuyersDetailAPIView(APIView):
-    permission_classes = [IsApproved,IsFromSellerAPI]
+    
+class BuyerDetailForDiscountAPIView(APIView):
+    permission_classes = [IsFromSellerAPI]
     
     def get(self,request,*args,**kwargs):
-        if pk := kwargs.get("pk",None):
-            object = request.user.seller_profiles.first().connections.filter(Q(buyer__pk=pk)).first()
-            buyer = get_object_or_404(BuyerProfile,pk=object.buyer.id)
-            serializer = BuyerDetailSerializer(buyer)
+        if pk := kwargs.get("pk"):
+            # seller_profile = get_object_or_404(SellerProfile,is_active=True,owner=request.user)
+            buyer_profile = get_object_or_404(BuyerProfile,pk=pk,is_active=True)
+            serializer = BuyerDetailForDiscountSerializer(buyer_profile)
             return Response(serializer.data,status=status.HTTP_200_OK)
-
-
-
-
-class BuyerDiscountAPI(generics.GenericAPIView,mixins.RetrieveModelMixin,mixins.UpdateModelMixin):
-    permission_classes = [IsApproved]
-    serializer_class = SellerBuyerConnectionDetailSerializer
-    
-    def get_queryset(self):
-        return self.request.user.seller_profiles.first().connections.filter(is_active=True)
-     
-    def get(self,request,*args,**kwargs):
-        if(kwargs.get("pk")):
-            return self.retrieve(request,*args,**kwargs)
         
-    def put(self,request,*args,**kwargs):
-        print(request.data)
-        return self.update(request,*args,**kwargs)
+class BuyerDiscountAPIView(APIView):
+    permission_classes = [IsFromSellerAPI]
+    
+    def post(self,request,*args,**kwargs):
+        if request.data.get("setting") == "generic_discount":
+            if pk := request.data.get("data").get("id"):
+                discount = get_object_or_404(BuyerDiscount,pk=pk)
+                serializer = GenericDiscountSerializer(discount,data=request.data.get("data"))
+            else:
+                serializer = GenericDiscountSerializer(data=request.data.get("data"))
+                
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data,status=status.HTTP_200_OK)
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+        
+        if request.data.get("setting") == "product_based_discount":
+            if pk := request.data.get("data").get("id"):
+                discount = get_object_or_404(BuyerDiscount,pk=pk)
+                serializer = ExclusiveProductDiscountSerializer(discount,data=request.data.get("data"))
+            else:
+                serializer = ExclusiveProductDiscountSerializer(data=request.data.get("data"))
+                
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data,status=status.HTTP_200_OK)
+            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+        
+    def delete(self,request,*args,**kwargs):
+        if pk := kwargs.get("pk"):
+            discount = get_object_or_404(BuyerDiscount,pk=pk)
+            discount.is_active = False
+            discount.save()
+            return Response({"message":"success"},status=status.HTTP_202_ACCEPTED)
+############## Buyer Discount End ############
