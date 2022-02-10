@@ -59,6 +59,7 @@ class OrderItem(models.Model):
     actual_price = models.DecimalField(max_digits=12, decimal_places=2)
     extra_discount = models.DecimalField(default=0,max_digits=12, decimal_places=2)
     is_active = models.BooleanField(default=True)
+    item_note = models.TextField(blank=True, null=True)
 
     @property
     def featured_image(self):

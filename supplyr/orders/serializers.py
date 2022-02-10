@@ -22,7 +22,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     product_variant_id = serializers.PrimaryKeyRelatedField(queryset=Variant.objects.all(), source='product_variant', write_only=True)
     class Meta: 
         model = OrderItem
-        fields = ["id", 'quantity', 'price', 'actual_price',"extra_discount" ,'product_variant', 'product_variant_id']
+        fields = ["id", 'quantity', 'item_note', 'price', 'actual_price',"extra_discount" ,'product_variant', 'product_variant_id']
 
 class OrderSerializer(serializers.ModelSerializer):
     
