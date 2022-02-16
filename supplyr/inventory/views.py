@@ -310,12 +310,14 @@ class BuyerSellerConnectionAPIView(APIView):
     def get(self,request,*args,**kwargs):
         seller = request.user.seller_profiles.first()
         query = request.GET.get("search",None)
+        pagination = request.GET.get("pagination")
+        print(f' Pagination ----> {pagination} ')
         if(query):
             buyers = seller.connections.filter((Q(buyer__business_name__icontains=query) | Q(buyer__owner__email__icontains=query)) & Q(is_active=True))
         else:
             buyers = seller.connections.filter(is_active=True)
         paginator = CustomPageNumberPagination()
-        paginator.page_size = 8
+        paginator.page_size = buyers.count() if not pagination else 8
         result_page = paginator.paginate_queryset(buyers, request)
         serializers = BuyerSellerConnectionSerializers(result_page,many=True)
         return paginator.get_paginated_response(serializers.data)

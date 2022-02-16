@@ -3,7 +3,7 @@ from django.db import transaction
 from django.shortcuts import render
 from rest_framework import generics, mixins
 from rest_framework.views import APIView
-from .models import Order, OrderHistory, OrderStatusVariableValue
+from .models import Order, OrderHistory, OrderStatusVariableValue,Payment
 from .serializers import *
 from supplyr.core.permissions import IsFromBuyerAPI, IsApproved, IsFromSellerAPI
 from rest_framework.permissions import IsAuthenticated
@@ -145,6 +145,16 @@ class OrderCancellationView(APIView, APISourceMixin):
                 order.cancelled_by = self.api_source
                 order.save()
                 OrderHistory.objects.create(order = order, status = Order.OrderStatusChoice.CANCELLED, created_by = request.user, **order_history_kwargs)
+                
+                ######## ----- Ledger Start ----- ########
+                
+                prev_ledger_balance = 0
+                if prev_ledger := Ledger.objects.filter(buyer=order.buyer,seller=order.seller).order_by("created_at").last():
+                    prev_ledger_balance = prev_ledger.balance
+                    
+                ledger = Ledger.objects.create(transaction_type=Ledger.TransactionTypeChoice.ORDER_CANCELLED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance + order.total_amount ),order=order)
+                
+                ######## ----- Ledger End ----- ########
 
                 for item in order.items.all():
                     product_variant = item.product_variant
@@ -161,3 +171,25 @@ class OrderCancellationView(APIView, APISourceMixin):
         return Response({'success': True, 'order_data': order_data})
 
 
+class PaymentCreateAPIView(generics.GenericAPIView,mixins.CreateModelMixin):
+    serializer_class = PaymentSerializer
+    permission_classes = [IsApproved]
+    
+    def get_queryset(self):
+        return  Payment.objects.filter(seller=self.request.user.seller_profiles.first(),is_active=True)
+    
+    def perform_create(self, serializer):
+        serializer.save(seller=self.request.user.seller_profiles.first())
+        
+    def post(self,request,*args,**kwargs):
+        return self.create(request,*args,**kwargs)
+    
+class LedgerAPIView(generics.GenericAPIView,mixins.ListModelMixin):
+    serializer_class = LedgerSerializer
+    permission_classes = [IsApproved]
+    
+    def get_queryset(self):
+        return  Ledger.objects.filter(seller=self.request.user.seller_profiles.first(),buyer=self.kwargs.get("pk")).order_by("-created_at")
+
+    def get(self,request,*args,**kwargs):
+        return self.list(request,*args,**kwargs)

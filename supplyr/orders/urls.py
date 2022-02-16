@@ -4,6 +4,8 @@ from .views import *
 
 urlpatterns = [
     path("generate-invoice/",GenerateInvoiceView.as_view(),name="generate-invoice"),
+    path("transaction/",PaymentCreateAPIView.as_view(),name="transaction-create"),
+    path("ledgers/<str:pk>/",LedgerAPIView.as_view(),name="ledgers"),
     path(
         '',
         OrderView.as_view(),

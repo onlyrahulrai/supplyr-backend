@@ -11,6 +11,7 @@ from .models import *
 from supplyr.inventory.models import Variant
 from supplyr.profiles.serializers import BuyerAddressSerializer
 from supplyr.inventory.serializers import VariantDetailsSerializer
+from supplyr.orders.models import Payment,Ledger
 
 class OrderItemSerializer(serializers.ModelSerializer):
     # featured_image = serializers.SerializerMethodField()
@@ -120,6 +121,16 @@ class OrderSerializer(serializers.ModelSerializer):
 
         with transaction.atomic():
             order = Order.objects.create(**validated_data)
+            
+            ######## ----- Ledger Start ----- ########
+            
+            prev_ledger_balance = 0
+            if prev_ledger := Ledger.objects.filter(buyer=order.buyer,seller=order.seller).order_by("created_at").last():
+                prev_ledger_balance = prev_ledger.balance
+            ledger = Ledger.objects.create(transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount ),order=order)
+            
+            ######## ----- Ledger End ----- ########
+            
             for item in items:
                 variant_id = item.pop("variant_id")
                 _item = OrderItem.objects.create(**item, order = order)
@@ -321,4 +332,59 @@ class GenerateInvoiceSerializer(serializers.ModelSerializer):
         model = Invoice
         fields = ["id","order","invoice_number","created_at"]
         
+class PaymentShortDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ["id","amount","mode","remarks","date"]
+        
+class OrderShortDetailSerializer(serializers.ModelSerializer):
     
+    created_by = serializers.SerializerMethodField()
+    def get_created_by(self,order):
+        return {"userId":order.created_by.id,"username":order.created_by.username}
+    
+    class Meta:
+        model = Order
+        fields = ["id","created_by","status"]
+        
+        
+class LedgerSerializer(serializers.ModelSerializer):
+    
+    description = serializers.SerializerMethodField()
+    def get_description(self,ledger):
+        return ledger.description
+    
+    
+    payment = PaymentShortDetailSerializer()
+    order = OrderShortDetailSerializer()
+    
+    
+    class Meta:
+        model = Ledger
+        fields = ["id","transaction_type","amount","balance","payment","order","description","created_at"]
+        
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ["seller","buyer","amount","mode","remarks"]
+        extra_kwargs={
+            "seller":{
+                "required":False
+            }
+        }
+        
+    def create(self, validated_data):
+        with transaction.atomic():
+            buyer = validated_data.get("buyer")
+            seller = validated_data.get("seller")
+            amount = validated_data.get("amount")
+            
+            payment = Payment.objects.create(**validated_data)
+            
+            prev_ledger_balance = 0
+            if previous_ledger := Ledger.objects.filter(seller=seller,buyer=buyer).order_by("created_at").last():
+                prev_ledger_balance = previous_ledger.balance
+                
+            new_ledger = Ledger.objects.create(transaction_type=Ledger.TransactionTypeChoice.PAYMENT_ADDED,amount=amount,balance=(payment.amount + prev_ledger_balance),payment=payment,buyer=buyer,seller=seller)
+            
+        return payment

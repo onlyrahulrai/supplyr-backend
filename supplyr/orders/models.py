@@ -139,5 +139,48 @@ class OrderStatusVariableValue(models.Model):
     variable = models.ForeignKey(OrderStatusVariable, on_delete=models.RESTRICT, related_name="values")
     value = models.TextField(blank=True, null=True)
 
+class Payment(models.Model):
+    class PaymentMode(models.TextChoices):
+        Cheque = 'cheque','Cheque'
+        Cash = 'cash','Cash'
+        BankTransfer = 'banktransfer','BankTransfer'
+    seller = models.ForeignKey(SellerProfile, on_delete=models.CASCADE,related_name="transactions")
+    buyer = models.ForeignKey('profiles.BuyerProfile', on_delete=models.CASCADE,related_name="transactions")
+    amount = models.DecimalField(max_digits=12,decimal_places=2)
+    mode = EnumField(choices=PaymentMode.choices,default=PaymentMode.BankTransfer)
+    remarks = models.CharField(max_length=255,null=True,blank=True)
+    is_active = models.BooleanField(default=True)
+    date    = models.DateTimeField(auto_now_add=True)
+    
+    
+    def __str__(self):
+        return f'{self.seller} - {self.buyer} - {self.amount}' 
 
-
+class Ledger(models.Model):
+    class TransactionTypeChoice(models.TextChoices):
+        ORDER_CREATED="order_created","Order Created"
+        PAYMENT_ADDED="payment_added","Payment Added"
+        ORDER_CANCELLED="order_cancelled","Order Cancelled"
+    
+    transaction_type  = EnumField(choices=TransactionTypeChoice.choices,default=TransactionTypeChoice.ORDER_CREATED)
+    seller = models.ForeignKey(SellerProfile, on_delete=models.CASCADE,related_name="ledgers",null=True,blank=True)
+    buyer = models.ForeignKey('profiles.BuyerProfile', on_delete=models.CASCADE,related_name="ledgers",null=True,blank=True)
+    amount = models.DecimalField(default=0,decimal_places=2,max_digits=12)
+    balance = models.DecimalField(default=0,decimal_places=2,max_digits=12)
+    payment = models.ForeignKey(Payment, on_delete=models.CASCADE,related_name="ledgers",null=True,blank=True)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE,related_name="ledgers",null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    @property
+    def description(self):
+        description_str = None
+        if self.transaction_type == TransactionTypeChoice.PAYMENT_ADDED:
+            description_str = f"Payment added. Payment ID: {self.payment.id}"
+        elif self.transaction_type == TransactionTypeChoice.ORDER_CREATED:
+            description_str = f"Order #{self.order.id} created by {'you' if self.order.created_by == self.seller.owner else 'buyer' }"
+        elif self.transaction_type == TransactionTypeChoice.ORDER_CANCELLED:
+            print(vars(self.order))
+            description_str = f"Order #{self.order.id} cancelled by {'you' if self.order.cancelled_by == 'seller' else 'buyer' if self.order.cancelled_by == 'buyer' else ''  }"
+        return description_str
+  
+  

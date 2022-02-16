@@ -2,7 +2,8 @@
 from django.contrib import admin
 
 
-from .models import Invoice, Order, OrderItem, OrderHistory, OrderStatusChoices, OrderStatusVariable, OrderStatusVariableValue
+from .models import *
+
 
 
 @admin.register(Order)
@@ -63,6 +64,12 @@ class OrderStatusChoicesAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'slug', 'serial')
     search_fields = ('name', 'slug')
     prepopulated_fields = {'slug': ['name']}
+    
+@admin.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ("id","seller","buyer","amount","mode","remarks")
+    
+admin.site.register(Ledger)
     
     
 admin.site.register(Invoice)

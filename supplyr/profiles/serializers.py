@@ -241,7 +241,7 @@ class UserDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['name', 'first_name', 'last_name', 'username', 'is_staff', 'user_status','user_profile_review','profiling_data', 'profile', 'user_role', 'is_email_verified', 'is_mobile_verified', 'email', 'mobile_number']
+        fields = ["id",'name', 'first_name', 'last_name', 'username', 'is_staff', 'user_status','user_profile_review','profiling_data', 'profile', 'user_role', 'is_email_verified', 'is_mobile_verified', 'email', 'mobile_number']
 
 
 class BuyerAddressSerializer(serializers.ModelSerializer):
