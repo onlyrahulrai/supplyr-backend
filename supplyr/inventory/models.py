@@ -311,7 +311,7 @@ class BuyerDiscount(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE,related_name="exclusive_products",null=True,blank=True)
     
     discount_type = EnumField(default=DiscountValueType.AMOUNT,choices=DiscountValueType.choices)
-    discount_value = models.DecimalField(default=0, decimal_places=2, max_digits=5)
+    discount_value = models.DecimalField(default=0, decimal_places=2, max_digits=8)
     
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
