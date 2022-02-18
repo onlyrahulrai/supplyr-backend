@@ -215,9 +215,27 @@ class SellerOrderListSerializer(OrderListSerializer):
     def get_buyer_id(self,order):
         return order.buyer.id
 
+    short_items_description = serializers.SerializerMethodField()
+    def get_short_items_description(self,order):
+        DESCRIPTION_LENGTH = 30
+        order_items = order.items.filter(is_active=True)
+        
+        first_item_name = order_items.first().product_variant.product.title
+        order_items_count = order_items.count()
+        
+        item_name_length = DESCRIPTION_LENGTH if order_items_count == 1 else (DESCRIPTION_LENGTH - 8)
+        
+        first_item_name_truncated = (first_item_name[:item_name_length] + '...') if len(first_item_name) > item_name_length else first_item_name
+        
+        if order_items_count == 1:
+            return first_item_name_truncated
+        else:
+            return f'{first_item_name_truncated} (+{order_items_count-1} More)'
+    
+
     class Meta:
         model = Order
-        fields = ['id', 'order_date', 'buyer_name',"buyer_id" ,'order_status', 'total_amount', 'featured_image',]
+        fields = ['id', 'order_date', 'buyer_name',"buyer_id" ,'order_status', 'total_amount', 'featured_image',"short_items_description"]
 
 class SalespersonOrderListSerializer(OrderListSerializer):
 
