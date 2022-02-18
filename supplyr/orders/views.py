@@ -1,6 +1,6 @@
 from django.db.models import Q
 from django.db import transaction
-from django.shortcuts import render
+from django.shortcuts import render,get_object_or_404
 from rest_framework import generics, mixins
 from rest_framework.views import APIView
 from .models import Order, OrderHistory, OrderStatusVariableValue,Payment
@@ -10,6 +10,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from supplyr.utils.api.mixins import APISourceMixin
 from django.db.models import F
+from rest_framework import status
 
 class OrderView(mixins.ListModelMixin,
                   mixins.CreateModelMixin,
@@ -30,8 +31,12 @@ class OrderView(mixins.ListModelMixin,
 
     def post(self, request, *args, **kwargs):
         print(" ----- requested data ------ ",request.data)
-        if(kwargs.get("pk")):
-            return self.update(request,*args,**kwargs)
+        if pk := kwargs.get("pk"):
+            order = get_object_or_404(Order,pk=pk,seller=self.request.user.seller_profiles.first())
+            if order.status not in ["processed",'cancelled','dispatched','delivered']:
+                return self.update(request,*args,**kwargs)
+            else:
+                return Response({"message":"Your are not allowed to update this order"},status=status.HTTP_304_NOT_MODIFIED)
         return self.create(request, *args, **kwargs)
 
 class GenerateInvoiceView(generics.GenericAPIView,mixins.CreateModelMixin):
