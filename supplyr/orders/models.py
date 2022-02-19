@@ -174,11 +174,11 @@ class Ledger(models.Model):
     @property
     def description(self):
         description_str = None
-        if self.transaction_type == TransactionTypeChoice.PAYMENT_ADDED:
+        if self.transaction_type == self.TransactionTypeChoice.PAYMENT_ADDED:
             description_str = f"Payment added. Payment ID: {self.payment.id}"
-        elif self.transaction_type == TransactionTypeChoice.ORDER_CREATED:
+        elif self.transaction_type == self.TransactionTypeChoice.ORDER_CREATED:
             description_str = f"Order #{self.order.id} created by {'you' if self.order.created_by == self.seller.owner else 'buyer' }"
-        elif self.transaction_type == TransactionTypeChoice.ORDER_CANCELLED:
+        elif self.transaction_type == self.TransactionTypeChoice.ORDER_CANCELLED:
             print(vars(self.order))
             description_str = f"Order #{self.order.id} cancelled by {'you' if self.order.cancelled_by == 'seller' else 'buyer' if self.order.cancelled_by == 'buyer' else ''  }"
         return description_str
