@@ -122,15 +122,6 @@ class OrderSerializer(serializers.ModelSerializer):
         with transaction.atomic():
             order = Order.objects.create(**validated_data)
             
-            ######## ----- Ledger Start ----- ########
-            
-            prev_ledger_balance = 0
-            if prev_ledger := Ledger.objects.filter(buyer=order.buyer,seller=order.seller).order_by("created_at").last():
-                prev_ledger_balance = prev_ledger.balance
-            ledger = Ledger.objects.create(transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount ),order=order)
-            
-            ######## ----- Ledger End ----- ########
-            
             for item in items:
                 variant_id = item.pop("variant_id")
                 _item = OrderItem.objects.create(**item, order = order)

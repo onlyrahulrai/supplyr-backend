@@ -95,6 +95,13 @@ class OrdersBulkUpdateView(APIView):
         operation = request.data.get('operation')
         profile = request.user.seller_profiles.first()
 
+        status_filter = {
+            "approved":"awaiting_approval",
+            "processed":"approved",
+            "dispatched":"processed",
+            "delivered":"dispatched"
+        }
+
         order_ids = request.data.get('order_ids')
 
         if operation in ['change_status', 'change_status_with_variables']:
@@ -105,13 +112,25 @@ class OrdersBulkUpdateView(APIView):
             # if new_status not in Order.OrderStatusChoice.choices:
             #     return Response({'success': False, 'message': 'Invalid Status'})
 
-            orders = Order.objects.filter(pk__in = order_ids, seller=profile, is_active=True).exclude(status__in=[Order.OrderStatusChoice.CANCELLED, new_status])
+            orders = Order.objects.filter(pk__in = order_ids, seller=profile, is_active=True,status=status_filter[new_status]).exclude(status__in=[Order.OrderStatusChoice.CANCELLED, new_status])
 
             with transaction.atomic():
                 _orders = list(orders)  # As the 'orders' queryset will remove the current orders after getting updated below, and no orders will be there because of status=new_status exclusion. Hence made a list to retain fetched orders list, to add history entry
                 orders.update(status = new_status)
                 for order in _orders:
                     OrderHistory.objects.create(order = order, status = new_status, created_by = request.user, seller = profile)
+                    
+                    if new_status == Order.OrderStatusChoice.PROCESSED:
+                        ######## ----- Ledger Start ----- ########
+                        
+                        print(" ---- Ledger Created ---- ",new_status)
+            
+                        prev_ledger_balance = 0
+                        if prev_ledger := Ledger.objects.filter(buyer=order.buyer,seller=order.seller).order_by("created_at").last():
+                            prev_ledger_balance = prev_ledger.balance
+                        ledger = Ledger.objects.create(transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount ),order=order)
+            
+                        ######## ----- Ledger End ----- ########
 
                 if operation == 'change_status_with_variables':
                     variables = data['variables']
