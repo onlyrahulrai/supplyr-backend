@@ -304,23 +304,39 @@ class SellerBuyersDetailAPIView(APIView):
             return Response(serializer.data,status=status.HTTP_200_OK)        
 
 ############## Buyer Discount Start ############
-class BuyerSellerConnectionAPIView(APIView):
+class BuyerSellerConnectionAPIView(GenericAPIView,mixins.ListModelMixin):
     permission_classes = [IsApproved,IsFromSellerAPI]
+    serializer_class = BuyerSellerConnectionSerializers
+    pagination_class = CustomPageNumberPagination
     
-    def get(self,request,*args,**kwargs):
-        seller = request.user.seller_profiles.first()
-        query = request.GET.get("search",None)
-        pagination = request.GET.get("pagination")
-        print(f' Pagination ----> {pagination} ')
+    def get_queryset(self):
+        query = self.request.GET.get("search",None)
+        seller = self.request.user.seller_profiles.first()
         if(query):
             buyers = seller.connections.filter((Q(buyer__business_name__icontains=query) | Q(buyer__owner__email__icontains=query)) & Q(is_active=True))
         else:
             buyers = seller.connections.filter(is_active=True)
-        paginator = CustomPageNumberPagination()
-        paginator.page_size = buyers.count() if not pagination else 8
-        result_page = paginator.paginate_queryset(buyers, request)
-        serializers = BuyerSellerConnectionSerializers(result_page,many=True)
-        return paginator.get_paginated_response(serializers.data)
+        return buyers
+    
+    def get(self,request,*args,**kwargs):
+        return self.list(request,*args,**kwargs)
+# class BuyerSellerConnectionAPIView(APIView):
+#     permission_classes = [IsApproved,IsFromSellerAPI]
+    
+#     def get(self,request,*args,**kwargs):
+#         seller = request.user.seller_profiles.first()
+#         query = request.GET.get("search",None)
+#         pagination = request.GET.get("pagination")
+#         print(f' Pagination ----> {pagination} ')
+#         if(query):
+#             buyers = seller.connections.filter((Q(buyer__business_name__icontains=query) | Q(buyer__owner__email__icontains=query)) & Q(is_active=True))
+#         else:
+#             buyers = seller.connections.filter(is_active=True)
+#         paginator = CustomPageNumberPagination()
+#         paginator.page_size = buyers.count() if not pagination else 8
+#         result_page = paginator.paginate_queryset(buyers, request)
+#         serializers = BuyerSellerConnectionSerializers(result_page,many=True)
+#         return paginator.get_paginated_response(serializers.data)
     
 class BuyerDetailForDiscountAPIView(APIView):
     permission_classes = [IsFromSellerAPI]

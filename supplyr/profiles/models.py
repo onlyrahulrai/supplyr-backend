@@ -33,12 +33,12 @@ class SellerProfile(models.Model):
         
     class SellerStatusChoice(models.TextChoices):
         PENDING_APPROVAL = 'pending_approval', 'Pending Approval'
+        PROFILE_CREATED = "profile_created","Profile Created"
         APPROVED = 'approved', 'Approved'
         REJECTED = 'rejected', 'Rejected'
         NEED_MORE_INFO = 'need_more_info', 'Need More Information'
         PERMANENTLY_REJECTED = 'permanently_rejected', 'Permanently Rejected'
         CATEGORIES_SELECTED = "categories_selected","Categories Selected"
-        NEW = 'new',"New"
 
     owner = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='seller_profiles')
     business_name = models.CharField(max_length=100, blank=True, null=True)
@@ -56,7 +56,7 @@ class SellerProfile(models.Model):
     operational_fields = models.ManyToManyField('inventory.Category', blank=True)
     invoice_prefix = models.CharField(max_length=12,null=True,blank=True)
     translations = models.JSONField(default=translation_default)
-    status = EnumField(default="new",choices=SellerStatusChoice.choices, blank=True, null=True)
+    status = EnumField(default="profile_created",choices=SellerStatusChoice.choices, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     connection_code = models.CharField(max_length=15)
     created_at = models.DateTimeField(default=timezone.now)

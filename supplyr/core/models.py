@@ -33,9 +33,7 @@ class User(AbstractUser):
 
     @property
     def seller_status(self):  
-        if self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.NEW).exists():
-            return "new"
-        elif self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.PENDING_APPROVAL).exists():
+        if self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.PENDING_APPROVAL).exists():
             return "pending_approval"
         elif  self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.APPROVED).exists():
             return 'approved'
@@ -47,6 +45,8 @@ class User(AbstractUser):
             return "permanently_rejected"
         elif self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.CATEGORIES_SELECTED).exists():
             return "categories_selected"
+        elif self.seller_profiles.filter(status=SellerProfile.SellerStatusChoice.PROFILE_CREATED).exists():
+            return "profile_created"
         
         if self.seller_profiles.exists():
             return 'form_filled'
