@@ -1,6 +1,6 @@
 from django.db.models.query_utils import Q
 from rest_framework import serializers
-from .models import BuyerAddress, BuyerProfile, SellerProfile, SalespersonProfile
+from .models import AddressState, BuyerAddress, BuyerProfile, SellerProfile, SalespersonProfile
 from django.contrib.auth import get_user_model
 from typing import Dict
 from supplyr.inventory.models import Category, Tags
@@ -243,14 +243,23 @@ class UserDetailsSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id",'name', 'first_name', 'last_name', 'username', 'is_staff', 'user_status','user_profile_review','profiling_data', 'profile', 'user_role', 'is_email_verified', 'is_mobile_verified', 'email', 'mobile_number']
 
+class AddressStatesSerializer(serializers.ModelSerializer):
 
-class BuyerAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AddressState
+        fields = '__all__'
+
+
+class BuyerAddressSerializer(serializers.ModelSerializer):        
+
+    state = AddressStatesSerializer(read_only=True)
+    state_id = serializers.PrimaryKeyRelatedField(queryset=AddressState.objects.all(), source='state', write_only=True)
     class Meta:
         model = BuyerAddress
         # fields = '__all__'
-        exclude = ['owner']
+        exclude = ['owner', 'state_old']
 
-    state = ChoiceField(choices=BuyerAddress.STATE_CHOICES)
+    # state = ChoiceField(choices=BuyerAddress.STATE_CHOICES)
 
 
 class SellerProfilingSerializer(serializers.ModelSerializer):

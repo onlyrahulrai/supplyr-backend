@@ -5,7 +5,7 @@ import random
 import string
 from os.path import splitext
 from django.utils import timezone
-from supplyr.profiles.data import STATE_CHOICES,CURRENCY_CHOICES
+from supplyr.profiles.data import COUNTRY_CHOICES, STATE_CHOICES,CURRENCY_CHOICES
 
 def get_document_upload_path(instance, filename, document_category):
     file, ext = splitext(filename)
@@ -129,6 +129,14 @@ class ManuallyCreatedBuyer(models.Model):
     is_settled = models.BooleanField(default=False)
 
 
+class AddressState(models.Model):
+    name = models.CharField(max_length=30)
+    country = EnumField(choices=COUNTRY_CHOICES)
+    code = models.CharField(max_length=10, blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.name}, {self.country}'
+
 class BuyerAddress(models.Model):
     STATE_CHOICES = STATE_CHOICES
     
@@ -137,7 +145,8 @@ class BuyerAddress(models.Model):
     line2 = models.CharField(max_length=200)
     pin = models.CharField(max_length=10)
     city = models.CharField(max_length=50)
-    state = EnumField(choices=STATE_CHOICES)
+    state_old = EnumField(choices=STATE_CHOICES, null=True,blank=True)
+    state = models.ForeignKey(AddressState, blank=True, null=True, on_delete=models.RESTRICT)  # Later remove blank true, after taking care of existing addressses
     phone = models.CharField(max_length=15)
 
     is_default = models.BooleanField(default=False)

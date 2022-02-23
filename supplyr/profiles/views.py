@@ -4,9 +4,9 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from rest_framework import generics, mixins, views
-from .models import BuyerAddress, BuyerSellerConnection, ManuallyCreatedBuyer, SalespersonProfile, SellerProfile, BuyerProfile
+from .models import AddressState, BuyerAddress, BuyerSellerConnection, ManuallyCreatedBuyer, SalespersonProfile, SellerProfile, BuyerProfile
 from supplyr.orders.models import Order
-from .serializers import BuyerAddressSerializer, BuyerProfileSerializer, SalespersonProfileSerializer2, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, SellerShortDetailsSerializer
+from .serializers import AddressStatesSerializer, BuyerAddressSerializer, BuyerProfileSerializer, SalespersonProfileSerializer2, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, SellerShortDetailsSerializer
 from supplyr.core.permissions import IsFromBuyerAPI, IsFromSalesAPI, IsApproved, IsFromSellerAPI, IsUnapproved, IsFromBuyerOrSalesAPI
 from supplyr.utils.api.mixins import APISourceMixin
 
@@ -144,6 +144,22 @@ class AddressView(generics.ListCreateAPIView, generics.UpdateAPIView, generics.D
         else:
             profile_id = self.request.user.buyer_profiles.first().id
         return BuyerAddress.objects.filter(is_active=True, owner_id = profile_id).order_by('-is_default')
+
+    def list(self, request, *args, **kwargs):
+        # To retuen 'states_list' as well along with 'addresses'
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset, many=True)
+        addresses_list = serializer.data
+
+
+        states_list = AddressStatesSerializer(AddressState.objects.all(), many=True).data
+        rsp = {
+            'addresses': addresses_list,
+            'states_list': states_list
+        }
+
+        # address_state_values = 
+        return Response(rsp)
 
     def perform_create(self, serializer):
         if self.api_source == 'sales':
