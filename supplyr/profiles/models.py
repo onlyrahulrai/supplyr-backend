@@ -143,7 +143,7 @@ class BuyerAddress(models.Model):
     name = models.CharField(max_length=100)
     line1 = models.CharField(max_length=200)
     line2 = models.CharField(max_length=200)
-    pin = models.CharField(max_length=10)
+    pin = models.CharField(max_length=10, blank=True, null= True)
     city = models.CharField(max_length=50)
     state_old = EnumField(choices=STATE_CHOICES, null=True,blank=True)
     state = models.ForeignKey(AddressState, blank=True, null=True, on_delete=models.RESTRICT)  # Later remove blank true, after taking care of existing addressses
