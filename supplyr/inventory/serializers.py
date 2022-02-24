@@ -843,35 +843,18 @@ class SellerBuyerConnectionDetailSerializer(serializers.ModelSerializer):
         fields = ["id","buyer","seller"]
         extra_kwargs = {"buyer":{"read_only":True},"seller":{"read_only":True}}
         
-class BuyerAddressSerializer(serializers.ModelSerializer):
-    state = ChoiceField(choices=BuyerAddress.STATE_CHOICES)
+class BuyerAddressSerializerForBuyer(serializers.ModelSerializer):
+    # state = ChoiceField(choices=BuyerAddress.STATE_CHOICES)
+    state = serializers.SerializerMethodField()
+    def get_state(self,buyer_address):
+        state = None
+        if address := buyer_address.state:
+            state = address.name
+        return state
+    
     class Meta:
         model = BuyerAddress
         fields = ["id","name","line1","line2","pin","city","state"]
-        
-class BuyerDetailSerializer(serializers.ModelSerializer):
-    
-    owner = serializers.SerializerMethodField()
-    def get_owner(self,buyer):
-        return buyer.owner.name
-    
-   
-    address = serializers.SerializerMethodField()
-    def get_address(self,buyer):
-        print(self.context['request'].user)
-        addresses = buyer.buyer_address.filter(is_active=True)
-        return BuyerAddressSerializer(addresses,many=True).data
-    
-   
-        
-    
-   
-    
-    class Meta:
-        model = BuyerProfile
-        fields = ["id","owner","business_name","address"]
-        
-        
         
 ############### Buyer Discount Part Started ###############
 
@@ -929,7 +912,7 @@ class BuyerDetailForDiscountSerializer(serializers.ModelSerializer):
     address = serializers.SerializerMethodField()
     def get_address(self,buyer):
         addresses = buyer.buyer_address.filter(is_active=True)
-        return BuyerAddressSerializer(addresses,many=True).data
+        return BuyerAddressSerializerForBuyer(addresses,many=True).data
     
     class Meta:
         model = BuyerProfile
