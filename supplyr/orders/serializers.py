@@ -192,20 +192,6 @@ class OrderListSerializer(serializers.ModelSerializer, SerializerAPISourceMixin)
             return 'cancelled_by_seller'
         return order.status
 
-    class Meta:
-        model = Order
-        fields = ['id', 'order_date', 'seller_name', 'items_count', 'order_status', 'total_amount', 'featured_image',]
-
-class SellerOrderListSerializer(OrderListSerializer):
-
-    buyer_name = serializers.SerializerMethodField()
-    def get_buyer_name(self, order):
-        return order.buyer.business_name
-    
-    buyer_id = serializers.SerializerMethodField()
-    def get_buyer_id(self,order):
-        return order.buyer.id
-
     short_items_description = serializers.SerializerMethodField()
     def get_short_items_description(self,order):
         DESCRIPTION_LENGTH = 30
@@ -222,7 +208,20 @@ class SellerOrderListSerializer(OrderListSerializer):
             return first_item_name_truncated
         else:
             return f'{first_item_name_truncated} (+{order_items_count-1} More)'
+
+    class Meta:
+        model = Order
+        fields = ['id', 'order_date', 'seller_name', 'items_count', 'order_status', 'total_amount', 'featured_image','short_items_description']
+
+class SellerOrderListSerializer(OrderListSerializer):
+
+    buyer_name = serializers.SerializerMethodField()
+    def get_buyer_name(self, order):
+        return order.buyer.business_name
     
+    buyer_id = serializers.SerializerMethodField()
+    def get_buyer_id(self,order):
+        return order.buyer.id
 
     class Meta:
         model = Order
