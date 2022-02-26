@@ -119,6 +119,7 @@ class OrderStatusVariable(models.Model):
         NUMBER = 'number', 'Number'
 
     name = models.CharField(max_length=100)
+    is_internal = models.BooleanField(default=False)   # Internal status variables won't be visible to the buyers
     slug = AutoSlugField(max_length=100, editable=True, populate_from=['name'])
     data_type = EnumField(choices=DataTypeChoices.choices, default=DataTypeChoices.TEXT)
     linked_order_status = models.ForeignKey(OrderStatusChoices, on_delete=models.RESTRICT)

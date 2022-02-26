@@ -277,10 +277,14 @@ class StatusVariableValueSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
     def get_status(self, instance):
         return "dispatched"
+
+    is_internal = serializers.SerializerMethodField()
+    def get_is_internal(self, instance):    # TODO: Security - Don;t send variable to non-accessible people (like, don't send internal variables to buyers) 
+        return instance.variable.is_internal
         
     class Meta:
         model = OrderStatusVariableValue
-        fields = ['status', 'variable_name', 'value', 'variable_slug']
+        fields = ['status', 'variable_name', 'value', 'variable_slug', 'is_internal']
 
 class OrderDetailsSerializer(SellerOrderListSerializer):
 
