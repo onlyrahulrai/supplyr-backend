@@ -154,6 +154,8 @@ function displayTable(data) {
             <tr>
                 <td class="id">${data.results[i].id}</td>
                 <td class="owner">${data.results[i].owner_name}</td>
+                <td class="owner">${data.results[i].owner_email}</td>
+                <td class="owner">${data.results[i].owner_phone}</td>
                 <td class="business_name">${data.results[i].business_name}</td>
                 <td class="entity_category">
                     ${ (data.results[i].entity_category === "M" && "Manufacturer") || (data.results[i].entity_category === "W" && "Wholeseller") || (data.results[i].entity_category === "D" && "Distributer") }

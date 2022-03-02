@@ -480,5 +480,5 @@ class SellerStateOrders(APIView):
                     print("start date",start_date,"end date",end_date)
                     filters["created_at__range"] = (start_date,end_date) 
                 
-        response = Order.objects.filter(seller=seller_profile,is_active=True,**filters).values(state=F("address__state__name")).annotate(state_orders_count=Count("state"),revenue=Sum("total_amount")).order_by("-state_orders_count")
+        response = Order.objects.filter(seller=seller_profile,is_active=True,**filters).values(state=F("address__state__name"),country_code=F("address__state__country")).annotate(state_orders_count=Count("state"),revenue=Sum("total_amount")).order_by("-state_orders_count")
         return Response(response,status=status.HTTP_200_OK)

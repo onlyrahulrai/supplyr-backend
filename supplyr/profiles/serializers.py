@@ -273,12 +273,22 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
     def get_owner_name(self,sellerprofile):
         return sellerprofile.owner.name
     
+    owner_email = serializers.SerializerMethodField()
+    def get_owner_email(self,sellerprofile):
+        return sellerprofile.owner.email
+    
+    owner_phone = serializers.SerializerMethodField()
+    def get_owner_phone(self,sellerprofile):
+        return sellerprofile.owner.mobile_number
+    
     class Meta:
         model = SellerProfile
         fields = [
             "id",
             "owner",
             "owner_name",
+            "owner_email",
+            "owner_phone",
             'business_name',
             'entity_category',
             'entity_type',

@@ -12,7 +12,7 @@ class SellerProfileFilter(FilterSet):
     '''
     search = CharFilter(field_name="business_name",lookup_expr="icontains")
     
-    sort = filters.OrderingFilter(fields=['id',"business_name","owner","entity_category","entity_type","status","is_gst_enrolled","is_active"], widget=widgets.LinkWidget)
+    sort = filters.OrderingFilter(fields=['id',"business_name","owner","owner__email","owner__mobile_number","entity_category","entity_type","status","is_gst_enrolled","is_active"], widget=widgets.LinkWidget)
 
     class Meta:
         model = SellerProfile
