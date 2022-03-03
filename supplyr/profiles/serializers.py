@@ -88,6 +88,7 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
             "vendors",
             'sub_categories',
             'connection_code',
+            'order_status_options'
             ]
 
 

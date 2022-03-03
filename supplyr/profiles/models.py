@@ -6,6 +6,7 @@ import string
 from os.path import splitext
 from django.utils import timezone
 from supplyr.profiles.data import COUNTRY_CHOICES, STATE_CHOICES,CURRENCY_CHOICES
+from supplyr.core.app_config import ORDER_STATUS_OPTIONS
 
 def get_document_upload_path(instance, filename, document_category):
     file, ext = splitext(filename)
@@ -60,6 +61,10 @@ class SellerProfile(models.Model):
     is_active = models.BooleanField(default=True)
     connection_code = models.CharField(max_length=15)
     created_at = models.DateTimeField(default=timezone.now)
+    
+    @property
+    def order_status_options(self):
+        return ORDER_STATUS_OPTIONS
     
     # @property
     # def is_approved(self):
