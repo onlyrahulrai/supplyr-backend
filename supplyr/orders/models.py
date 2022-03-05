@@ -13,6 +13,7 @@ class Order(models.Model):
         CANCELLED = 'cancelled', 'Cancelled'
         DISPATCHED = 'dispatched', 'Dispatched'
         DELIVERED = 'delivered', 'Delivered'
+        RETURNED = "returned","Returned"
 
 
     buyer = models.ForeignKey('profiles.BuyerProfile', related_name='orders', on_delete=models.RESTRICT)
