@@ -37,6 +37,7 @@ ORDER_STATUS_OPTIONS = [
         "sequence":5,
         "transitions_possible":['processed', 'cancelled'],
         "editing_allowed":True,
+        "confirmation_needed":True
     },
     {
         "slug":"delivered",
@@ -51,5 +52,6 @@ ORDER_STATUS_OPTIONS = [
         "sequence":7,
         "transitions_possible":[],
         "editing_allowed":False,
+        "confirmation_needed":True
     },
 ]
