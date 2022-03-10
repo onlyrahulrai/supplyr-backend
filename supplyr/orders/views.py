@@ -216,3 +216,15 @@ class LedgerAPIView(generics.GenericAPIView,mixins.ListModelMixin):
 
     def get(self,request,*args,**kwargs):
         return self.list(request,*args,**kwargs)
+    
+class OrderStatusVariableAPIView(generics.GenericAPIView,mixins.UpdateModelMixin):
+    serializer_class = OrderStatusVariableSerializer
+    permission_classes = [IsApproved]
+    
+    def get_queryset(self):
+        seller = self.request.user.seller_profiles.first()
+        order = get_object_or_404(Order,pk=self.kwargs.get("orderId"),seller=seller)
+        return OrderStatusVariableValue.objects.filter(order=order)
+    
+    def put(self, request,*args,**kwargs):
+        return self.partial_update(request,*args,**kwargs)

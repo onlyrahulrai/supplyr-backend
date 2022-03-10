@@ -284,7 +284,7 @@ class StatusVariableValueSerializer(serializers.ModelSerializer):
         
     class Meta:
         model = OrderStatusVariableValue
-        fields = ['status', 'variable_name', 'value', 'variable_slug', 'is_internal']
+        fields = ["id", 'status', 'variable_name', 'value', 'variable_slug', 'is_internal']
 
 class OrderDetailsSerializer(SellerOrderListSerializer):
 
@@ -400,3 +400,16 @@ class PaymentSerializer(serializers.ModelSerializer):
             new_ledger = Ledger.objects.create(transaction_type=Ledger.TransactionTypeChoice.PAYMENT_ADDED,amount=amount,balance=(payment.amount + prev_ledger_balance),payment=payment,buyer=buyer,seller=seller)
             
         return payment
+    
+class OrderStatusVariableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderStatusVariableValue
+        fields = ["id","value","order","variable"]
+        extra_kwargs = {
+            "order":{
+                "read_only":True
+            },
+            "variable":{
+                "read_only":True
+            }
+        }
