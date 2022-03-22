@@ -17,12 +17,10 @@ class Migration(migrations.Migration):
         for seller_id,orders in seller_orders.items():
             seller_profile = get_object_or_404(SellerProfile,id=seller_id)
             for order in orders:
-                if order.order_number:
-                    print(" how are you? ")
-                    order.order_number = (seller_profile.order_number_counter + 1)
-                    order.save()
-                    seller_profile.order_number_counter += 1
-                    seller_profile.save()
+                order.order_number = (seller_profile.order_number_counter + 1)
+                order.save()
+                seller_profile.order_number_counter += 1
+                seller_profile.save()
 
     dependencies = [
         ('orders', '0027_auto_20220322_1355'),
