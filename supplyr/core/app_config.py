@@ -1,5 +1,6 @@
 TRANSLATABLES = [
     "quantity",
+    "order_number_prefix"
 ]
 
 ORDER_STATUS_OPTIONS = [
