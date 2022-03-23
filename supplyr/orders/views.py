@@ -26,7 +26,7 @@ class OrderView(mixins.ListModelMixin,
     pagination_class = None
 
     def get_queryset(self):
-        return Order.objects.all()
+        return Order.objects.filter(seller=self.request.user.seller_profiles.first()).order_by("-created_at")
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -79,7 +79,7 @@ class OrderListView(mixins.ListModelMixin, generics.GenericAPIView, APISourceMix
         elif self.api_source == 'sales':
             filters['salesperson'] = self.request.user.get_sales_profile()
 
-        return Order.objects.order_by('-created_at').filter(**filters)
+        return Order.objects.filter(**filters).order_by('-created_at')
 
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
