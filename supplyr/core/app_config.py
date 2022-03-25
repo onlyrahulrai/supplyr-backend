@@ -21,7 +21,7 @@ ORDER_STATUS_OPTIONS = [
         "slug":"processed",
         "name":"Processed",
         "sequence":3,
-        "transitions_possible":["dispatched","returned","cancelled"],
+        "transitions_possible":["dispatched","approved","cancelled"],
         "editing_allowed":False,
     },
     {
@@ -50,7 +50,7 @@ ORDER_STATUS_OPTIONS = [
         "slug":"cancelled",
         "name":"Cancelled",
         "sequence":7,
-        "transitions_possible":[],
+        "transitions_possible":['approved',],
         "editing_allowed":False,
         "confirmation_needed":True
     },
