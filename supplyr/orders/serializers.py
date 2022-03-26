@@ -120,7 +120,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
         with transaction.atomic():
-            validated_data["order_number"] = (f'{validated_data["seller"].order_number_prefix}{validated_data["seller"].order_number_counter + 1}')
+            validated_data["order_number"] = (f'{validated_data["seller"].order_number_prefix or ""}{validated_data["seller"].order_number_counter + 1}')
             order = Order.objects.create(**validated_data)
             
             order.seller.order_number_counter += 1
