@@ -42,6 +42,8 @@ class SellerProfile(models.Model):
         CATEGORIES_SELECTED = "categories_selected","Categories Selected"
 
     owner = models.ForeignKey('core.User', on_delete=models.CASCADE, related_name='seller_profiles')
+    order_number_counter = models.IntegerField(default=0)
+    order_number_prefix = models.CharField(max_length=200,null=True,blank=True)
     business_name = models.CharField(max_length=100, blank=True, null=True)
     entity_category = EnumField(choices=EntityCategory.choices, blank=True, null=True) 
     entity_type = EnumField(choices=EntityTypes.choices, blank=True, null=True)

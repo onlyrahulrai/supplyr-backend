@@ -17,6 +17,7 @@ class Order(models.Model):
 
 
     buyer = models.ForeignKey('profiles.BuyerProfile', related_name='orders', on_delete=models.RESTRICT)
+    order_number = models.CharField(max_length=200)
     seller = models.ForeignKey('profiles.SellerProfile', related_name='received_orders', on_delete=models.RESTRICT)
     status = EnumField(choices=OrderStatusChoice.choices, default=OrderStatusChoice.AWAITING_APPROVAL)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -46,6 +47,7 @@ class Order(models.Model):
         verbose_name = 'Order'
         verbose_name_plural = 'Orders'
         ordering = ['-created_at']
+        unique_together = ["seller","order_number"]
         
     def __str__(self):
         return f"{self.id} {self.buyer} {self.seller}"

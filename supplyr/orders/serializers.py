@@ -120,8 +120,11 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
         with transaction.atomic():
+            validated_data["order_number"] = (f'{validated_data["seller"].order_number_prefix or ""}{validated_data["seller"].order_number_counter + 1}')
             order = Order.objects.create(**validated_data)
             
+            order.seller.order_number_counter += 1
+            order.seller.save() 
             for item in items:
                 variant_id = item.pop("variant_id")
                 _item = OrderItem.objects.create(**item, order = order)
