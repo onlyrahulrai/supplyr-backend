@@ -214,7 +214,7 @@ class OrderListSerializer(serializers.ModelSerializer, SerializerAPISourceMixin)
 
     class Meta:
         model = Order
-        fields = ['id', 'order_date', 'seller_name', 'items_count', 'order_status', 'total_amount', 'featured_image','short_items_description']
+        fields = ['id', 'order_number', 'order_date', 'seller_name', 'items_count', 'order_status', 'total_amount', 'featured_image','short_items_description']
 
 class SellerOrderListSerializer(OrderListSerializer):
 
@@ -228,7 +228,7 @@ class SellerOrderListSerializer(OrderListSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'order_date', 'buyer_name',"buyer_id" ,'order_status', 'total_amount', 'featured_image',"short_items_description"]
+        fields = ['id', 'order_number', 'order_date', 'buyer_name',"buyer_id" ,'order_status', 'total_amount', 'featured_image',"short_items_description"]
 
 class SalespersonOrderListSerializer(OrderListSerializer):
 
@@ -329,7 +329,7 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
 
     class Meta:
         model = Order
-        fields=['order_date', 'order_time', 'seller_name', 'buyer_name',"buyer_id" ,'order_status', 'total_amount',"total_extra_discount",'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
+        fields=['order_number', 'order_date', 'order_time', 'seller_name', 'buyer_name',"buyer_id" ,'order_status', 'total_amount',"total_extra_discount",'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
         
 class GenerateInvoiceSerializer(serializers.ModelSerializer):
     

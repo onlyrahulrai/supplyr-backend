@@ -10,6 +10,7 @@ from .models import *
 class OrderAdmin(admin.ModelAdmin):
     list_display = (
         'id',
+        'order_number',
         'buyer',
         'seller',
         'created_at',
