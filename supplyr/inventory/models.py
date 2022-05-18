@@ -240,6 +240,18 @@ class Variant(Model):
     def __str__(self):
         return f"{self.product}"
 
+    def get_variant_description(self):
+        if self.option1_name == "default" and self.option1_value == "default":
+            return ''
+        desc = ''
+        if self.option1_name:
+            desc += f'{self.option1_name}: {self.option1_value}'
+        if self.option2_name:
+            desc += f', {self.option2_name}: {self.option2_value}'
+        if self.option3_name:
+            desc += f', {self.option3_name}: {self.option3_value}'
+        return desc
+
 
 class ProductImage(Model):
 

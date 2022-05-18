@@ -197,20 +197,23 @@ class OrderListSerializer(serializers.ModelSerializer, SerializerAPISourceMixin)
 
     short_items_description = serializers.SerializerMethodField()
     def get_short_items_description(self,order):
-        DESCRIPTION_LENGTH = 30
+        DESCRIPTION_LENGTH = 60
         order_items = order.items.filter(is_active=True)
         
-        first_item_name = order_items.first().product_variant.product.title
+        first_item_variant = order_items.first().product_variant
+        first_item_name = first_item_variant.product.title
+        first_item_variant_description = first_item_variant.get_variant_description()
+        description_text = first_item_name + (f' ({first_item_variant_description})' if first_item_variant_description else '')
         order_items_count = order_items.count()
         
         item_name_length = DESCRIPTION_LENGTH if order_items_count == 1 else (DESCRIPTION_LENGTH - 8)
         
-        first_item_name_truncated = (first_item_name[:item_name_length] + '...') if len(first_item_name) > item_name_length else first_item_name
+        description_text_truncated = (description_text[:item_name_length] + '...') if len(description_text) > item_name_length else description_text
         
         if order_items_count == 1:
-            return first_item_name_truncated
+            return description_text_truncated
         else:
-            return f'{first_item_name_truncated} (+{order_items_count-1} More)'
+            return f'{description_text_truncated} + {order_items_count-1} more item{"s" if order_items_count>2 else ""}'
 
     class Meta:
         model = Order
