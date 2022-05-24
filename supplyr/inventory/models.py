@@ -122,8 +122,8 @@ class Product(Model):
         lb = 'lbs', 'lbs'
     # COUNTRY_CHOICES = COUNTRY_CHOICES
     
-    title = models.CharField(max_length=200)
-    slug = AutoSlugField(max_length=100, populate_from=['title'], unique=True)
+    title = models.CharField(max_length=255)
+    slug = AutoSlugField(max_length=255, populate_from=['title'], unique=True)
     description = models.TextField(blank=True, null=True)
     owner = models.ForeignKey('profiles.SellerProfile', related_name='products', on_delete=models.CASCADE)
     vendors = models.ForeignKey('inventory.vendors', related_name='products', on_delete=models.CASCADE,blank=True,null=True)
