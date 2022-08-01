@@ -810,7 +810,7 @@ class  BuyerSellerConnectionSerializers(serializers.ModelSerializer):
     
     buyer = serializers.SerializerMethodField()
     def get_buyer(self,connection):
-        return {"id":connection.buyer.id,"name":connection.buyer.owner.name,"email":connection.buyer.owner.email,"business_name":connection.buyer.business_name}
+        return {"id":connection.buyer.id,"name":connection.buyer.owner.name,"email":connection.buyer.owner.email,"business_name":connection.buyer.business_name,"mobile_number":connection.buyer.owner.mobile_number}
     
     generic_discount = serializers.SerializerMethodField()
     def get_generic_discount(self,connection):

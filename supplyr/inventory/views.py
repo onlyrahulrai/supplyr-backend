@@ -103,6 +103,7 @@ class SellerSelfProductListView(ListAPIView):
             filters['sub_categories__in'] = sub_categories.split(',')
 
         print('filters', filters)
+        sorting = self.request.GET.get("order_by","-created_at")
         return Product.objects.filter(owner = profile, is_active = True, **filters)\
             .annotate(
                 variants_count_annotated=Count('variants', filter=Q(variants__is_active=True)),
@@ -113,7 +114,7 @@ class SellerSelfProductListView(ListAPIView):
             .prefetch_related(
                  Prefetch('images', queryset=ProductImage.objects.filter(is_active=True), to_attr='active_images_prefetched'),
                  Prefetch('variants', queryset=Variant.objects.filter(is_active=True), to_attr='active_variants_prefetched'),
-                 )
+                 ).order_by(sorting)
                  # Didn't store annotations and prefetches into their natural names, as the model methods could fail if these has not been generated. 
                  # Hence, stored them with unique names which I am checking in models, to use if exists.
                  
