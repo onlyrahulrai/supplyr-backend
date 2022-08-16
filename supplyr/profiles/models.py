@@ -132,6 +132,7 @@ class ManuallyCreatedBuyer(models.Model):
     email = models.CharField(max_length=100)
     mobile_number = models.CharField(max_length=14)
     created_by = models.ForeignKey('profiles.SalespersonProfile', on_delete=models.RESTRICT, null=True, blank=True)
+    created_by_seller = models.ForeignKey('profiles.SellerProfile', on_delete=models.RESTRICT, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_settled = models.BooleanField(default=False)
 

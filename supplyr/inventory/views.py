@@ -117,7 +117,6 @@ class SellerSelfProductListView(ListAPIView):
                  ).order_by(sorting)
                  # Didn't store annotations and prefetches into their natural names, as the model methods could fail if these has not been generated. 
                  # Hence, stored them with unique names which I am checking in models, to use if exists.
-                 
 class ProductListView(ListAPIView):
     """
     Products list of a seller when viewed by himself
@@ -130,7 +129,10 @@ class ProductListView(ListAPIView):
         profile = self.request.user.seller_profiles.first()
         return Product.objects.filter(owner = profile, is_active = True)
                  
-
+class SellerSelfproductDetailView(RetrieveAPIView):
+    permission_classes = [IsApproved]
+    serializer_class = ProductListSerializer
+    lookup_field = "pk"
 
 
 class SellerProductListView(ListAPIView):
@@ -321,6 +323,30 @@ class BuyerSellerConnectionAPIView(GenericAPIView,mixins.ListModelMixin):
     
     def get(self,request,*args,**kwargs):
         return self.list(request,*args,**kwargs)
+class SellerBuyersAPIView(ListAPIView,RetrieveAPIView):
+    permission_classes = [IsApproved,IsFromSellerAPI]
+    serializer_class = SellerBuyersConnectionSerializer
+    
+    def get_queryset(self):
+        query = self.request.GET.get("search",None)
+        seller = self.request.user.seller_profiles.first()
+
+        connections = seller.connections.filter(Q(is_active=True))
+            
+        buyerIDs = [connection.buyer.id for connection in connections]
+        
+        profiles = BuyerProfile.objects.filter(id__in=buyerIDs)
+        
+        if query:
+            profiles = profiles.filter(Q(business_name__icontains=query) | Q(owner__email__icontains=query) | Q(owner__mobile_number__icontains=query) | Q(manuallycreatedbuyer__email__icontains=query) | Q(manuallycreatedbuyer__mobile_number__icontains=query)).prefetch_related('manuallycreatedbuyer_set')
+            
+        return profiles
+    
+    def get(self,request,*args,**kwargs):
+        if self.kwargs.get("pk"):
+            return self.retrieve(request,*args,**kwargs)
+        return self.list(request,*args,**kwargs)
+
 # class BuyerSellerConnectionAPIView(APIView):
 #     permission_classes = [IsApproved,IsFromSellerAPI]
     

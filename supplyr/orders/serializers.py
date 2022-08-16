@@ -305,6 +305,8 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
     
     history = OrderHistorySerializer(many=True)
     order_time = serializers.SerializerMethodField()
+    buyer_name = serializers.SerializerMethodField()
+    buyer_business_name = serializers.SerializerMethodField()
     created_by_user = serializers.SerializerMethodField()
     created_by_entity = serializers.SerializerMethodField()
     status_variable_values = serializers.SerializerMethodField()
@@ -315,6 +317,12 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
     def get_order_time(self, order):
         return order.created_at.astimezone().strftime('%H:%M %p')
 
+    def get_buyer_name(self,order):
+        name = order.buyer.owner.name if order.buyer.owner else ""
+        return name
+    
+    def get_buyer_business_name(self,order):
+        return order.buyer.business_name
     def get_created_by_user(self, order):
         return order.created_by.name
     
@@ -332,7 +340,7 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
 
     class Meta:
         model = Order
-        fields=['order_number', 'order_date', 'order_time', 'seller_name', 'buyer_name',"buyer_id" ,'order_status', 'total_amount',"total_extra_discount",'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
+        fields=['order_number', 'order_date', 'order_time', 'seller_name', 'buyer_name','buyer_business_name',"buyer_id" ,'order_status', 'total_amount',"total_extra_discount",'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
         
 class GenerateInvoiceSerializer(serializers.ModelSerializer):
     

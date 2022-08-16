@@ -7,7 +7,16 @@ from rest_framework import generics, mixins, views
 from .models import AddressState, BuyerAddress, BuyerSellerConnection, ManuallyCreatedBuyer, SalespersonProfile, SellerProfile, BuyerProfile
 from supplyr.orders.models import Order
 from .serializers import AddressStatesSerializer, BuyerAddressSerializer, BuyerProfileSerializer, SalespersonProfileSerializer2, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, SellerShortDetailsSerializer
-from supplyr.core.permissions import IsFromBuyerAPI, IsFromSalesAPI, IsApproved, IsFromSellerAPI, IsUnapproved, IsFromBuyerOrSalesAPI
+from supplyr.core.permissions import (
+    IsFromBuyerAPI,
+    IsFromSalesAPI,
+    IsApproved, 
+    IsFromSellerAPI, 
+    IsUnapproved, 
+    IsFromBuyerOrSalesAPI,
+    IsFromSellerOrSalesAPI,
+    IsFromBuyerSellerOrSalesAPI
+)
 from supplyr.utils.api.mixins import APISourceMixin
 
 from allauth.account.utils import send_email_confirmation
@@ -20,6 +29,7 @@ from supplyr.utils.api.mixins import UserInfoMixin
 from django.db import transaction
 from collections import OrderedDict
 from supplyr.core.app_config import TRANSLATABLES
+from supplyr.inventory.serializers import *
 
 
 User = get_user_model()
@@ -135,11 +145,12 @@ class AddressView(generics.ListCreateAPIView, generics.UpdateAPIView, generics.D
     """
     # queryset = BuyerAddress.objects.all()
     serializer_class = BuyerAddressSerializer
-    permission_classes = [IsFromBuyerOrSalesAPI]
+    # permission_classes = [IsFromBuyerOrSalesAPI]
+    permission_classes = [IsFromBuyerSellerOrSalesAPI]
     pagination_class = None
 
     def get_queryset(self):
-        if self.api_source == 'sales':
+        if self.api_source == 'sales' or self.api_source == "seller":
             profile_id = self.request.GET.get('buyer_id')
         else:
             profile_id = self.request.user.buyer_profiles.first().id
@@ -162,7 +173,7 @@ class AddressView(generics.ListCreateAPIView, generics.UpdateAPIView, generics.D
         return Response(rsp)
 
     def perform_create(self, serializer):
-        if self.api_source == 'sales':
+        if self.api_source == 'sales' or self.api_source == 'seller':
             owner_id = self.request.GET.get('buyer_id')
         else:
             owner_id = self.request.user.buyer_profiles.first().id
@@ -246,7 +257,8 @@ class CreateBuyerView(views.APIView):
     """
     For salesperson, who wishes to add a non existant buyer
     """
-    permission_classes = [IsFromSalesAPI]
+    # permission_classes = [IsFromSalesAPI]
+    permission_classes = [IsFromSellerOrSalesAPI]
 
     @transaction.atomic
     def post(self, request, *args, **kwargs):
@@ -272,14 +284,27 @@ class CreateBuyerView(views.APIView):
         buyer_profile = BuyerProfile.objects.create(
             business_name=business_name,
             )
-        ManuallyCreatedBuyer.objects.create(
-            buyer_profile = buyer_profile,
-            email=email,
-            mobile_number=mobile_number,
-            created_by_id=request.user.get_sales_profile().id
-        )
+        profile = request.user.get_seller_profile() if "seller" in request.resolver_match.kwargs.values() else request.user.get_sales_profile()
+        
 
-        buyer_profile_data = BuyerProfileSerializer(buyer_profile).data
+        if "seller" in request.resolver_match.kwargs.values():
+            connection,created = BuyerSellerConnection.objects.get_or_create(buyer=buyer_profile,seller=profile)
+            ManuallyCreatedBuyer.objects.create(
+                buyer_profile = buyer_profile,
+                email=email,
+                mobile_number=mobile_number,
+                created_by_seller=profile
+            )
+        else:
+            ManuallyCreatedBuyer.objects.create(
+                buyer_profile = buyer_profile,
+                email=email,
+                mobile_number=mobile_number,
+                created_by=profile
+            )
+
+        # buyer_profile_data = BuyerProfileSerializer(buyer_profile).data
+        buyer_profile_data = SellerBuyersConnectionSerializer(buyer_profile).data
         return Response(buyer_profile_data)
 
 class SalespersonView(generics.ListCreateAPIView, generics.DestroyAPIView):
