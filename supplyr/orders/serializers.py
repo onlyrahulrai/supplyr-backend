@@ -113,7 +113,8 @@ class OrderSerializer(serializers.ModelSerializer):
         items = validated_data.pop('items')
         print("VDDDDD ", validated_data)
         # address = BuyerAddress.objectaddressed_data)
-        if self._get_api_source() != 'sales' and validated_data['address'].owner_id != validated_data['buyer'].id:
+
+        if self._get_api_source() not in ['sales',"seller"] and validated_data['address'].owner_id != validated_data['buyer'].id:
             raise ValidationError({"message": "Invalid Address"})
         if self._get_api_source() == 'sales':
             validated_data['salesperson'] = self.context['request'].user.get_sales_profile()
