@@ -21,9 +21,11 @@ class BuyerAddressAdmin(admin.ModelAdmin):
     search_fields = ('name',)
     list_editable = ('is_default', 'is_active')
 
+@admin.register(BuyerSellerConnection)
+class BuyerSellerConnectionAdmin(admin.ModelAdmin):
+    list_display = ("id","buyer","seller")
 admin.site.register(SellerProfile)
 admin.site.register(BuyerProfile)
-admin.site.register(BuyerSellerConnection)
 admin.site.register(SalespersonProfile)
 admin.site.register(ManuallyCreatedBuyer)
 admin.site.register(SalespersonPreregisteredUser)

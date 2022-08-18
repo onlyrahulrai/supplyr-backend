@@ -59,3 +59,10 @@ class IsFromBuyerSellerOrSalesAPI(permissions.IsAuthenticated):
             allowed = True
             
         return super().has_permission(request, view) and allowed
+class IsFromSellerOrBuyerAPI(permissions.IsAuthenticated):
+    def has_permission(self, request, view):
+        allowed = False
+        if 'api_source' in view.kwargs and view.kwargs['api_source'] in ['buyer', "seller"]:
+            allowed = True
+            
+        return super().has_permission(request, view) and allowed

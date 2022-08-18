@@ -15,7 +15,8 @@ from supplyr.core.permissions import (
     IsUnapproved, 
     IsFromBuyerOrSalesAPI,
     IsFromSellerOrSalesAPI,
-    IsFromBuyerSellerOrSalesAPI
+    IsFromBuyerSellerOrSalesAPI,
+    IsFromSellerOrBuyerAPI
 )
 from supplyr.utils.api.mixins import APISourceMixin
 
@@ -186,18 +187,24 @@ class AddressView(generics.ListCreateAPIView, generics.UpdateAPIView, generics.D
 
 class SellerView(views.APIView, APISourceMixin):
 
-    permission_classes = [IsAuthenticated, IsFromBuyerAPI]
+    permission_classes = [IsAuthenticated, IsFromSellerOrBuyerAPI]
 
     def post(self, request, *args, **kwargs):
-        code = request.data['connection_code']
-        print(code)
-        if seller := SellerProfile.objects.filter(connection_code__iexact = code, is_active= True, status=SellerProfile.SellerStatusChoice.APPROVED).first():
-            BuyerSellerConnection.objects.get_or_create(seller=seller, is_active=True, buyer = self.request.user.get_buyer_profile())
+        code = request.data['buyer_id'] if "seller" in request.resolver_match.kwargs.values() else request.data['connection_code']
+        
+        if "seller" in request.resolver_match.kwargs.values():
+            seller = request.user.get_seller_profile()
+            buyer = get_object_or_404(BuyerProfile,id=code)
+            connection,created = BuyerSellerConnection.objects.get_or_create(seller=seller, buyer = buyer)
             return Response({'success': True})
         else:
-            return Response({
-                'message': 'Invalid connection code'
-            }, status=400)
+            if seller := SellerProfile.objects.filter(connection_code__iexact = code, is_active= True, status=SellerProfile.SellerStatusChoice.APPROVED).first():
+                connection,created = BuyerSellerConnection.objects.get_or_create(seller=seller, is_active=True, buyer = self.request.user.get_buyer_profile())
+                return Response({'success': True})
+            else:
+                return Response({
+                    'message': 'Invalid connection code'
+                }, status=400)
 
     def delete(self, request, *args, **kwargs):
         seller_id = kwargs.get('pk')
@@ -365,8 +372,6 @@ class SalespersonView(generics.ListCreateAPIView, generics.DestroyAPIView):
             salesperson_profile.is_active = False
             salesperson_profile.save()
             return self.get(request, *args, **kwargs)
-
-
 
 class ProfilingCategoriesView(views.APIView, UserInfoMixin):
     """

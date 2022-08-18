@@ -15,7 +15,7 @@ from .serializers import *
 from supplyr.inventory.models import Category,BuyerDiscount
 from supplyr.profiles.models import BuyerProfile,  SellerProfile
 from .models import Product, Variant, ProductImage
-from django.db.models import Prefetch, Q, Count, Sum, Min, Max
+from django.db.models import Prefetch, Q, Count, Sum, Min, Max,Value,Case,When,BooleanField
 
 class AddProduct(APIView,UserInfoMixin):
     permission_classes = [IsApproved]
@@ -335,7 +335,8 @@ class SellerBuyersAPIView(ListAPIView,RetrieveAPIView):
             
         buyerIDs = [connection.buyer.id for connection in connections]
         
-        profiles = BuyerProfile.objects.filter(id__in=buyerIDs)
+        profiles = BuyerProfile.objects.annotate(is_connected=Case(When(id__in=buyerIDs,then=Value(True)),default=Value(False),output_field=BooleanField()))
+
         
         if query:
             profiles = profiles.filter(Q(business_name__icontains=query) | Q(owner__email__icontains=query) | Q(owner__mobile_number__icontains=query) | Q(manuallycreatedbuyer__email__icontains=query) | Q(manuallycreatedbuyer__mobile_number__icontains=query)).prefetch_related('manuallycreatedbuyer_set')
