@@ -196,7 +196,7 @@ class SellerView(views.APIView, APISourceMixin):
             seller = request.user.get_seller_profile()
             buyer = get_object_or_404(BuyerProfile,id=code)
             connection,created = BuyerSellerConnection.objects.get_or_create(seller=seller, buyer = buyer)
-            return Response({'success': True})
+            return Response(SellerBuyersConnectionSerializer(buyer).data)
         else:
             if seller := SellerProfile.objects.filter(connection_code__iexact = code, is_active= True, status=SellerProfile.SellerStatusChoice.APPROVED).first():
                 connection,created = BuyerSellerConnection.objects.get_or_create(seller=seller, is_active=True, buyer = self.request.user.get_buyer_profile())
@@ -227,17 +227,20 @@ class SellersListView(generics.ListAPIView):
         return SellerProfile.objects.filter(connections__buyer=buyer_profile, is_active=True, connections__is_active=True)
 
 class BuyerSearchView(generics.ListAPIView):
-    permission_classes = [IsFromSalesAPI]
+    permission_classes = [IsFromSellerOrSalesAPI]
     serializer_class = BuyerProfileSerializer
     pagination_class = None
     # queryset = SellerProfile.objects.all()
     def get_queryset(self):
         # buyer_profile = self.request.user.get_buyer_profile()
         query = self.request.query_params.get('q')
-        return BuyerProfile.objects.filter(
-                Q(business_name__istartswith=query) | Q(business_name__icontains= ' ' + query),
-                is_active=True
-            )
+        
+        # return BuyerProfile.objects.filter(
+        #         Q(business_name__istartswith=query) | Q(business_name__icontains= ' ' + query),
+        #         is_active=True
+        #     )
+        
+        return BuyerProfile.objects.filter(Q(business_name__icontains=query) | Q(owner__email__icontains=query) | Q(owner__mobile_number__icontains=query) | Q(manuallycreatedbuyer__email__icontains=query) | Q(manuallycreatedbuyer__mobile_number__icontains=query)).prefetch_related('manuallycreatedbuyer_set')
 
 class RecentBuyersView(generics.ListAPIView):
     permission_classes = [IsFromSalesAPI]

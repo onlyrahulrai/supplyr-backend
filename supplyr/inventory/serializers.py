@@ -966,11 +966,8 @@ class SellerBuyersConnectionSerializer(serializers.ModelSerializer):
     def get_states(self,buyer):
         return AddressStatesSerializer(AddressState.objects.all(),many=True).data
     
-    is_connected = serializers.SerializerMethodField()
-    def get_is_connected(self,buyer):
-        return buyer.is_connected
     class Meta:
         model = BuyerProfile
-        fields = ["id","name","email","mobile_number","business_name",'is_connected',"address","generic_discount","product_discounts",'states']
+        fields = ["id","name","email","mobile_number","business_name","address","generic_discount","product_discounts",'states']
         
 ############### Buyer Discount Part End ###############

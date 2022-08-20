@@ -335,8 +335,9 @@ class SellerBuyersAPIView(ListAPIView,RetrieveAPIView):
             
         buyerIDs = [connection.buyer.id for connection in connections]
         
-        profiles = BuyerProfile.objects.annotate(is_connected=Case(When(id__in=buyerIDs,then=Value(True)),default=Value(False),output_field=BooleanField()))
-
+        # profiles = BuyerProfile.objects.annotate(is_connected=Case(When(id__in=buyerIDs,then=Value(True)),default=Value(False),output_field=BooleanField()))
+        
+        profiles = BuyerProfile.objects.filter(Q(id__in=buyerIDs) & Q(is_active=True))
         
         if query:
             profiles = profiles.filter(Q(business_name__icontains=query) | Q(owner__email__icontains=query) | Q(owner__mobile_number__icontains=query) | Q(manuallycreatedbuyer__email__icontains=query) | Q(manuallycreatedbuyer__mobile_number__icontains=query)).prefetch_related('manuallycreatedbuyer_set')
