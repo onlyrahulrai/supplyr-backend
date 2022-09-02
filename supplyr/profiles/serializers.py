@@ -86,9 +86,11 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
             "currency_representation",
             "invoice_prefix",
             "translations",
+            'user_settings',
             "vendors",
             'sub_categories',
             'connection_code',
+            'invoice_options',
             'order_status_options'
             ]
 
@@ -330,6 +332,14 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
                 "read_only":True
             }
         }
+
+    def update(self, instance, validated_data):
+        for key,value in validated_data.get('translations',{}).items():
+            translations = instance.user_settings.get("translations",{})
+            translations[key] = value
+            instance.user_settings["translations"].update(translations)
+        instance.save()
+        return instance
 
 class SellerProfilingDocumentsSerializer(serializers.ModelSerializer):
     class Meta:

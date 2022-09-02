@@ -19,6 +19,10 @@ def get_gst_upload_path(instance, filename):
 def translation_default():
     return {"quantity": "Quantity"}
 
+def user_setting_config():
+    return {
+        "translation":{"quantity": "Quantity"}
+    }
 
 class SellerProfile(models.Model):
     class EntityTypes(models.TextChoices):
@@ -58,7 +62,8 @@ class SellerProfile(models.Model):
     gst_certificate = models.FileField(upload_to=get_gst_upload_path, max_length=150, blank=True, null=True)
     operational_fields = models.ManyToManyField('inventory.Category', blank=True)
     invoice_prefix = models.CharField(max_length=12,null=True,blank=True)
-    translations = models.JSONField(default=translation_default)
+    # translations = models.JSONField(default=translation_default)
+    user_settings = models.JSONField(default=user_setting_config)
     status = EnumField(default="profile_created",choices=SellerStatusChoice.choices, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     connection_code = models.CharField(max_length=15)
@@ -66,7 +71,12 @@ class SellerProfile(models.Model):
     
     @property
     def order_status_options(self):
-        return ORDER_STATUS_OPTIONS
+        return self.user_settings.get("order_status_options") if self.user_settings.get("order_status_options") else ORDER_STATUS_OPTIONS
+    
+    @property
+    def invoice_options(self):
+        return self.user_settings.get("invoice_options") if self.user_settings.get("invoice_options") else {"status":"processed"}
+        
     
     # @property
     # def is_approved(self):
