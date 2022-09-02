@@ -35,6 +35,14 @@ class IsFromBuyerOrSalesAPI(permissions.IsAuthenticated):
             
         return super().has_permission(request, view) and allowed
 
+class IsFromSellerOrSalesAPI(permissions.IsAuthenticated):
+    def has_permission(self, request, view):
+        allowed = False
+        if 'api_source' in view.kwargs and view.kwargs['api_source'] in ['seller', 'sales']:
+            allowed = True
+            
+        return super().has_permission(request, view) and allowed
+
 class IsFromSellerAPI(permissions.IsAuthenticated):
     def has_permission(self, request, view):
         allowed = False
@@ -48,6 +56,13 @@ class IsFromBuyerSellerOrSalesAPI(permissions.IsAuthenticated):
     def has_permission(self, request, view):
         allowed = False
         if 'api_source' in view.kwargs and view.kwargs['api_source'] in ['buyer', 'sales',"seller"]:
+            allowed = True
+            
+        return super().has_permission(request, view) and allowed
+class IsFromSellerOrBuyerAPI(permissions.IsAuthenticated):
+    def has_permission(self, request, view):
+        allowed = False
+        if 'api_source' in view.kwargs and view.kwargs['api_source'] in ['buyer', "seller"]:
             allowed = True
             
         return super().has_permission(request, view) and allowed

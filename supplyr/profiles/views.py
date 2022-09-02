@@ -7,7 +7,17 @@ from rest_framework import generics, mixins, views
 from .models import AddressState, BuyerAddress, BuyerSellerConnection, ManuallyCreatedBuyer, SalespersonProfile, SellerProfile, BuyerProfile
 from supplyr.orders.models import Order
 from .serializers import AddressStatesSerializer, BuyerAddressSerializer, BuyerProfileSerializer, SalespersonProfileSerializer2, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, SellerShortDetailsSerializer
-from supplyr.core.permissions import IsFromBuyerAPI, IsFromSalesAPI, IsApproved, IsFromSellerAPI, IsUnapproved, IsFromBuyerOrSalesAPI
+from supplyr.core.permissions import (
+    IsFromBuyerAPI,
+    IsFromSalesAPI,
+    IsApproved, 
+    IsFromSellerAPI, 
+    IsUnapproved, 
+    IsFromBuyerOrSalesAPI,
+    IsFromSellerOrSalesAPI,
+    IsFromBuyerSellerOrSalesAPI,
+    IsFromSellerOrBuyerAPI
+)
 from supplyr.utils.api.mixins import APISourceMixin
 
 from allauth.account.utils import send_email_confirmation
@@ -20,6 +30,7 @@ from supplyr.utils.api.mixins import UserInfoMixin
 from django.db import transaction
 from collections import OrderedDict
 from supplyr.core.app_config import TRANSLATABLES
+from supplyr.inventory.serializers import *
 
 
 User = get_user_model()
@@ -135,11 +146,12 @@ class AddressView(generics.ListCreateAPIView, generics.UpdateAPIView, generics.D
     """
     # queryset = BuyerAddress.objects.all()
     serializer_class = BuyerAddressSerializer
-    permission_classes = [IsFromBuyerOrSalesAPI]
+    # permission_classes = [IsFromBuyerOrSalesAPI]
+    permission_classes = [IsFromBuyerSellerOrSalesAPI]
     pagination_class = None
 
     def get_queryset(self):
-        if self.api_source == 'sales':
+        if self.api_source == 'sales' or self.api_source == "seller":
             profile_id = self.request.GET.get('buyer_id')
         else:
             profile_id = self.request.user.buyer_profiles.first().id
@@ -162,7 +174,7 @@ class AddressView(generics.ListCreateAPIView, generics.UpdateAPIView, generics.D
         return Response(rsp)
 
     def perform_create(self, serializer):
-        if self.api_source == 'sales':
+        if self.api_source == 'sales' or self.api_source == 'seller':
             owner_id = self.request.GET.get('buyer_id')
         else:
             owner_id = self.request.user.buyer_profiles.first().id
@@ -175,18 +187,24 @@ class AddressView(generics.ListCreateAPIView, generics.UpdateAPIView, generics.D
 
 class SellerView(views.APIView, APISourceMixin):
 
-    permission_classes = [IsAuthenticated, IsFromBuyerAPI]
+    permission_classes = [IsAuthenticated, IsFromSellerOrBuyerAPI]
 
     def post(self, request, *args, **kwargs):
-        code = request.data['connection_code']
-        print(code)
-        if seller := SellerProfile.objects.filter(connection_code__iexact = code, is_active= True, status=SellerProfile.SellerStatusChoice.APPROVED).first():
-            BuyerSellerConnection.objects.get_or_create(seller=seller, is_active=True, buyer = self.request.user.get_buyer_profile())
-            return Response({'success': True})
+        code = request.data['buyer_id'] if "seller" in request.resolver_match.kwargs.values() else request.data['connection_code']
+        
+        if "seller" in request.resolver_match.kwargs.values():
+            seller = request.user.get_seller_profile()
+            buyer = get_object_or_404(BuyerProfile,id=code)
+            connection,created = BuyerSellerConnection.objects.get_or_create(seller=seller, buyer = buyer)
+            return Response(SellerBuyersConnectionSerializer(buyer).data)
         else:
-            return Response({
-                'message': 'Invalid connection code'
-            }, status=400)
+            if seller := SellerProfile.objects.filter(connection_code__iexact = code, is_active= True, status=SellerProfile.SellerStatusChoice.APPROVED).first():
+                connection,created = BuyerSellerConnection.objects.get_or_create(seller=seller, is_active=True, buyer = self.request.user.get_buyer_profile())
+                return Response({'success': True})
+            else:
+                return Response({
+                    'message': 'Invalid connection code'
+                }, status=400)
 
     def delete(self, request, *args, **kwargs):
         seller_id = kwargs.get('pk')
@@ -209,17 +227,20 @@ class SellersListView(generics.ListAPIView):
         return SellerProfile.objects.filter(connections__buyer=buyer_profile, is_active=True, connections__is_active=True)
 
 class BuyerSearchView(generics.ListAPIView):
-    permission_classes = [IsFromSalesAPI]
+    permission_classes = [IsFromSellerOrSalesAPI]
     serializer_class = BuyerProfileSerializer
     pagination_class = None
     # queryset = SellerProfile.objects.all()
     def get_queryset(self):
         # buyer_profile = self.request.user.get_buyer_profile()
         query = self.request.query_params.get('q')
-        return BuyerProfile.objects.filter(
-                Q(business_name__istartswith=query) | Q(business_name__icontains= ' ' + query),
-                is_active=True
-            )
+        
+        # return BuyerProfile.objects.filter(
+        #         Q(business_name__istartswith=query) | Q(business_name__icontains= ' ' + query),
+        #         is_active=True
+        #     )
+        
+        return BuyerProfile.objects.filter(Q(business_name__icontains=query) | Q(owner__email__icontains=query) | Q(owner__mobile_number__icontains=query) | Q(manuallycreatedbuyer__email__icontains=query) | Q(manuallycreatedbuyer__mobile_number__icontains=query)).prefetch_related('manuallycreatedbuyer_set')
 
 class RecentBuyersView(generics.ListAPIView):
     permission_classes = [IsFromSalesAPI]
@@ -246,7 +267,8 @@ class CreateBuyerView(views.APIView):
     """
     For salesperson, who wishes to add a non existant buyer
     """
-    permission_classes = [IsFromSalesAPI]
+    # permission_classes = [IsFromSalesAPI]
+    permission_classes = [IsFromSellerOrSalesAPI]
 
     @transaction.atomic
     def post(self, request, *args, **kwargs):
@@ -272,14 +294,27 @@ class CreateBuyerView(views.APIView):
         buyer_profile = BuyerProfile.objects.create(
             business_name=business_name,
             )
-        ManuallyCreatedBuyer.objects.create(
-            buyer_profile = buyer_profile,
-            email=email,
-            mobile_number=mobile_number,
-            created_by_id=request.user.get_sales_profile().id
-        )
+        profile = request.user.get_seller_profile() if "seller" in request.resolver_match.kwargs.values() else request.user.get_sales_profile()
+        
 
-        buyer_profile_data = BuyerProfileSerializer(buyer_profile).data
+        if "seller" in request.resolver_match.kwargs.values():
+            connection,created = BuyerSellerConnection.objects.get_or_create(buyer=buyer_profile,seller=profile)
+            ManuallyCreatedBuyer.objects.create(
+                buyer_profile = buyer_profile,
+                email=email,
+                mobile_number=mobile_number,
+                created_by_seller=profile
+            )
+        else:
+            ManuallyCreatedBuyer.objects.create(
+                buyer_profile = buyer_profile,
+                email=email,
+                mobile_number=mobile_number,
+                created_by=profile
+            )
+
+        # buyer_profile_data = BuyerProfileSerializer(buyer_profile).data
+        buyer_profile_data = SellerBuyersConnectionSerializer(buyer_profile).data
         return Response(buyer_profile_data)
 
 class SalespersonView(generics.ListCreateAPIView, generics.DestroyAPIView):
@@ -340,8 +375,6 @@ class SalespersonView(generics.ListCreateAPIView, generics.DestroyAPIView):
             salesperson_profile.is_active = False
             salesperson_profile.save()
             return self.get(request, *args, **kwargs)
-
-
 
 class ProfilingCategoriesView(views.APIView, UserInfoMixin):
     """

@@ -5,6 +5,7 @@ urlpatterns = [
     path('add-product/', AddProduct.as_view(), name='add_product'),
     path('add-product-image/', ProductImageUpload.as_view(), name='add_product_image'),
     path('products/', SellerSelfProductListView.as_view(), name='products_list'),
+    path("products/<str:pk>/",ProductListView.as_view(),name="products-detail"),
     path("products/list/",ProductListView.as_view(),name="product-list"),
     path('products-by-seller/<int:seller_id>', SellerProductListView.as_view(), name='products_list'),
     path('products/bulk-update/', ProductsBulkUpdateView.as_view(), name='products_bulk_update'),
@@ -16,7 +17,9 @@ urlpatterns = [
     
     path('cart-items-info/', VariantDetailView.as_view(), name='variants_details'),
     path('update-favourites/', UpdateFavouritesView.as_view()),
-    path("seller-buyers/",BuyerSellerConnectionAPIView.as_view(),name="seller-buyers"),
+    path("_seller-buyers/",BuyerSellerConnectionAPIView.as_view(),name="_seller-buyers"),
+    path("seller-buyers/",SellerBuyersAPIView.as_view(),name="seller-buyers"),
+    path("seller-buyers/<str:pk>/",SellerBuyersAPIView.as_view(),name="seller-buyers"),
     
     path("sellers-buyer-detail/<str:pk>/",SellerBuyersDetailAPIView.as_view(),name="sellers-buyer-detail"),
         

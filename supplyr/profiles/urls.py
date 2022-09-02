@@ -15,6 +15,7 @@ urlpatterns = [
     path('buyers-search/', BuyerSearchView.as_view(), name='buyers_search'),
     path('buyers-recent/', RecentBuyersView.as_view(), name='buyers_recent'),
     path('buyer-create/', CreateBuyerView.as_view(), name='buyer_create'),
+    # path('buyer-details/<str:pk>/', BuyerDetailsView.as_view(), name='buyer_details'),
     path('sellers/', SellerView.as_view(), name='sellers'),
     path('seller/<int:pk>/', SellerView.as_view(), name='seller'),
     path('categories/', ProfilingCategoriesView.as_view()),

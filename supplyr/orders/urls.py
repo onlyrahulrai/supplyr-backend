@@ -7,6 +7,7 @@ urlpatterns = [
     path("transaction/",PaymentCreateAPIView.as_view(),name="transaction-create"),
     path("ledgers/<str:pk>/",LedgerAPIView.as_view(),name="ledgers"),
     path("order-status-variable/<str:orderId>/<str:pk>/",OrderStatusVariableAPIView.as_view(),name="order-status-variable"),
+    path("product/<str:pk>/",ProductDetailView.as_view(),name="order-product-detail"),
     path(
         '',
         OrderView.as_view(),

@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q,Count,Sum,Min,Max,Prefetch
 from django.db import transaction
 from django.shortcuts import render,get_object_or_404
 from rest_framework import generics, mixins
@@ -12,6 +12,9 @@ from supplyr.utils.api.mixins import APISourceMixin
 from django.db.models import F
 from rest_framework import status
 from supplyr.profiles.models import *
+from rest_framework.generics import RetrieveAPIView
+from supplyr.inventory.serializers import ProductListSerializer
+from supplyr.inventory.models import Product,ProductImage
 
 
 class OrderView(mixins.ListModelMixin,
@@ -40,6 +43,25 @@ class OrderView(mixins.ListModelMixin,
             else:
                 return Response({"message":"Your are not allowed to update this order"},status=status.HTTP_304_NOT_MODIFIED)
         return self.create(request, *args, **kwargs)
+
+class ProductDetailView(RetrieveAPIView):
+    permission_classes = [IsApproved]
+    serializer_class = ProductListSerializer
+    
+    def get_queryset(self):
+        profile = self.request.user.seller_profiles.first()
+        return Product.objects.filter(owner = profile, is_active = True)\
+            .annotate(
+                variants_count_annotated=Count('variants', filter=Q(variants__is_active=True)),
+                quantity_all_variants=Sum('variants__quantity', filter=Q(variants__is_active=True)),
+                sale_price_minimum=Min('variants__price', filter=Q(variants__is_active=True)),
+                sale_price_maximum=Max('variants__price', filter=Q(variants__is_active=True))
+                )\
+            .prefetch_related(
+                 Prefetch('images', queryset=ProductImage.objects.filter(is_active=True), to_attr='active_images_prefetched'),
+                 Prefetch('variants', queryset=Variant.objects.filter(is_active=True), to_attr='active_variants_prefetched'),
+                 )
+
 
 class GenerateInvoiceView(generics.GenericAPIView,mixins.CreateModelMixin):
     permission_classes = [IsAuthenticated]
