@@ -149,7 +149,9 @@ class OrdersBulkUpdateView(APIView):
                     if new_status == profile.invoice_options.get("status","processed"):
                         ledger,created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount ))
                         
-                    elif new_status == Order.OrderStatusChoice.CANCELLED:
+                    elif new_status == Order.OrderStatusChoice.CANCELLED or new_status == Order.OrderStatusChoice.RETURNED:
+                        
+                        
                         ledger,created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CANCELLED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance + order.total_amount ))
                     ######## ----- Ledger End ----- ########
 

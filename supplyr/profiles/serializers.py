@@ -299,6 +299,7 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
             'is_gst_enrolled',
             "invoice_prefix",
             'gst_number',
+            'user_settings',
             'pan_number',
             "default_currency",
             "currency_representation",
@@ -332,7 +333,7 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
         }
 
     def update(self, instance, validated_data):
-        for key,value in validated_data.get('translations',{}).items():
+        for key,value in validated_data.get('user_settings',{}).items():
             translations = instance.user_settings.get("translations",{})
             translations[key] = value
             instance.user_settings["translations"].update(translations)

@@ -373,7 +373,7 @@ class OrderShortDetailSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ["id","created_by","status"]
+        fields = ["id",'order_number',"created_by","status"]
         
         
 class LedgerSerializer(serializers.ModelSerializer):
