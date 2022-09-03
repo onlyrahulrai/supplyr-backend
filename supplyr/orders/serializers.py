@@ -122,6 +122,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
         with transaction.atomic():
             validated_data["order_number"] = (f'{validated_data["seller"].order_number_prefix or ""}{validated_data["seller"].order_number_counter + 1}')
+            validated_data['status'] = min(validated_data["seller"].order_status_options,key=lambda element:element["sequence"]).get("slug",Order.OrderStatusChoice.AWAITING_APPROVAL)
             order = Order.objects.create(**validated_data)
             
             order.seller.order_number_counter += 1

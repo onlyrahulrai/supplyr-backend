@@ -21,7 +21,7 @@ def translation_default():
 
 def user_setting_config():
     return {
-        "translation":{"quantity": "Quantity"}
+        "translations":{"quantity": "Quantity"}
     }
 
 class SellerProfile(models.Model):
@@ -71,7 +71,7 @@ class SellerProfile(models.Model):
     
     @property
     def order_status_options(self):
-        return self.user_settings.get("order_status_options") if self.user_settings.get("order_status_options") else ORDER_STATUS_OPTIONS
+        return self.user_settings.get('order_options').get("order_statuses_config") if self.user_settings.get("order_options") else ORDER_STATUS_OPTIONS
     
     @property
     def invoice_options(self):
