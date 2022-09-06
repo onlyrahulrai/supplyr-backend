@@ -76,6 +76,10 @@ class SellerProfile(models.Model):
     @property
     def invoice_options(self):
         return self.user_settings.get("invoice_options") if self.user_settings.get("invoice_options") else {"generate_at_status":"processed"}
+    
+    @property
+    def translations(self):
+        return self.user_settings.get("translations") 
         
     
     # @property
