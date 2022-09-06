@@ -88,10 +88,17 @@ class SellerProfileSettings(views.APIView,UserInfoMixin):
     permission_classes = [IsFromSellerAPI]
     
     def put(self,request,*args,**kwargs):
-        print("requested data ----> ",request.data)
         if request.data.get("setting") == "profile-setting":
             seller_profile = request.user.seller_profiles.first()
-            serializer = SellerProfilingSerializer(seller_profile,data=request.data.get("data"),partial=True)
+            
+            data = request.data.get("data")
+            
+            if 'user_settings' in data:
+                data = dict({"user_settings":seller_profile.user_settings})
+                for key,value in request.data.get("data").get('user_settings',{}).items():
+                    data["user_settings"][key] = value    
+                  
+            serializer = SellerProfilingSerializer(seller_profile,data=data,partial=True)
             if serializer.is_valid():
                 serializer.save()
                 serialized_data = self.inject_user_info({"user_settings":{"translatables":TRANSLATABLES}},request.user)

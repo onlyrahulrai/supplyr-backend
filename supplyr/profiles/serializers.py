@@ -90,8 +90,14 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
             'sub_categories',
             'connection_code',
             'invoice_options',
-            'order_status_options'
+            'order_status_options',
+            'translations'
             ]
+        extra_kwargs={
+            "user_settings":{
+                "write_only":True
+            }
+        }
 
 
 
@@ -332,13 +338,6 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
             }
         }
 
-    def update(self, instance, validated_data):
-        for key,value in validated_data.get('user_settings',{}).items():
-            translations = instance.user_settings.get("translations",{})
-            translations[key] = value
-            instance.user_settings["translations"].update(translations)
-        instance.save()
-        return instance
 
 class SellerProfilingDocumentsSerializer(serializers.ModelSerializer):
     class Meta:
