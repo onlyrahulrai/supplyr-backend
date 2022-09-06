@@ -21,7 +21,8 @@ def translation_default():
 
 def user_setting_config():
     return {
-        "translations":{"quantity": "Quantity"}
+        "translations":{"quantity": "Quantity"},
+        "invoice_options":{"generate_at_status":"processed"}
     }
 
 class SellerProfile(models.Model):
@@ -75,11 +76,11 @@ class SellerProfile(models.Model):
     
     @property
     def invoice_options(self):
-        return self.user_settings.get("invoice_options") if self.user_settings.get("invoice_options") else {"generate_at_status":"processed"}
+        return self.user_settings.get("invoice_options") if self.user_settings.get("invoice_options") else {"generate_at_status":"dispatched"}
     
     @property
     def translations(self):
-        return self.user_settings.get("translations") 
+        return self.user_settings.get("translations") if self.user_settings.get("translations") else {"quantity": "Quantity"} 
         
     
     # @property
