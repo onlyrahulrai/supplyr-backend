@@ -93,7 +93,7 @@ class OrderSerializer(serializers.ModelSerializer):
                 handled_errors = "Incorrect Data ! Sellers of all items do not match"
 
         data['total_amount'] = total_amount
-        data["total_extra_discount"] = data.get("total_extra_discount",0)
+        data["total_extra_discount"] = round(data.get("total_extra_discount",0),2)
         data['seller'] = seller_id
 
         if 'request' in self.context:
@@ -122,7 +122,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
         with transaction.atomic():
             validated_data["order_number"] = (f'{validated_data["seller"].order_number_prefix or ""}{validated_data["seller"].order_number_counter + 1}')
-            validated_data['status'] = min(validated_data["seller"].order_status_options,key=lambda element:element["sequence"]).get("slug",Order.OrderStatusChoice.AWAITING_APPROVAL)
+            validated_data['status'] = validated_data["seller"].default_order_status
             order = Order.objects.create(**validated_data)
             
             order.seller.order_number_counter += 1

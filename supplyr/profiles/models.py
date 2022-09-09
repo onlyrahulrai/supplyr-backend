@@ -75,6 +75,10 @@ class SellerProfile(models.Model):
         return self.user_settings.get('order_options').get("order_statuses_config") if self.user_settings.get("order_options") else ORDER_STATUS_OPTIONS
     
     @property
+    def default_order_status(self):
+        return self.user_settings.get('order_options').get("default_order_status") if self.user_settings.get("order_options",{}).get("default_order_status") else 'awaiting_approval'
+    
+    @property
     def invoice_options(self):
         return self.user_settings.get("invoice_options") if self.user_settings.get("invoice_options") else {"generate_at_status":"dispatched"}
     
