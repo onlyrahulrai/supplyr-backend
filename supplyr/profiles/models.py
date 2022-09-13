@@ -76,7 +76,7 @@ class SellerProfile(models.Model):
     
     @property
     def default_order_status(self):
-        return self.user_settings.get('order_options').get("default_order_status") if self.user_settings.get("order_options",{}).get("default_order_status") else 'awaiting_approval'
+        return self.user_settings.get('order_options').get("default_order_status") if self.user_settings.get("order_options",{}).get("default_order_status") else min(self.order_status_options,key=lambda option:option["sequence"]).get("slug","awaiting_approval")
     
     @property
     def invoice_options(self):
