@@ -37,9 +37,9 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["id","items","buyer","seller","created_by","total_amount","total_extra_discount","address","status","created_at","cancelled_at","cancelled_by"]
+        fields = ["id","order_number","items","buyer","seller","created_by","total_amount","total_extra_discount","address","status","created_at","cancelled_at","cancelled_by"]
         # exclude = ['is_active']
-        read_only_fields = ['cancelled_at']
+        read_only_fields = ['order_number','cancelled_at']
 
     def _get_api_source(self):
         if 'request' in self.context:
@@ -121,12 +121,13 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
         with transaction.atomic():
-            validated_data["order_number"] = (f'{validated_data["seller"].order_number_prefix or ""}{validated_data["seller"].order_number_counter + 1}')
             validated_data['status'] = validated_data["seller"].default_order_status
+            
+            validated_data["order_number"] = (f'{validated_data["seller"].order_number_prefix or ""}{validated_data["seller"].order_number_counter + 1}')
             order = Order.objects.create(**validated_data)
             
-            order.seller.order_number_counter += 1
-            order.seller.save() 
+            validated_data["seller"].order_number_counter += 1
+            validated_data["seller"].save()
             for item in items:
                 variant_id = item.pop("variant_id")
                 _item = OrderItem.objects.create(**item, order = order)
