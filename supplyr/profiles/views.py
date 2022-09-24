@@ -88,22 +88,31 @@ class SellerProfileSettings(views.APIView,UserInfoMixin):
     permission_classes = [IsFromSellerAPI]
     
     def put(self,request,*args,**kwargs):
-        if request.data.get("setting") == "profile-setting":
-            seller_profile = request.user.seller_profiles.first()
-            
+        print(" ----- Requested Data ----- ",request.data)
+        data = dict({})
+        seller_profile = request.user.seller_profiles.first()
+        if request.data.get("setting") == "profile-setting":    
             data = request.data.get("data")
             
             if 'user_settings' in data:
                 data = dict({"user_settings":seller_profile.user_settings})
                 for key,value in request.data.get("data").get('user_settings',{}).items():
-                    data["user_settings"][key] = value    
+                    data["user_settings"][key] = value  
+                    
+        if request.data.get("setting") == "invoice-template-setting":
+            data = dict(seller_profile.user_settings)
+            
+            if "invoice_options" in data:
+                data["invoice_options"].update(request.data.get("data",{}))
+            
+            
                   
-            serializer = SellerProfilingSerializer(seller_profile,data=data,partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                serialized_data = self.inject_user_info({"user_settings":{"translatables":TRANSLATABLES}},request.user)
-                return Response(serialized_data,status=status.HTTP_200_OK)
-            return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
+        serializer = SellerProfilingSerializer(seller_profile,data=data,partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            serialized_data = self.inject_user_info({"user_settings":{"translatables":TRANSLATABLES}},request.user)
+            return Response(serialized_data,status=status.HTTP_200_OK)
+        return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
         
 
 class ResendEmailConfirmation(views.APIView):
