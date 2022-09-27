@@ -32,6 +32,7 @@ ALLOWED_HOSTS = ['.supplyr.tk']
 # Application definition
 
 INSTALLED_APPS = [
+    'prettyjson',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -55,7 +56,6 @@ INSTALLED_APPS = [
     
     
     
-
     'allauth',
     'allauth.account',
     'dj_rest_auth',

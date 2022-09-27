@@ -8,7 +8,7 @@ class SellerProfileForm(forms.ModelForm):
     model = SellerProfile
     fields = '__all__'
     widgets = {
-      'myjsonfield': PrettyJSONWidget(),
+      'user_settings': PrettyJSONWidget(attrs={'initial': 'parsed'}),
     }
 
 @admin.register(BuyerAddress)

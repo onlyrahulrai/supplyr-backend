@@ -12,3 +12,4 @@ django-filter~=2.4.0
 django-amazon-ses~=4.0.0
 uritemplate~=4.1.1
 coreapi~=2.3.3
+django-prettyjson==0.4.1
