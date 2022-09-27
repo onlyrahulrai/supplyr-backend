@@ -22,7 +22,10 @@ def translation_default():
 def user_setting_config():
     return {
         "translations":{"quantity": "Quantity"},
-        "invoice_options":{"generate_at_status":"processed"}
+        "invoice_options":{
+            "generate_at_status":"processed",
+            "template":"default"
+        }
     }
 
 class SellerProfile(models.Model):
