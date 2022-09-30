@@ -19,7 +19,7 @@ def get_gst_upload_path(instance, filename):
 def translation_default():
     return {"quantity": "Quantity"}
 
-def user_setting_config():
+def user_setting_config(*args,**kwargs):
     return {
         "translations":{"quantity": "Quantity"},
         "invoice_options":{
@@ -67,7 +67,7 @@ class SellerProfile(models.Model):
     operational_fields = models.ManyToManyField('inventory.Category', blank=True)
     invoice_prefix = models.CharField(max_length=12,null=True,blank=True)
     # translations = models.JSONField(default=translation_default)
-    user_settings = models.JSONField(default=user_setting_config)
+    user_settings = models.JSONField(default=dict,null=True,blank=True)
     status = EnumField(default="profile_created",choices=SellerStatusChoice.choices, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     connection_code = models.CharField(max_length=15)
@@ -83,11 +83,26 @@ class SellerProfile(models.Model):
     
     @property
     def invoice_options(self):
-        return self.user_settings.get("invoice_options") if self.user_settings.get("invoice_options") else {"generate_at_status":"dispatched"}
+        return self.user_settings.get("invoice_options") if ('generate_at_status' in self.user_settings.get("invoice_options")) and ("template" in self.user_settings.get("invoice_options")) else {"generate_at_status":"dispatched",
+            "template":"default"}
+        
+    @property
+    def invoice_template(self):
+        return self.user_settings.get("invoice_options").get("template","default") if self.user_settings.get("invoice_options") else "default"
     
     @property
     def translations(self):
         return self.user_settings.get("translations") if self.user_settings.get("translations") else {"quantity": "Quantity"} 
+    
+    @property
+    def default_user_settings(self):
+        return {
+            "translations":{"quantity": "Quantity"},
+            "invoice_options":{
+                "generate_at_status":self.default_order_status,
+                "template":self.invoice_template
+            }
+        }
         
     
     # @property
@@ -126,6 +141,7 @@ class SellerProfile(models.Model):
         except:
             url = ''
         return url
+
 
 
 class BuyerProfile(models.Model):
