@@ -323,6 +323,16 @@ class BuyerSellerConnectionAPIView(GenericAPIView,mixins.ListModelMixin):
     
     def get(self,request,*args,**kwargs):
         return self.list(request,*args,**kwargs)
+
+class SellerCategoriesAPIView(ListAPIView):
+    permission_classes = [IsApproved,IsFromSellerAPI]
+    serializer_class = SellerCategoriesSerializer
+    
+    def get_queryset(self):
+        seller = self.request.user.seller_profiles.first()
+        return Category.objects.filter(seller=seller)
+    
+
 class SellerBuyersAPIView(ListAPIView,RetrieveAPIView):
     permission_classes = [IsApproved,IsFromSellerAPI]
     serializer_class = SellerBuyersConnectionSerializer
