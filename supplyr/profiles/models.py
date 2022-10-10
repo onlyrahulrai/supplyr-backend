@@ -142,6 +142,10 @@ class SellerProfile(models.Model):
             url = ''
         return url
 
+    def save(self,*args,**kwargs):
+        if not len(self.user_settings.keys()):
+            self.user_settings = self.default_user_settings
+        super(SellerProfile, self).save(*args,**kwargs)
 
 
 class BuyerProfile(models.Model):

@@ -21,6 +21,8 @@ class SellerProfileForm(forms.ModelForm):
     def clean_user_settings(self,*args,**kwargs):
         user_settings = self.instance.default_user_settings if self.cleaned_data.get("user_settings",{}) == None else self.cleaned_data.get("user_settings",{})
             
+        order_options = user_settings.get("order_options",{}).get("order_statuses_config",self.instance.order_status_options)
+            
         if ("translations" not in user_settings):
             user_settings['translations'] = self.instance.default_user_settings.get("translations")
         
@@ -37,11 +39,14 @@ class SellerProfileForm(forms.ModelForm):
         invoice_options = user_settings.get("invoice_options")
             
         if "generate_at_status" not in invoice_options:
-            invoice_options.update({"generate_at_status":self.instance.default_user_settings.get("invoice_options",{}).get("generate_at_status")})
-            
-        if "template" not in invoice_options:
-            invoice_options.update({"template":self.instance.invoice_template})
+            invoice_options.update({"generate_at_status":self.instance.default_order_status})
+        else:
+            if invoice_options.get("generate_at_status") not in list(map(lambda option:option.get("slug"),order_options)):
+                invoice_options.update({"generate_at_status":min(order_options,key=lambda option:option["sequence"]).get("slug","awaiting_approval")})
                 
+        if "template" not in invoice_options:
+            invoice_options.update({"template":"default"})
+            
         user_settings.get("invoice_options").update(invoice_options)
             
         return user_settings
