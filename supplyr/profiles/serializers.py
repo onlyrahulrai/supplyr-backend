@@ -91,7 +91,9 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
             'connection_code',
             'invoice_options',
             'order_status_options',
-            'translations'
+            'translations',
+            'is_gst_enabled',
+            'default_gst_rate'
             ]
         extra_kwargs={
             "user_settings":{

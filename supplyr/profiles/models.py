@@ -60,6 +60,8 @@ class SellerProfile(models.Model):
     pan_number = models.CharField(max_length=15, blank=True, null=True)
     tan_number = models.CharField(max_length=15, blank=True, null=True)
     
+    is_gst_enabled = models.BooleanField(default=False)
+    default_gst_rate = models.DecimalField(default=0,max_digits=5, decimal_places=2)
     default_currency = EnumField(default="INR",choices=CURRENCY_CHOICES)
     currency_representation = models.CharField(default="₹",max_length=75,null=True,blank=True)
     
@@ -103,19 +105,6 @@ class SellerProfile(models.Model):
                 "template":self.invoice_template
             }
         }
-        
-    
-    # @property
-    # def is_approved(self):
-    #     if self.status == "approved":
-    #         return True
-    #     elif self.status == "rejected":
-    #         return False
-    #     elif self.status == "need_more_info":
-    #         return "need_more_info"
-    #     else:
-    #         return "permanently_rejected"
-
     def generate_connection_code(self):
         if self.connection_code:
             return self.connection_code
@@ -164,7 +153,6 @@ class BuyerProfile(models.Model):
         verbose_name = 'BuyerProfile'
         verbose_name_plural = 'BuyerProfiles'
 
-
 class ManuallyCreatedBuyer(models.Model):
     """
     This model is used to store information of a buyer who is created by a salesperson, and his user is not created yet.
@@ -177,7 +165,6 @@ class ManuallyCreatedBuyer(models.Model):
     created_by_seller = models.ForeignKey('profiles.SellerProfile', on_delete=models.RESTRICT, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_settled = models.BooleanField(default=False)
-
 
 class AddressState(models.Model):
     name = models.CharField(max_length=30)
