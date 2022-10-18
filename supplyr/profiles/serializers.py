@@ -85,12 +85,19 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
             "default_currency",
             "currency_representation",
             "invoice_prefix",
-            "translations",
+            'user_settings',
             "vendors",
             'sub_categories',
             'connection_code',
-            'order_status_options'
+            'invoice_options',
+            'order_status_options',
+            'translations'
             ]
+        extra_kwargs={
+            "user_settings":{
+                "write_only":True
+            }
+        }
 
 
 
@@ -297,8 +304,8 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
             'entity_type',
             'is_gst_enrolled',
             "invoice_prefix",
-            "translations",
             'gst_number',
+            'user_settings',
             'pan_number',
             "default_currency",
             "currency_representation",
@@ -330,6 +337,7 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
                 "read_only":True
             }
         }
+
 
 class SellerProfilingDocumentsSerializer(serializers.ModelSerializer):
     class Meta:

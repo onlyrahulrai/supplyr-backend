@@ -869,8 +869,8 @@ class BuyerSellerConnectionSerializers(serializers.ModelSerializer):
     buyer = serializers.SerializerMethodField()
     def get_buyer(self,connection):
         name = connection.buyer.owner.name  if connection.buyer.owner else ""
-        email = connection.buyer.owner.email  if connection.buyer.owner else ""
-        mobile_number = connection.buyer.owner.mobile_number  if connection.buyer.owner else ""
+        email = connection.buyer.owner.email  if connection.buyer.owner else connection.buyer.manuallycreatedbuyer_set.first().email
+        mobile_number = connection.buyer.owner.mobile_number  if connection.buyer.owner else connection.buyer.manuallycreatedbuyer_set.first().mobile_number
         
         return {"id":connection.buyer.id,"name":name,"email":email,"business_name":connection.buyer.business_name,"mobile_number":mobile_number}
     

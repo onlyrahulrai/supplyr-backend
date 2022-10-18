@@ -19,6 +19,14 @@ def get_gst_upload_path(instance, filename):
 def translation_default():
     return {"quantity": "Quantity"}
 
+def user_setting_config(*args,**kwargs):
+    return {
+        "translations":{"quantity": "Quantity"},
+        "invoice_options":{
+            "generate_at_status":"processed",
+            "template":"default"
+        }
+    }
 
 class SellerProfile(models.Model):
     class EntityTypes(models.TextChoices):
@@ -58,7 +66,8 @@ class SellerProfile(models.Model):
     gst_certificate = models.FileField(upload_to=get_gst_upload_path, max_length=150, blank=True, null=True)
     operational_fields = models.ManyToManyField('inventory.Category', blank=True)
     invoice_prefix = models.CharField(max_length=12,null=True,blank=True)
-    translations = models.JSONField(default=translation_default)
+    # translations = models.JSONField(default=translation_default)
+    user_settings = models.JSONField(default=dict,null=True,blank=True)
     status = EnumField(default="profile_created",choices=SellerStatusChoice.choices, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     connection_code = models.CharField(max_length=15)
@@ -66,7 +75,35 @@ class SellerProfile(models.Model):
     
     @property
     def order_status_options(self):
-        return ORDER_STATUS_OPTIONS
+        return self.user_settings.get('order_options').get("order_statuses_config") if self.user_settings.get("order_options") else ORDER_STATUS_OPTIONS
+    
+    @property
+    def default_order_status(self):
+        return self.user_settings.get('order_options').get("default_order_status") if self.user_settings.get("order_options",{}).get("default_order_status") else min(self.order_status_options,key=lambda option:option["sequence"]).get("slug","awaiting_approval")
+    
+    @property
+    def invoice_options(self):
+        return self.user_settings.get("invoice_options") if ('generate_at_status' in self.user_settings.get("invoice_options")) and ("template" in self.user_settings.get("invoice_options")) else {"generate_at_status":"dispatched",
+            "template":"default"}
+        
+    @property
+    def invoice_template(self):
+        return self.user_settings.get("invoice_options").get("template","default") if self.user_settings.get("invoice_options") else "default"
+    
+    @property
+    def translations(self):
+        return self.user_settings.get("translations") if self.user_settings.get("translations") else {"quantity": "Quantity"} 
+    
+    @property
+    def default_user_settings(self):
+        return {
+            "translations":{"quantity": "Quantity"},
+            "invoice_options":{
+                "generate_at_status":self.default_order_status,
+                "template":self.invoice_template
+            }
+        }
+        
     
     # @property
     # def is_approved(self):
@@ -104,6 +141,11 @@ class SellerProfile(models.Model):
         except:
             url = ''
         return url
+
+    def save(self,*args,**kwargs):
+        if not len(self.user_settings.keys()):
+            self.user_settings = self.default_user_settings
+        super(SellerProfile, self).save(*args,**kwargs)
 
 
 class BuyerProfile(models.Model):
