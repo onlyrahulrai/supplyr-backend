@@ -1,6 +1,6 @@
 from django.db.models.query_utils import Q
 from rest_framework import serializers
-from .models import AddressState, BuyerAddress, BuyerProfile, SellerProfile, SalespersonProfile
+from .models import AddressState, BuyerAddress, BuyerProfile, SellerProfile, SalespersonProfile,SellerAddress,CategoryOverrideGst
 from django.contrib.auth import get_user_model
 from typing import Dict
 from supplyr.inventory.models import Category, Tags
@@ -92,8 +92,9 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
             'invoice_options',
             'order_status_options',
             'translations',
-            'is_gst_enabled',
-            'default_gst_rate'
+            'gst_number',
+            'default_gst_rate',
+            'is_gst_enabled'
             ]
         extra_kwargs={
             "user_settings":{
@@ -143,6 +144,7 @@ def _get_seller_profiling_data(user: User) -> Dict:
 
     ### Category Information
     # categories = Category.objects.filter(is_active=True).exclude(sub_categories = None)
+    override_categories = CategoryOverrideGstSerializer(existing_profile.override_categories.filter(is_active=True),many=True).data
     categories = Category.objects.filter(is_active=True,parent=None).filter(Q(seller=None) | Q(seller=existing_profile))
     cat_serializer = CategoriesSerializer(categories, many=True,context={"seller":existing_profile})
     cat_serializer_data = cat_serializer.data
@@ -150,6 +152,7 @@ def _get_seller_profiling_data(user: User) -> Dict:
    
 
     categories_data = {
+            'override_categories':override_categories,
             'categories': cat_serializer_data,
             'selected_sub_categories': user_selected_sub_categories
         }
@@ -271,15 +274,17 @@ class BuyerAddressSerializer(serializers.ModelSerializer):
         exclude = ['owner', 'state_old']
 
     # state = ChoiceField(choices=BuyerAddress.STATE_CHOICES)
-
-
+    
+class SellerAddressSerializer(serializers.ModelSerializer):
+    state = AddressStatesSerializer(read_only=True)
+    state_id = serializers.PrimaryKeyRelatedField(queryset=AddressState.objects.all(), source='state', write_only=True)
+    
+    class Meta:
+        model = SellerAddress
+        exclude = ['owner','is_active','created_at',"updated_at"]
+        
 class SellerProfilingSerializer(serializers.ModelSerializer):
 
-    # def validate(self, data):
-    #     if data['gst_number'] == '123':
-    #         raise serializers.ValidationError("Dummy Error")  
-    #     return data
-    
     owner_name = serializers.SerializerMethodField()
     def get_owner_name(self,sellerprofile):
         return sellerprofile.owner.name
@@ -304,8 +309,9 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
             'business_name',
             'entity_category',
             'entity_type',
-            'is_gst_enrolled',
+            'is_gst_enabled',
             "invoice_prefix",
+            'default_gst_rate',
             'gst_number',
             'user_settings',
             'pan_number',
@@ -422,3 +428,21 @@ class SalespersonProfileSerializer2(serializers.ModelSerializer):
             'email',
             'is_joined'
             ]
+
+class CategoryOverrideGstSerializer(serializers.ModelSerializer):
+    category = serializers.SerializerMethodField()
+    def get_category(self,gst):
+        return {"id":gst.category.id,'name':gst.category.name,'is_parent':gst.category.is_parent}
+    
+    class Meta:
+        model = CategoryOverrideGst
+        fields = ['id','category','default_gst_rate']
+        
+class SellerGstConfigSettingSerializer(serializers.ModelSerializer):
+    override_categories = serializers.SerializerMethodField()
+    def get_override_categories(self,seller):
+        return CategoryOverrideGstSerializer(seller.override_categories.all(),many=True).data
+    
+    class Meta:
+        model = SellerProfile
+        exclude = ["is_active","connection_code","created_at"]
