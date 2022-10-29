@@ -6,7 +6,7 @@ from supplyr.core.functions import check_and_link_manually_created_profiles
 from supplyr.orders.models import Order
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum,Case, Value, When,CharField
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -480,5 +480,6 @@ class SellerStateOrders(APIView):
                     print("start date",start_date,"end date",end_date)
                     filters["created_at__range"] = (start_date,end_date) 
                 
-        response = Order.objects.filter(seller=seller_profile,is_active=True,**filters).values(state=F("address__state__name"),country_code=F("address__state__country")).annotate(state_orders_count=Count("state"),revenue=Sum("total_amount")).order_by("-state_orders_count")
+        response = Order.objects.filter(seller=seller_profile,is_active=True,**filters).values(state=Case(When(address__state__name=None,then=Value("No State Information")),default="address__state__name",output_field=CharField()),country_code=Case(When(address__state__country=None,then=Value("")),default="address__state__country",output_field=CharField())).annotate(state_orders_count=Count("state"),revenue=Sum("total_amount")).order_by("-state_orders_count")
+
         return Response(response,status=status.HTTP_200_OK)
