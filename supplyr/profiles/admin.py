@@ -1,5 +1,16 @@
 from django.contrib import admin
-from .models import BuyerAddress, BuyerSellerConnection, BuyerProfile, SalespersonPreregisteredUser, SellerProfile, SalespersonProfile, ManuallyCreatedBuyer, AddressState
+from .models import (
+    BuyerAddress, 
+    BuyerSellerConnection, 
+    BuyerProfile, 
+    SalespersonPreregisteredUser, 
+    SellerProfile,
+    SalespersonProfile,
+    ManuallyCreatedBuyer, 
+    AddressState,
+    SellerAddress,
+    CategoryOverrideGst
+)
 from django import forms
 from prettyjson import PrettyJSONWidget
 import json
@@ -82,3 +93,5 @@ admin.site.register(SalespersonProfile)
 admin.site.register(ManuallyCreatedBuyer)
 admin.site.register(SalespersonPreregisteredUser)
 admin.site.register(AddressState)
+admin.site.register(SellerAddress)
+admin.site.register(CategoryOverrideGst)

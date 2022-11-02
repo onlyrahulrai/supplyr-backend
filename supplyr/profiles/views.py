@@ -4,9 +4,19 @@ from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from rest_framework import generics, mixins, views
-from .models import AddressState, BuyerAddress, BuyerSellerConnection, ManuallyCreatedBuyer, SalespersonProfile, SellerProfile, BuyerProfile
+from .models import AddressState, BuyerAddress, BuyerSellerConnection, ManuallyCreatedBuyer, SalespersonProfile, SellerProfile, BuyerProfile,SellerAddress,CategoryOverrideGst
 from supplyr.orders.models import Order
-from .serializers import AddressStatesSerializer, BuyerAddressSerializer, BuyerProfileSerializer, SalespersonProfileSerializer2, SellerProfilingSerializer, SellerProfilingDocumentsSerializer, SellerShortDetailsSerializer
+from .serializers import (
+    AddressStatesSerializer, 
+    BuyerAddressSerializer, 
+    BuyerProfileSerializer, 
+    SalespersonProfileSerializer2, 
+    SellerProfilingSerializer, 
+    SellerProfilingDocumentsSerializer, 
+    SellerShortDetailsSerializer,
+    SellerAddressSerializer,
+    SellerGstConfigSettingSerializer
+)
 from supplyr.core.permissions import (
     IsFromBuyerAPI,
     IsFromSalesAPI,
@@ -88,7 +98,6 @@ class SellerProfileSettings(views.APIView,UserInfoMixin):
     permission_classes = [IsFromSellerAPI]
     
     def put(self,request,*args,**kwargs):
-        print(" ----- Requested Data ----- ",request.data)
         data = dict({})
         seller_profile = request.user.seller_profiles.first()
         if request.data.get("setting") == "profile-setting":    
@@ -99,21 +108,23 @@ class SellerProfileSettings(views.APIView,UserInfoMixin):
                 for key,value in request.data.get("data").get('user_settings',{}).items():
                     data["user_settings"][key] = value  
                     
-        if request.data.get("setting") == "invoice-template-setting":
+        elif request.data.get("setting") == "invoice-template-setting":
             data = dict(seller_profile.user_settings)
             
             if "invoice_options" in data:
                 data["invoice_options"].update(request.data.get("data",{}))
             
+        else:
+            data = request.data
+            print(" ----- Data ----- ",data)
             
-                  
         serializer = SellerProfilingSerializer(seller_profile,data=data,partial=True)
         if serializer.is_valid():
             serializer.save()
             serialized_data = self.inject_user_info({"user_settings":{"translatables":TRANSLATABLES}},request.user)
             return Response(serialized_data,status=status.HTTP_200_OK)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
-        
+
 
 class ResendEmailConfirmation(views.APIView):
     permission_classes = [IsAuthenticated] 
@@ -201,6 +212,36 @@ class AddressView(generics.ListCreateAPIView, generics.UpdateAPIView, generics.D
         instance.is_active = False
         instance.save()
 
+class SellerAddressView(generics.ListCreateAPIView,generics.UpdateAPIView,APISourceMixin):
+    pagination_class = None
+    serializer_class = SellerAddressSerializer
+    permission_classes = [IsApproved]
+    
+    def get_queryset(self):
+        owner = self.request.user.seller_profiles.first().id
+        return SellerAddress.objects.filter(owner=owner,is_active=True).order_by('-is_default')
+    
+    def perform_create(self, serializer):
+        owner = self.request.user.seller_profiles.first().id
+        serializer.save(owner_id=owner,is_default=True)
+        
+    def post(self,request,*args,**kwargs):        
+        if id := kwargs.get("pk"):
+            return self.update(request, *args, **kwargs)
+        return self.create(request, *args, **kwargs)
+    
+    def get(self, request,*args,**kwargs):
+        queryset = self.get_queryset()
+        serializer = self.serializer_class(queryset,many=True)
+        
+        states_list = AddressStatesSerializer(AddressState.objects.all(), many=True).data
+        rsp = {
+            'addresses': serializer.data,
+            'states_list': states_list
+        }
+        
+        return Response(rsp)
+        
 class SellerView(views.APIView, APISourceMixin):
 
     permission_classes = [IsAuthenticated, IsFromSellerOrBuyerAPI]
@@ -427,6 +468,51 @@ class ApplyForApproval(views.APIView,UserInfoMixin):
         response = self.inject_user_info({'success': True}, request.user)
         return Response(response)
     
-
+class GstConfigSettingAPIView(generics.CreateAPIView,generics.RetrieveAPIView):
+    permission_classes = [IsApproved]
+    serializer_class = SellerGstConfigSettingSerializer
+    queryset = SellerProfile.objects.filter(is_active=True)
+    
+    def get(self,request,*args,**kwargs):
+        seller = request.user.seller_profiles.first()
+        serializer = self.serializer_class(seller)
+        return Response(serializer.data)
+    
+    def post(self,request,*args,**kwargs):
+        with transaction.atomic():
+            data = request.data
+            seller = request.user.seller_profiles.first()
+            override_categories = data.pop('override_categories',[])
+            
+            initial_override_categories = seller.override_categories.filter(is_active=True).values_list("id",flat=True)
+            
+            override_categories_ids = []
+            
+            for override_category in override_categories:
+                categoryID = override_category.pop("category")
+                
+                categoryInstance = get_object_or_404(Category,id=categoryID)
+                
+                if override_category.get("id"):
+                    category_override_gst = CategoryOverrideGst(category=categoryInstance,seller=seller,**override_category)
+                else:
+                    category_override_gst = CategoryOverrideGst.objects.create(category=categoryInstance,seller=seller,**override_category)
+                
+                category_override_gst.save()
+                
+                override_categories_ids.append(category_override_gst.id)
+                
+            override_category_to_remove = [_override_category for _override_category in initial_override_categories if  _override_category not in override_categories_ids]
+            
+            
+            CategoryOverrideGst.objects.filter(id__in=override_category_to_remove).update(is_active=False)    
+                    
+            serializer = self.serializer_class(seller,data=data,partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors)
+    
+    
     
     

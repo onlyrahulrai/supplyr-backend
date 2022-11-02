@@ -22,4 +22,11 @@ urlpatterns = [
     path('salespersons/', SalespersonView.as_view(), name='salespersons'),
     path('salespersons/<int:pk>/', SalespersonView.as_view(), name='salesperson'),
     path('apply-for-approval/', ApplyForApproval.as_view(), name='apply-for-approval'),
+    
+    ############################# Seller Address ##########################
+    
+    path('seller-address/', SellerAddressView.as_view(), name='seller-adress-create'),
+    path("gst-config-setting/",GstConfigSettingAPIView.as_view(),name="gst-config-setting")
+    
+    ############################# Seller Address ##########################
 ]

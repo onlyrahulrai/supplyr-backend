@@ -60,6 +60,8 @@ class SellerProfile(models.Model):
     pan_number = models.CharField(max_length=15, blank=True, null=True)
     tan_number = models.CharField(max_length=15, blank=True, null=True)
     
+    is_gst_enabled = models.BooleanField(default=False)
+    default_gst_rate = models.DecimalField(default=0,max_digits=5, decimal_places=2)
     default_currency = EnumField(default="INR",choices=CURRENCY_CHOICES)
     currency_representation = models.CharField(default="₹",max_length=75,null=True,blank=True)
     
@@ -103,19 +105,6 @@ class SellerProfile(models.Model):
                 "template":self.invoice_template
             }
         }
-        
-    
-    # @property
-    # def is_approved(self):
-    #     if self.status == "approved":
-    #         return True
-    #     elif self.status == "rejected":
-    #         return False
-    #     elif self.status == "need_more_info":
-    #         return "need_more_info"
-    #     else:
-    #         return "permanently_rejected"
-
     def generate_connection_code(self):
         if self.connection_code:
             return self.connection_code
@@ -164,7 +153,6 @@ class BuyerProfile(models.Model):
         verbose_name = 'BuyerProfile'
         verbose_name_plural = 'BuyerProfiles'
 
-
 class ManuallyCreatedBuyer(models.Model):
     """
     This model is used to store information of a buyer who is created by a salesperson, and his user is not created yet.
@@ -177,7 +165,6 @@ class ManuallyCreatedBuyer(models.Model):
     created_by_seller = models.ForeignKey('profiles.SellerProfile', on_delete=models.RESTRICT, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_settled = models.BooleanField(default=False)
-
 
 class AddressState(models.Model):
     name = models.CharField(max_length=30)
@@ -217,6 +204,33 @@ class BuyerAddress(models.Model):
     def __str__(self):
         return f'{self.owner}'
 
+class SellerAddress(models.Model):
+    line1 = models.CharField(max_length=200)
+    line2 = models.CharField(max_length=200)
+    city = models.CharField(max_length=50)
+    pin_code = models.CharField(max_length=10, blank=True, null= True)
+    state = models.ForeignKey(AddressState, blank=True, null=True, on_delete=models.RESTRICT)
+    owner = models.ForeignKey('profiles.SellerProfile', on_delete=models.CASCADE,related_name="seller_addresses")
+    
+    is_default = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['owner'], condition=models.Q(is_default=True), name='unique_seller_address'), # Not supported in MySQL
+        ]
+        
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.is_default:
+            SellerAddress.objects.filter(is_active=True, owner_id=self.owner_id).exclude(pk=self.pk).update(is_default=False)
+            
+    def __str__(self):
+        return f'{self.owner}'
+
 class BuyerSellerConnection(models.Model):
     """Model definition for BuyerSellerConnection."""
 
@@ -246,3 +260,15 @@ class SalespersonPreregisteredUser(models.Model):
     salesperson_profile = models.ForeignKey(SalespersonProfile, on_delete=models.CASCADE, related_name='preregistrations')
     email = models.CharField(max_length=150)
     is_settled = models.BooleanField(default=False)
+    
+class CategoryOverrideGst(models.Model):
+    category = models.ForeignKey('inventory.Category', on_delete=models.SET_NULL,null=True)
+    seller = models.ForeignKey(SellerProfile, on_delete=models.SET_NULL,null=True,related_name="override_categories")
+    default_gst_rate = models.DecimalField(default=0,decimal_places=2,max_digits=5)
+    
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True,null=True)
+    updated_at = models.DateTimeField(auto_now=True,null=True)
+    
+    def __str__(self):
+        return f'{self.category} - {self.default_gst_rate}'

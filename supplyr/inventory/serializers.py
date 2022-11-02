@@ -20,7 +20,6 @@ class ChoiceField(serializers.ChoiceField):
             return obj
         return self._choices[obj]
 
-
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
@@ -100,7 +99,6 @@ class ProductListSerializer(serializers.ModelSerializer):
     def get_sub_categories(self,instance):
         return instance.sub_categories.values_list("id",flat=True)
 
-
 class VariantSerializer(serializers.ModelSerializer):
     """
     To be used in productDetailsSerializer
@@ -154,7 +152,6 @@ class VariantSerializer(serializers.ModelSerializer):
         model = Variant
         exclude = ['is_active', 'created_at','product']
         # Product has been excluded but it will need to be passed as attribute while creating new variant
-
 
 class ProductDetailsSerializer(serializers.ModelSerializer):
     class ProductOwnerSerializer(serializers.ModelSerializer):
@@ -455,7 +452,6 @@ class ProductDetailsSerializer(serializers.ModelSerializer):
         model = Product
         fields = ['id', 'title', 'slug', 'description', 'owner', 'images', 'variants_data',"vendors","tags", 'sub_categories', 'is_favourite',"weight_unit","weight_value","country","allow_inventory_tracking","allow_overselling"]
         # depth = 1
-
 
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -803,8 +799,6 @@ class VendorsSerializer(serializers.ModelSerializer):
         model = Vendors
         fields = ["id","label"]
         
-        
-        
 class SellerBuyerConnectionDetailSerializer(serializers.ModelSerializer):    
     buyer = serializers.SerializerMethodField()
     def get_buyer(self,connection):
@@ -971,3 +965,8 @@ class SellerBuyersConnectionSerializer(serializers.ModelSerializer):
         fields = ["id","name","email","mobile_number","business_name","address","generic_discount","product_discounts",'states']
         
 ############### Buyer Discount Part End ###############
+
+class SellerCategoriesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["id","name","is_parent"]

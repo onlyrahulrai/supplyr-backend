@@ -20,6 +20,7 @@ urlpatterns = [
     path("_seller-buyers/",BuyerSellerConnectionAPIView.as_view(),name="_seller-buyers"),
     path("seller-buyers/",SellerBuyersAPIView.as_view(),name="seller-buyers"),
     path("seller-buyers/<str:pk>/",SellerBuyersAPIView.as_view(),name="seller-buyers"),
+    path("seller-categories/",SellerCategoriesAPIView.as_view(),name="seller-categories"),
     
     path("sellers-buyer-detail/<str:pk>/",SellerBuyersDetailAPIView.as_view(),name="sellers-buyer-detail"),
         

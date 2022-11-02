@@ -78,6 +78,10 @@ class Category(models.Model):
 
     def __str__(self):
         return f'[{self.id}] {self.name}'
+    
+    @property
+    def is_parent(self):
+        return False if self.parent else True
 
     def save(self, *args, **kwargs):
         if self.image != self._existing_image or (self.image and not self.id): #image is changed, or it's a new category
