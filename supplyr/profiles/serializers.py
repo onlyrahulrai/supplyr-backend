@@ -33,6 +33,19 @@ class OrderStatusVariableForSeller(serializers.ModelSerializer):
         model = OrderStatusVariable
         fields = ( 'name', 'id', 'data_type', 'linked_order_status')
 
+class AddressStatesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AddressState
+        fields = '__all__'
+
+class SellerAddressSerializer(serializers.ModelSerializer):
+    state = AddressStatesSerializer(read_only=True)
+    state_id = serializers.PrimaryKeyRelatedField(queryset=AddressState.objects.all(), source='state', write_only=True)
+    
+    class Meta:
+        model = SellerAddress
+        exclude = ['owner','is_active','created_at',"updated_at"]
+    
 class ShortEntityDetailsSerializer(serializers.ModelSerializer):
     """
     To be used by seller app 
@@ -74,27 +87,33 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
         data_grouped = {k: list(v) for k,v in _data_grouped}
         return data_grouped
 
+    addresses = serializers.SerializerMethodField()
+    def get_addresses(self,profile):
+        print(profile.seller_addresses.all())
+        return SellerAddressSerializer(profile.seller_addresses.first()).data
+
     class Meta:
         model = SellerProfile
         fields = [
             'business_name',
             'id',
-            "tags",
             "order_number_prefix",
-            "order_status_variables",
             "default_currency",
             "currency_representation",
             "invoice_prefix",
+            'connection_code',
+            'gst_number',
+            'default_gst_rate',
+            'is_gst_enabled',
+            "tags",
+            "addresses",
             'user_settings',
+            "order_status_variables",
             "vendors",
             'sub_categories',
-            'connection_code',
             'invoice_options',
             'order_status_options',
             'translations',
-            'gst_number',
-            'default_gst_rate',
-            'is_gst_enabled'
             ]
         extra_kwargs={
             "user_settings":{
@@ -257,13 +276,6 @@ class UserDetailsSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id",'name', 'first_name', 'last_name', 'username', 'is_staff', 'user_status','user_profile_review','profiling_data', 'profile', 'user_role', 'is_email_verified', 'is_mobile_verified', 'email', 'mobile_number']
 
-class AddressStatesSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = AddressState
-        fields = '__all__'
-
-
 class BuyerAddressSerializer(serializers.ModelSerializer):        
 
     state = AddressStatesSerializer(read_only=True)
@@ -274,15 +286,7 @@ class BuyerAddressSerializer(serializers.ModelSerializer):
         exclude = ['owner', 'state_old']
 
     # state = ChoiceField(choices=BuyerAddress.STATE_CHOICES)
-    
-class SellerAddressSerializer(serializers.ModelSerializer):
-    state = AddressStatesSerializer(read_only=True)
-    state_id = serializers.PrimaryKeyRelatedField(queryset=AddressState.objects.all(), source='state', write_only=True)
-    
-    class Meta:
-        model = SellerAddress
-        exclude = ['owner','is_active','created_at',"updated_at"]
-        
+          
 class SellerProfilingSerializer(serializers.ModelSerializer):
 
     owner_name = serializers.SerializerMethodField()

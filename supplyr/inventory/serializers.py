@@ -7,6 +7,7 @@ from supplyr.core.model_utils import get_auto_category_ORM_filters, get_wight_in
 
 from .models import AutoCategoryRule, Product, Tags, User, Variant, ProductImage, Category, Vendors,BuyerDiscount
 from supplyr.profiles.models import BuyerAddress, BuyerProfile, BuyerSellerConnection, SellerProfile,AddressState
+from supplyr.profiles.serializers import *
 from django.conf import settings
 from django.db import transaction
 from django.db.models.functions import Coalesce
@@ -469,7 +470,7 @@ class VariantDetailsSerializer(serializers.ModelSerializer):
         seller_name = serializers.CharField(source='owner.business_name')
         class Meta:
             model = Product
-            fields = ["id",'title',"slug", 'has_multiple_variants', 'id', 'seller_name',"allow_inventory_tracking","allow_overselling"]
+            fields = ["id",'title',"slug", 'has_multiple_variants','sub_categories','id', 'seller_name',"allow_inventory_tracking","allow_overselling"]
 
     featured_image = serializers.SerializerMethodField()
     def get_featured_image(self, variant):
@@ -820,7 +821,7 @@ class BuyerAddressSerializerForSeller(serializers.ModelSerializer):
         state = None
         if address := buyer_address.state:
             state = address.name
-        return state
+        return AddressStatesSerializer(buyer_address.state).data
     
     class Meta:
         model = BuyerAddress

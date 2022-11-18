@@ -23,7 +23,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     product_variant_id = serializers.PrimaryKeyRelatedField(queryset=Variant.objects.all(), source='product_variant', write_only=True)
     class Meta: 
         model = OrderItem
-        fields = ["id", 'quantity', 'item_note', 'price', 'actual_price',"extra_discount" ,'product_variant', 'product_variant_id']
+        fields = ["id", 'quantity', 'item_note','taxable_amount','cgst','sgst','igst','price', 'actual_price',"extra_discount" ,'product_variant', 'product_variant_id']
 
 class OrderSerializer(serializers.ModelSerializer):
     
@@ -37,7 +37,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["id","order_number","items","buyer","seller","created_by","total_amount","total_extra_discount","address","status","created_at","cancelled_at","cancelled_by"]
+        fields = ["id","order_number","items","buyer","seller","created_by","total_amount","total_extra_discount","taxable_amount","sgst","cgst","igst","address","status","created_at","cancelled_at","cancelled_by"]
         # exclude = ['is_active']
         read_only_fields = ['order_number','cancelled_at']
 
@@ -92,7 +92,7 @@ class OrderSerializer(serializers.ModelSerializer):
             elif seller_id != variant.product.owner_id:
                 handled_errors = "Incorrect Data ! Sellers of all items do not match"
 
-        data['total_amount'] = total_amount
+        data['total_amount'] = (total_amount + data.get("taxable_amount",0)) - round(data.get("total_extra_discount",0),2)
         data["total_extra_discount"] = round(data.get("total_extra_discount",0),2)
         data['seller'] = seller_id
 
@@ -343,7 +343,7 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
 
     class Meta:
         model = Order
-        fields=['order_number', 'order_date', 'order_time', 'seller_name', 'buyer_name','buyer_business_name',"buyer_id" ,'order_status', 'total_amount',"total_extra_discount",'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
+        fields=['order_number', 'order_date', 'order_time', 'seller_name', 'buyer_name','buyer_business_name',"buyer_id" ,'order_status','taxable_amount','sgst','cgst','igst', 'total_amount',"total_extra_discount",'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
         
 class GenerateInvoiceSerializer(serializers.ModelSerializer):
     

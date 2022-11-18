@@ -330,7 +330,7 @@ class SellerCategoriesAPIView(ListAPIView):
     
     def get_queryset(self):
         seller = self.request.user.seller_profiles.first()
-        return Category.objects.filter(seller=seller)
+        return Category.objects.filter(seller=seller,is_active=True)
     
 
 class SellerBuyersAPIView(ListAPIView,RetrieveAPIView):

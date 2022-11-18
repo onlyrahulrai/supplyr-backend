@@ -28,8 +28,11 @@ class Order(models.Model):
         choices=('buyer', 'seller', 'staff', 'sales'),
         blank=True, null=True
         )
+    taxable_amount = models.DecimalField(default=0,max_digits=12,decimal_places=2)
+    sgst = models.DecimalField(default=0,max_digits=12,decimal_places=2)
+    cgst = models.DecimalField(default=0,max_digits=12,decimal_places=2)
+    igst = models.DecimalField(default=0,max_digits=12,decimal_places=2)
     total_amount = models.DecimalField(max_digits=14, decimal_places=2)
-    # discount = models.DecimalField(default=0,max_digits=12, decimal_places=2)
     total_extra_discount = models.DecimalField(default=0,max_digits=12, decimal_places=2)
     address = models.ForeignKey('profiles.BuyerAddress', on_delete=models.RESTRICT,null=True,blank=True)
 
@@ -58,9 +61,15 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.RESTRICT, related_name='items')
     product_variant = models.ForeignKey('inventory.Variant', on_delete=models.RESTRICT)
     quantity = models.IntegerField()
+    extra_discount = models.DecimalField(default=0,max_digits=12, decimal_places=2)
+    taxable_amount = models.DecimalField(default=0,max_digits=12,decimal_places=2)
+    cgst = models.DecimalField(default=0,max_digits=12,decimal_places=2)
+    sgst = models.DecimalField(default=0,max_digits=12,decimal_places=2)
+    igst = models.DecimalField(default=0,max_digits=12,decimal_places=2)
     price = models.DecimalField(max_digits=12, decimal_places=2)
     actual_price = models.DecimalField(max_digits=12, decimal_places=2)
-    extra_discount = models.DecimalField(default=0,max_digits=12, decimal_places=2)
+    
+
     is_active = models.BooleanField(default=True)
     item_note = models.TextField(blank=True, null=True)
 
