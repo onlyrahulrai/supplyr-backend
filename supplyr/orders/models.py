@@ -15,7 +15,6 @@ class Order(models.Model):
         DELIVERED = 'delivered', 'Delivered'
         RETURNED = "returned","Returned"
 
-
     buyer = models.ForeignKey('profiles.BuyerProfile', related_name='orders', on_delete=models.RESTRICT)
     order_number = models.CharField(max_length=200)
     seller = models.ForeignKey('profiles.SellerProfile', related_name='received_orders', on_delete=models.RESTRICT)
@@ -33,10 +32,15 @@ class Order(models.Model):
     cgst = models.DecimalField(default=0,max_digits=12,decimal_places=2)
     igst = models.DecimalField(default=0,max_digits=12,decimal_places=2)
     total_amount = models.DecimalField(max_digits=14, decimal_places=2)
+    # total_subamount = models.DecimalField(default=0,max_digits=14,decimal_places=2)
     total_extra_discount = models.DecimalField(default=0,max_digits=12, decimal_places=2)
     address = models.ForeignKey('profiles.BuyerAddress', on_delete=models.RESTRICT,null=True,blank=True)
 
     salesperson = models.ForeignKey('profiles.SalespersonProfile', on_delete=models.RESTRICT, blank=True, null=True, related_name='orders') # Populated when order is placed by a salesperson
+    
+    @property
+    def tax_amount(self):
+        return self.igst + self.sgst + self.cgst
     
     @property
     def featured_image(self):
@@ -72,6 +76,10 @@ class OrderItem(models.Model):
 
     is_active = models.BooleanField(default=True)
     item_note = models.TextField(blank=True, null=True)
+
+    @property
+    def tax_amount(self):
+        return (self.igst + self.cgst + self.sgst)
 
     @property
     def featured_image(self):

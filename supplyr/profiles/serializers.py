@@ -105,6 +105,7 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
             'gst_number',
             'default_gst_rate',
             'is_gst_enabled',
+            'product_price_includes_taxes',
             "tags",
             "addresses",
             'user_settings',
@@ -156,14 +157,15 @@ def _get_seller_profiling_data(user: User) -> Dict:
     existing_profile = user.seller_profiles.first()
     entity_details = None
     profiling_data = None
+    
     user_selected_sub_categories = []
     if  existing_profile:
         entity_details = SellerProfilingSerializer(existing_profile).data
         user_selected_sub_categories = existing_profile.operational_fields.all().values_list('id', flat=True)
+        override_categories = CategoryOverrideGstSerializer(existing_profile.override_categories.filter(is_active=True),many=True).data
 
     ### Category Information
     # categories = Category.objects.filter(is_active=True).exclude(sub_categories = None)
-    override_categories = CategoryOverrideGstSerializer(existing_profile.override_categories.filter(is_active=True),many=True).data
     categories = Category.objects.filter(is_active=True,parent=None).filter(Q(seller=None) | Q(seller=existing_profile))
     cat_serializer = CategoriesSerializer(categories, many=True,context={"seller":existing_profile})
     cat_serializer_data = cat_serializer.data
@@ -171,7 +173,6 @@ def _get_seller_profiling_data(user: User) -> Dict:
    
 
     categories_data = {
-            'override_categories':override_categories,
             'categories': cat_serializer_data,
             'selected_sub_categories': user_selected_sub_categories
         }
@@ -183,7 +184,7 @@ def _get_seller_profiling_data(user: User) -> Dict:
         }
     elif user.is_approved:
         profiling_data = {
-            'categories_data': categories_data
+            'categories_data': {**categories_data,'override_categories':override_categories}
         }
     
     return profiling_data

@@ -106,10 +106,15 @@ class OrderListView(mixins.ListModelMixin, generics.GenericAPIView, APISourceMix
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
-class OrderDetailsView(generics.RetrieveAPIView):
-    serializer_class = OrderDetailsSerializer
+class OrderDetailsView(generics.GenericAPIView,mixins.RetrieveModelMixin):
     permission_classes = [IsAuthenticated]
     queryset = Order.objects.all()
+    
+    def get_serializer_class(self):
+        return OrderDetailsSerializer
+    
+    def get(self,request,*args,**kwargs):
+        return self.retrieve(request,*args,**kwargs)
 
 
 class OrdersBulkUpdateView(APIView):

@@ -12,18 +12,33 @@ from supplyr.inventory.models import Variant
 from supplyr.profiles.serializers import BuyerAddressSerializer
 from supplyr.inventory.serializers import VariantDetailsSerializer
 from supplyr.orders.models import Payment,Ledger
+from supplyr.inventory.serializers import SellerBuyersConnectionSerializer
+from django.shortcuts import get_object_or_404
 
 class OrderItemSerializer(serializers.ModelSerializer):
     # featured_image = serializers.SerializerMethodField()
     # def get_featured_image(self, order):
     #     if im := order.featured_image:
     #         return order.featured_image.image_md.url
-
+    
     product_variant = VariantDetailsSerializer(read_only=True)
     product_variant_id = serializers.PrimaryKeyRelatedField(queryset=Variant.objects.all(), source='product_variant', write_only=True)
+    
+    def to_representation(self, instance):
+        output = super(OrderItemSerializer, self).to_representation(instance)
+        output["cgst"] = float(instance.cgst)
+        output["sgst"] = float(instance.sgst)
+        output["igst"] = float(instance.igst)
+        output["extra_discount"] = float(instance.extra_discount)
+        output["taxable_amount"] = float(instance.taxable_amount)
+        output["tax_amount"] = float(instance.tax_amount)
+        output["price"] = float(instance.price)
+        output["actual_price"] = float(instance.actual_price)
+        return output
+    
     class Meta: 
         model = OrderItem
-        fields = ["id", 'quantity', 'item_note','taxable_amount','cgst','sgst','igst','price', 'actual_price',"extra_discount" ,'product_variant', 'product_variant_id']
+        fields = ["id", 'quantity', 'item_note','taxable_amount',"tax_amount",'cgst','sgst','igst','price', 'actual_price',"extra_discount" ,'product_variant', 'product_variant_id']
 
 class OrderSerializer(serializers.ModelSerializer):
     
@@ -55,12 +70,10 @@ class OrderSerializer(serializers.ModelSerializer):
         print("validated data >>>>>>>>>>>> ",data.get("discount"))
         unhandled_errors = False
         # handled_errors = False
-        total_amount = 0
+        subtotal = 0
         seller_id = None
-        if 'buyer_id' in data and self.context['request'].user.salesperson_status == 'ready':
-            buyer_id = data.pop('buyer_id')
-            buyer_profile_id =  buyer_id
-        elif "buyer_id" in data and self.context["request"].user.seller_status == "approved":
+        
+        if "buyer_id" in data and (self.context["request"].user.seller_status == "approved" or self.context['request'].user.salesperson_status == 'ready'):
             buyer_id = data.pop("buyer_id")
             buyer_profile_id = buyer_id
         else:
@@ -86,13 +99,19 @@ class OrderSerializer(serializers.ModelSerializer):
             item['actual_price'] = float(item.get("actual_price",variant.price or variant.actual_price))
             item['price'] =  float(item.get("price",variant.actual_price))
             item['product_variant_id'] = item['variant_id']
-            total_amount += (item['price'] or item['actual_price'])*item['quantity'] #TODO: Remove the later part after 'or', as it might never get executed
+            subtotal += (item['price'] or item['actual_price'])*item['quantity'] #TODO: Remove the later part after 'or', as it might never get executed
             if not seller_id:
                 seller_id = variant.product.owner_id
             elif seller_id != variant.product.owner_id:
                 handled_errors = "Incorrect Data ! Sellers of all items do not match"
 
-        data['total_amount'] = (total_amount + data.get("taxable_amount",0)) - round(data.get("total_extra_discount",0),2)
+        seller = get_object_or_404(SellerProfile,pk=seller_id)
+        
+        tax_amount = (data.get("igst",0) + data.get("cgst",0) + data.get("sgst",0))
+        
+        total_amount = subtotal if(seller.product_price_includes_taxes) else (subtotal + tax_amount)
+
+        data['total_amount'] = round((total_amount  - data.get("total_extra_discount",0)),2)
         data["total_extra_discount"] = round(data.get("total_extra_discount",0),2)
         data['seller'] = seller_id
 
@@ -313,6 +332,10 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
     created_by_user = serializers.SerializerMethodField()
     created_by_entity = serializers.SerializerMethodField()
     status_variable_values = serializers.SerializerMethodField()
+    # address_id = serializers.Serializer.SerializerMethodField()
+    
+    # def get_address_id(self,order):
+    #     return order.address
 
     def get_order_date(self, order):
         return order.created_at.astimezone().strftime("%b %d, %Y")
@@ -340,10 +363,22 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
 
     def get_status_variable_values(self, order):
         return StatusVariableValueSerializer(order.status_variable_values.all(), many=True).data
+    
+    buyer = SellerBuyersConnectionSerializer()
+    
+    def to_representation(self, instance):
+        output = super(OrderDetailsSerializer, self).to_representation(instance)
+        output["cgst"] = float(instance.cgst)
+        output["sgst"] = float(instance.sgst)
+        output["igst"] = float(instance.igst)
+        output["taxable_amount"] = float(instance.taxable_amount)
+        output["total_amount"] = float(instance.total_amount)
+        output["total_extra_discount"] = float(instance.total_extra_discount)
+        return output
 
     class Meta:
         model = Order
-        fields=['order_number', 'order_date', 'order_time', 'seller_name', 'buyer_name','buyer_business_name',"buyer_id" ,'order_status','taxable_amount','sgst','cgst','igst', 'total_amount',"total_extra_discount",'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values']
+        fields=['order_number', 'order_date', 'order_time','seller_name', 'buyer_name','buyer_business_name',"buyer_id" ,'order_status','taxable_amount','sgst','cgst','igst', 'total_amount',"total_extra_discount",'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values','buyer',"tax_amount"]
         
 class GenerateInvoiceSerializer(serializers.ModelSerializer):
     
@@ -430,3 +465,66 @@ class OrderStatusVariableSerializer(serializers.ModelSerializer):
                 "read_only":True
             }
         }
+        
+# class SellerOrderDetailsSerializer(serializers.ModelSerializer):
+#     order_time = serializers.SerializerMethodField()
+#     order_date = serializers.SerializerMethodField()
+#     order_status = serializers.SerializerMethodField()
+#     seller_name = serializers.SerializerMethodField()
+#     created_by_user = serializers.SerializerMethodField()
+#     created_by_entity = serializers.SerializerMethodField()
+    
+#     invoice = serializers.SerializerMethodField()
+#     status_variable_values = serializers.SerializerMethodField()
+#     items = serializers.SerializerMethodField()
+    
+#     def get_order_date(self, order):
+#         return order.created_at.astimezone().strftime("%b %d, %Y")
+    
+#     def get_order_time(self, order):
+#         return order.created_at.astimezone().strftime('%H:%M %p')
+    
+#     def get_order_status(self,order):
+#         return order.status
+    
+#     def get_seller_name(self,order):
+#         return order.seller.business_name
+    
+#     def get_created_by_user(self, order):
+#         return order.created_by.name
+    
+#     def get_created_by_entity(self, order):
+#         if order.salesperson:
+#             return order.salesperson.seller.business_name
+#         else:
+#             return order.buyer.business_name
+        
+#     def get_invoice(self,order): 
+#         invoice = order.invoices.first()   
+#         data = GenerateInvoiceSerializer(invoice).data if invoice else None
+#         return  data
+    
+#     def get_status_variable_values(self, order):
+#         return StatusVariableValueSerializer(order.status_variable_values.all(), many=True).data
+    
+#     def get_items(self,order):
+#         return OrderItemSerializer(order.items.filter(is_active=True),many=True).data
+    
+#     history = OrderHistorySerializer(many=True)
+    
+#     buyer = SellerBuyersConnectionSerializer()
+    
+#     def to_representation(self, instance):
+#         output = super(SellerOrderDetailsSerializer, self).to_representation(instance)
+#         output["cgst"] = float(instance.cgst)
+#         output["sgst"] = float(instance.sgst)
+#         output["igst"] = float(instance.igst)
+#         output["taxable_amount"] = float(instance.taxable_amount)
+#         output["total_amount"] = float(instance.total_amount)
+#         output["total_extra_discount"] = float(instance.total_extra_discount)
+#         return output
+    
+#     class Meta:
+#         model = Order
+#         fields = ["id","order_date","order_time","order_number","seller_name","order_status","taxable_amount","sgst","cgst","igst","total_amount","total_extra_discount","created_by_user","created_by_entity","items","invoice","history","status_variable_values","buyer","buyer_id","address_id"]
+        
