@@ -102,7 +102,7 @@ class SellerProfile(models.Model):
         return {
             "translations":{"quantity": "Quantity"},
             "invoice_options":{
-                "generate_at_status":self.default_order_status,
+                "generate_at_status":next(filter(lambda option: not option.get("editing_allowed"), self.order_status_options)).get("slug","awaiting_approval"),
                 "template":self.invoice_template
             }
         }

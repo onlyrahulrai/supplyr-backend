@@ -56,3 +56,5 @@ ORDER_STATUS_OPTIONS = [
         "confirmation_needed":True
     },
 ]
+
+ADD_LEDGER_ENTRY_ON_MARK_ORDER_PAID = True

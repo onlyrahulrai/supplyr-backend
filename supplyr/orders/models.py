@@ -21,6 +21,7 @@ class Order(models.Model):
     status = EnumField(choices=OrderStatusChoice.choices, default=OrderStatusChoice.AWAITING_APPROVAL)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    is_paid = models.BooleanField(default=False)
     created_by = models.ForeignKey('core.User', related_name='orders_created', on_delete=models.RESTRICT)
     cancelled_at = models.DateTimeField(auto_now_add=True,blank=True, null=True)
     cancelled_by = EnumField(
@@ -182,6 +183,7 @@ class Ledger(models.Model):
         ORDER_CREATED="order_created","Order Created"
         PAYMENT_ADDED="payment_added","Payment Added"
         ORDER_CANCELLED="order_cancelled","Order Cancelled"
+        ORDER_PAID = "order_paid","Order Paid"
     
     transaction_type  = EnumField(choices=TransactionTypeChoice.choices,default=TransactionTypeChoice.ORDER_CREATED)
     seller = models.ForeignKey(SellerProfile, on_delete=models.CASCADE,related_name="ledgers",null=True,blank=True)
@@ -202,6 +204,8 @@ class Ledger(models.Model):
         elif self.transaction_type == self.TransactionTypeChoice.ORDER_CANCELLED:
             print(vars(self.order))
             description_str = f"Order #{self.order.id} cancelled by {'you' if self.order.cancelled_by == 'seller' else 'buyer' if self.order.cancelled_by == 'buyer' else ''  }"
+        else:
+            description_str = f"Order #{self.order.id} mark as paid by {'you' if self.order.created_by == self.seller.owner else 'buyer' }"
         return description_str
   
   

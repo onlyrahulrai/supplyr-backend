@@ -50,7 +50,7 @@ class SellerProfileForm(forms.ModelForm):
         invoice_options = user_settings.get("invoice_options")
             
         if "generate_at_status" not in invoice_options:
-            invoice_options.update({"generate_at_status":self.instance.default_order_status})
+            invoice_options.update({"generate_at_status":next(filter(lambda option:not option.get("editing_allowed"),order_options)).get("slug")})
         else:
             if invoice_options.get("generate_at_status") not in list(map(lambda option:option.get("slug"),order_options)):
                 invoice_options.update({"generate_at_status":min(order_options,key=lambda option:option["sequence"]).get("slug","awaiting_approval")})

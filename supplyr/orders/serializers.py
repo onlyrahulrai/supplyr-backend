@@ -52,7 +52,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["id","order_number","items","buyer","seller","created_by","total_amount","total_extra_discount","taxable_amount","sgst","cgst","igst","address","status","created_at","cancelled_at","cancelled_by"]
+        fields = ["id","order_number","items","buyer","seller","created_by","total_amount","total_extra_discount","taxable_amount","sgst","cgst","igst","address","status","created_at","cancelled_at","cancelled_by","is_paid"]
         # exclude = ['is_active']
         read_only_fields = ['order_number','cancelled_at']
 
@@ -378,7 +378,7 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
 
     class Meta:
         model = Order
-        fields=['order_number', 'order_date', 'order_time','seller_name', 'buyer_name','buyer_business_name',"buyer_id" ,'order_status','taxable_amount','sgst','cgst','igst', 'total_amount',"total_extra_discount",'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values','buyer',"tax_amount"]
+        fields=['order_number', 'order_date', 'order_time','seller_name', 'buyer_name','buyer_business_name',"buyer_id" ,'order_status','taxable_amount','sgst','cgst','igst', 'total_amount',"total_extra_discount",'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values','buyer',"tax_amount","is_paid"]
         
 class GenerateInvoiceSerializer(serializers.ModelSerializer):
     
@@ -409,8 +409,12 @@ class OrderShortDetailSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Order
-        fields = ["id",'order_number',"created_by","status"]
-        
+        fields = ["id",'order_number',"created_by","status","is_paid"]
+        extra_kwargs = {
+            "created_by":{
+                "read_only":True
+            }
+        }
         
 class LedgerSerializer(serializers.ModelSerializer):
     
