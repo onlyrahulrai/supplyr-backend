@@ -157,9 +157,6 @@ class OrderSerializer(serializers.ModelSerializer):
         
         return order
     def update(self, instance, validated_data):
-        print(" ------ validated data ------ ",validated_data)
-        
-        
         items = validated_data.pop("items")
         order = super().update(instance, validated_data)
         
@@ -239,7 +236,7 @@ class OrderListSerializer(serializers.ModelSerializer, SerializerAPISourceMixin)
 
     class Meta:
         model = Order
-        fields = ['id', 'order_number', 'order_date', 'seller_name', 'items_count', 'order_status', 'total_amount', 'featured_image','short_items_description']
+        fields = ['id', 'order_number',"is_paid",'order_date', 'seller_name', 'items_count', 'order_status', 'total_amount', 'featured_image','short_items_description']
 
 class SellerOrderListSerializer(OrderListSerializer):
 
@@ -253,7 +250,7 @@ class SellerOrderListSerializer(OrderListSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'order_number', 'order_date', 'buyer_name',"buyer_id" ,'order_status', 'total_amount', 'featured_image',"short_items_description"]
+        fields = ['id', 'order_number', 'order_date', 'buyer_name',"buyer_id" ,'order_status', 'total_amount', 'featured_image',"short_items_description","is_paid"]
 
 class SalespersonOrderListSerializer(OrderListSerializer):
 

@@ -48,7 +48,6 @@ class MarkAsOrderPaidView(APIView):
     permission_classes = [IsApproved]
     
     def put(self,request,*args,**kwargs):
-        if ADD_LEDGER_ENTRY_ON_MARK_ORDER_PAID:
             with transaction.atomic():
                 seller = request.user.seller_profiles.first()
                 instance = get_object_or_404(Order,pk=kwargs.get("pk"))
@@ -56,13 +55,13 @@ class MarkAsOrderPaidView(APIView):
                  
                 if serializer.is_valid():
                     serializer.save()
-                    prev_ledger_balance = 0
-                    if prev_ledger := Ledger.objects.filter(buyer=instance.buyer,seller=instance.seller).order_by("created_at").last():
+                    if ADD_LEDGER_ENTRY_ON_MARK_ORDER_PAID:
+                        prev_ledger_balance = 0
+                        if prev_ledger := Ledger.objects.filter(buyer=instance.buyer,seller=instance.seller).order_by("created_at").last():
                             prev_ledger_balance = prev_ledger.balance
-                            
-                    ledger,created = Ledger.objects.get_or_create(order=instance,transaction_type=Ledger.TransactionTypeChoice.ORDER_PAID,seller=seller,buyer=instance.buyer,amount=instance.total_amount,balance=(prev_ledger_balance + instance.total_amount ))
+                        ledger,created = Ledger.objects.get_or_create(order=instance,transaction_type=Ledger.TransactionTypeChoice.ORDER_PAID,seller=seller,buyer=instance.buyer,amount=instance.total_amount,balance=(prev_ledger_balance + instance.total_amount ))
                     return Response({"message":"Success"},status=status.HTTP_202_ACCEPTED)
-        return Response({"message":"Method isn't allowed"},status=status.HTTP_304_NOT_MODIFIED)
+                return Response(serializer.errors)
 
 class ProductDetailView(RetrieveAPIView):
     permission_classes = [IsApproved]
