@@ -3,7 +3,7 @@ from django.db import transaction
 from django.shortcuts import render,get_object_or_404
 from rest_framework import generics, mixins
 from rest_framework.views import APIView
-from .models import Order, OrderHistory, OrderStatusVariableValue,Payment
+# from .models import Order, OrderHistory, OrderStatusVariableValue,Payment,OrderShortDetailSerializer
 from .serializers import *
 from supplyr.core.permissions import IsFromBuyerAPI, IsApproved, IsFromSellerAPI
 from rest_framework.permissions import IsAuthenticated
@@ -15,6 +15,7 @@ from supplyr.profiles.models import *
 from rest_framework.generics import RetrieveAPIView
 from supplyr.inventory.serializers import ProductListSerializer
 from supplyr.inventory.models import Product,ProductImage
+from supplyr.core.app_config import ADD_LEDGER_ENTRY_ON_MARK_ORDER_PAID
 
 
 class OrderView(mixins.ListModelMixin,
@@ -35,7 +36,6 @@ class OrderView(mixins.ListModelMixin,
         return self.list(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        print(" ----- requested data ------ ",request.data)
         if pk := kwargs.get("pk"):
             order = get_object_or_404(Order,pk=pk,seller=self.request.user.seller_profiles.first())
             if order.status not in ["processed",'cancelled','dispatched','delivered']:
@@ -43,6 +43,25 @@ class OrderView(mixins.ListModelMixin,
             else:
                 return Response({"message":"Your are not allowed to update this order"},status=status.HTTP_304_NOT_MODIFIED)
         return self.create(request, *args, **kwargs)
+
+class MarkAsOrderPaidView(APIView):
+    permission_classes = [IsApproved]
+    
+    def put(self,request,*args,**kwargs):
+            with transaction.atomic():
+                seller = request.user.seller_profiles.first()
+                instance = get_object_or_404(Order,pk=kwargs.get("pk"))
+                serializer = OrderShortDetailSerializer(instance,request.data,partial=True)
+                 
+                if serializer.is_valid():
+                    serializer.save()
+                    if ADD_LEDGER_ENTRY_ON_MARK_ORDER_PAID:
+                        prev_ledger_balance = 0
+                        if prev_ledger := Ledger.objects.filter(buyer=instance.buyer,seller=instance.seller).order_by("created_at").last():
+                            prev_ledger_balance = prev_ledger.balance
+                        ledger,created = Ledger.objects.get_or_create(order=instance,transaction_type=Ledger.TransactionTypeChoice.ORDER_PAID,seller=seller,buyer=instance.buyer,amount=instance.total_amount,balance=(prev_ledger_balance + instance.total_amount ))
+                    return Response({"message":"Success"},status=status.HTTP_202_ACCEPTED)
+                return Response(serializer.errors)
 
 class ProductDetailView(RetrieveAPIView):
     permission_classes = [IsApproved]
@@ -61,7 +80,6 @@ class ProductDetailView(RetrieveAPIView):
                  Prefetch('images', queryset=ProductImage.objects.filter(is_active=True), to_attr='active_images_prefetched'),
                  Prefetch('variants', queryset=Variant.objects.filter(is_active=True), to_attr='active_variants_prefetched'),
                  )
-
 
 class GenerateInvoiceView(generics.GenericAPIView,mixins.CreateModelMixin):
     permission_classes = [IsAuthenticated]
@@ -106,11 +124,15 @@ class OrderListView(mixins.ListModelMixin, generics.GenericAPIView, APISourceMix
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
-class OrderDetailsView(generics.RetrieveAPIView):
-    serializer_class = OrderDetailsSerializer
+class OrderDetailsView(generics.GenericAPIView,mixins.RetrieveModelMixin):
     permission_classes = [IsAuthenticated]
     queryset = Order.objects.all()
-
+    
+    def get_serializer_class(self):
+        return OrderDetailsSerializer
+    
+    def get(self,request,*args,**kwargs):
+        return self.retrieve(request,*args,**kwargs)
 
 class OrdersBulkUpdateView(APIView):
     permission_classes = [IsApproved, IsFromSellerAPI]
@@ -146,13 +168,15 @@ class OrdersBulkUpdateView(APIView):
                     if prev_ledger := Ledger.objects.filter(buyer=order.buyer,seller=order.seller).order_by("created_at").last():
                             prev_ledger_balance = prev_ledger.balance
                             
+                    print(" ---- Leader to generate ---- ",profile.invoice_options.get("generate_at_status","processed"))
+                            
                     if new_status == profile.invoice_options.get("generate_at_status","processed"):
                         ledger,created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount ))
                         
                     elif new_status == Order.OrderStatusChoice.CANCELLED or new_status == Order.OrderStatusChoice.RETURNED:
+                        balance = (prev_ledger_balance + order.total_amount) if order.is_paid else (prev_ledger_balance - order.total_amount)
                         
-                        
-                        ledger,created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CANCELLED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance + order.total_amount ))
+                        ledger,created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CANCELLED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=balance)
                     ######## ----- Ledger End ----- ########
 
                 if operation == 'change_status_with_variables':

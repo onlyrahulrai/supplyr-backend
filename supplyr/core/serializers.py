@@ -15,6 +15,8 @@ from django.contrib.auth.forms import SetPasswordForm
 from django.contrib.auth.tokens import default_token_generator 
 from django.utils.http import urlsafe_base64_decode as uid_decoder
 from django.utils.encoding import force_text
+from supplyr.core.functions import ManuallyCreatedBuyer
+from django.db.models import Q
 
 
 User = get_user_model()
@@ -60,19 +62,19 @@ class CustomRegisterSerializer(RegisterSerializer):
         user.mobile_number = mobile_number
         user.save()
 
-        # if self._get_api_source() == 'buyer':
-        #     if manual_buyer := ManuallyCreatedBuyer.objects.filter(Q(mobile_number=mobile_number) | Q(email=user.email)).first():
-        #         manual_buyer.buyer_profile.owner = user
-        #         manual_buyer.buyer_profile.save()
-        #         manual_buyer.is_settled = True
-        #         manual_buyer.save()
+        if self._get_api_source() == 'buyer':
+            if manual_buyer := ManuallyCreatedBuyer.objects.filter(Q(mobile_number=mobile_number) | Q(email=user.email)).first():
+                manual_buyer.buyer_profile.owner = user
+                manual_buyer.buyer_profile.save()
+                manual_buyer.is_settled = True
+                manual_buyer.save()
 
-        # if self._get_api_source() == 'sales':
-        #     preregistered_user = SalespersonPreregisteredUser.objects.filter(email = email).first()
-        #     preregistered_user.salesperson_profile.owner = user
-        #     preregistered_user.salesperson_profile.save()
-        #     preregistered_user.is_settled = True
-        #     preregistered_user.save()
+        if self._get_api_source() == 'sales':
+            preregistered_user = SalespersonPreregisteredUser.objects.filter(email = email).first()
+            preregistered_user.salesperson_profile.owner = user
+            preregistered_user.salesperson_profile.save()
+            preregistered_user.is_settled = True
+            preregistered_user.save()
 
 
         return user

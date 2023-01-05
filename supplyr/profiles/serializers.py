@@ -33,6 +33,19 @@ class OrderStatusVariableForSeller(serializers.ModelSerializer):
         model = OrderStatusVariable
         fields = ( 'name', 'id', 'data_type', 'linked_order_status')
 
+class AddressStatesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AddressState
+        fields = '__all__'
+
+class SellerAddressSerializer(serializers.ModelSerializer):
+    state = AddressStatesSerializer(read_only=True)
+    state_id = serializers.PrimaryKeyRelatedField(queryset=AddressState.objects.all(), source='state', write_only=True)
+    
+    class Meta:
+        model = SellerAddress
+        exclude = ['owner','is_active','created_at',"updated_at"]
+    
 class ShortEntityDetailsSerializer(serializers.ModelSerializer):
     """
     To be used by seller app 
@@ -74,27 +87,34 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
         data_grouped = {k: list(v) for k,v in _data_grouped}
         return data_grouped
 
+    addresses = serializers.SerializerMethodField()
+    def get_addresses(self,profile):
+        print(profile.seller_addresses.all())
+        return SellerAddressSerializer(profile.seller_addresses.first()).data
+
     class Meta:
         model = SellerProfile
         fields = [
             'business_name',
             'id',
-            "tags",
             "order_number_prefix",
-            "order_status_variables",
             "default_currency",
             "currency_representation",
             "invoice_prefix",
+            'connection_code',
+            'gst_number',
+            'default_gst_rate',
+            'is_gst_enabled',
+            'product_price_includes_taxes',
+            "tags",
+            "addresses",
             'user_settings',
+            "order_status_variables",
             "vendors",
             'sub_categories',
-            'connection_code',
             'invoice_options',
             'order_status_options',
             'translations',
-            'gst_number',
-            'default_gst_rate',
-            'is_gst_enabled'
             ]
         extra_kwargs={
             "user_settings":{
@@ -137,14 +157,15 @@ def _get_seller_profiling_data(user: User) -> Dict:
     existing_profile = user.seller_profiles.first()
     entity_details = None
     profiling_data = None
+    
     user_selected_sub_categories = []
     if  existing_profile:
         entity_details = SellerProfilingSerializer(existing_profile).data
         user_selected_sub_categories = existing_profile.operational_fields.all().values_list('id', flat=True)
+        override_categories = CategoryOverrideGstSerializer(existing_profile.override_categories.filter(is_active=True),many=True).data
 
     ### Category Information
     # categories = Category.objects.filter(is_active=True).exclude(sub_categories = None)
-    override_categories = CategoryOverrideGstSerializer(existing_profile.override_categories.filter(is_active=True),many=True).data
     categories = Category.objects.filter(is_active=True,parent=None).filter(Q(seller=None) | Q(seller=existing_profile))
     cat_serializer = CategoriesSerializer(categories, many=True,context={"seller":existing_profile})
     cat_serializer_data = cat_serializer.data
@@ -152,7 +173,6 @@ def _get_seller_profiling_data(user: User) -> Dict:
    
 
     categories_data = {
-            'override_categories':override_categories,
             'categories': cat_serializer_data,
             'selected_sub_categories': user_selected_sub_categories
         }
@@ -164,7 +184,7 @@ def _get_seller_profiling_data(user: User) -> Dict:
         }
     elif user.is_approved:
         profiling_data = {
-            'categories_data': categories_data
+            'categories_data': {**categories_data,'override_categories':override_categories}
         }
     
     return profiling_data
@@ -257,13 +277,6 @@ class UserDetailsSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id",'name', 'first_name', 'last_name', 'username', 'is_staff', 'user_status','user_profile_review','profiling_data', 'profile', 'user_role', 'is_email_verified', 'is_mobile_verified', 'email', 'mobile_number']
 
-class AddressStatesSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = AddressState
-        fields = '__all__'
-
-
 class BuyerAddressSerializer(serializers.ModelSerializer):        
 
     state = AddressStatesSerializer(read_only=True)
@@ -274,15 +287,7 @@ class BuyerAddressSerializer(serializers.ModelSerializer):
         exclude = ['owner', 'state_old']
 
     # state = ChoiceField(choices=BuyerAddress.STATE_CHOICES)
-    
-class SellerAddressSerializer(serializers.ModelSerializer):
-    state = AddressStatesSerializer(read_only=True)
-    state_id = serializers.PrimaryKeyRelatedField(queryset=AddressState.objects.all(), source='state', write_only=True)
-    
-    class Meta:
-        model = SellerAddress
-        exclude = ['owner','is_active','created_at',"updated_at"]
-        
+          
 class SellerProfilingSerializer(serializers.ModelSerializer):
 
     owner_name = serializers.SerializerMethodField()

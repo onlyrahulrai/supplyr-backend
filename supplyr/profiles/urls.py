@@ -26,6 +26,7 @@ urlpatterns = [
     ############################# Seller Address ##########################
     
     path('seller-address/', SellerAddressView.as_view(), name='seller-adress-create'),
+    path('seller-address/<str:pk>/', SellerAddressView.as_view(), name='seller-adress-update'),
     path("gst-config-setting/",GstConfigSettingAPIView.as_view(),name="gst-config-setting")
     
     ############################# Seller Address ##########################

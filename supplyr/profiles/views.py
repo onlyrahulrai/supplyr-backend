@@ -468,7 +468,7 @@ class ApplyForApproval(views.APIView,UserInfoMixin):
         response = self.inject_user_info({'success': True}, request.user)
         return Response(response)
     
-class GstConfigSettingAPIView(generics.CreateAPIView,generics.RetrieveAPIView):
+class GstConfigSettingAPIView(generics.CreateAPIView,generics.RetrieveAPIView,UserInfoMixin):
     permission_classes = [IsApproved]
     serializer_class = SellerGstConfigSettingSerializer
     queryset = SellerProfile.objects.filter(is_active=True)
@@ -510,7 +510,10 @@ class GstConfigSettingAPIView(generics.CreateAPIView,generics.RetrieveAPIView):
             serializer = self.serializer_class(seller,data=data,partial=True)
             if serializer.is_valid():
                 serializer.save()
-                return Response(serializer.data)
+                
+                response = self.inject_user_info({'success': True}, request.user)
+                
+                return Response(response)
             return Response(serializer.errors)
     
     

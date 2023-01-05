@@ -59,12 +59,13 @@ class SellerProfile(models.Model):
     gst_number = models.CharField(max_length=20, blank=True, null=True)
     pan_number = models.CharField(max_length=15, blank=True, null=True)
     tan_number = models.CharField(max_length=15, blank=True, null=True)
-    
     is_gst_enabled = models.BooleanField(default=False)
+    
+    product_price_includes_taxes = models.BooleanField(default=False)
+    
     default_gst_rate = models.DecimalField(default=0,max_digits=5, decimal_places=2)
     default_currency = EnumField(default="INR",choices=CURRENCY_CHOICES)
     currency_representation = models.CharField(default="₹",max_length=75,null=True,blank=True)
-    
     gst_certificate = models.FileField(upload_to=get_gst_upload_path, max_length=150, blank=True, null=True)
     operational_fields = models.ManyToManyField('inventory.Category', blank=True)
     invoice_prefix = models.CharField(max_length=12,null=True,blank=True)
@@ -101,7 +102,7 @@ class SellerProfile(models.Model):
         return {
             "translations":{"quantity": "Quantity"},
             "invoice_options":{
-                "generate_at_status":self.default_order_status,
+                "generate_at_status":next(filter(lambda option: not option.get("editing_allowed"), self.order_status_options)).get("slug","awaiting_approval"),
                 "template":self.invoice_template
             }
         }

@@ -7,6 +7,7 @@ from supplyr.core.model_utils import get_auto_category_ORM_filters, get_wight_in
 
 from .models import AutoCategoryRule, Product, Tags, User, Variant, ProductImage, Category, Vendors,BuyerDiscount
 from supplyr.profiles.models import BuyerAddress, BuyerProfile, BuyerSellerConnection, SellerProfile,AddressState
+from supplyr.profiles.serializers import *
 from django.conf import settings
 from django.db import transaction
 from django.db.models.functions import Coalesce
@@ -469,7 +470,11 @@ class VariantDetailsSerializer(serializers.ModelSerializer):
         seller_name = serializers.CharField(source='owner.business_name')
         class Meta:
             model = Product
-            fields = ["id",'title',"slug", 'has_multiple_variants', 'id', 'seller_name',"allow_inventory_tracking","allow_overselling"]
+            fields = ["id",'title',"slug", 'has_multiple_variants','sub_categories','id', 'seller_name',"allow_inventory_tracking","allow_overselling"]
+            
+    title = serializers.SerializerMethodField()
+    def get_title(self,variant):
+        return variant.product.title
 
     featured_image = serializers.SerializerMethodField()
     def get_featured_image(self, variant):
@@ -481,9 +486,13 @@ class VariantDetailsSerializer(serializers.ModelSerializer):
         
         return None
 
-    # product_title = serializers.SerializerMethodField()
-    # def get_product_title(self, variant):
-    #     return variant.product.title
+    price = serializers.SerializerMethodField()
+    def get_price(self, variant):
+        return float(variant.price)
+    
+    actual_price = serializers.SerializerMethodField()
+    def get_actual_price(self, variant):
+        return float(variant.actual_price)
 
     product = ProductShortDetailsSerializer()
 
@@ -820,7 +829,7 @@ class BuyerAddressSerializerForSeller(serializers.ModelSerializer):
         state = None
         if address := buyer_address.state:
             state = address.name
-        return state
+        return AddressStatesSerializer(buyer_address.state).data
     
     class Meta:
         model = BuyerAddress
@@ -847,9 +856,13 @@ class ExclusiveProductDiscountDetailSerializer(serializers.ModelSerializer):
                 return product.featured_image.image_md.url
             return None
         
+        variants = serializers.SerializerMethodField()
+        def get_variants(self,product):
+            return product.variants.filter(is_active=True).values_list("id",flat=True)
+        
         class Meta:
             model = Product
-            fields = ["id",'title',"featured_image"]
+            fields = ["id",'title',"featured_image","variants"]
             
         
     product = ProductShortDetailsSerializer()
@@ -923,7 +936,7 @@ class AddressStatesSerializer(serializers.ModelSerializer):
     class Meta:
         model = AddressState
         fields = '__all__'
-    
+        
 class SellerBuyersConnectionSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     def get_name(self,buyer):

@@ -19,6 +19,11 @@ urlpatterns = [
         name='order'
     ),
     path(
+        '<str:pk>/mark-as-paid/',
+        MarkAsOrderPaidView.as_view(),
+        name='mark-as-paid'
+    ),
+    path(
         'list/',
         OrderListView.as_view(),
         name='orders_list'
