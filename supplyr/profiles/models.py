@@ -84,6 +84,9 @@ class SellerProfile(models.Model):
     def default_order_status(self):
         return self.user_settings.get('order_options').get("default_order_status") if self.user_settings.get("order_options",{}).get("default_order_status") else min(self.order_status_options,key=lambda option:option["sequence"]).get("slug","awaiting_approval")
     
+    def get_invoice_prefix(self,invoice_id):
+        return f'{self.invoice_prefix}{invoice_id}/21-22' if self.invoice_prefix else f'{invoice.id}/21-22'
+    
     @property
     def invoice_options(self):
         return self.user_settings.get("invoice_options") if ('generate_at_status' in self.user_settings.get("invoice_options")) and ("template" in self.user_settings.get("invoice_options")) else {"generate_at_status":"dispatched",

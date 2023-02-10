@@ -128,9 +128,10 @@ class Invoice(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
-    
     class Meta:
         verbose_name_plural = 'Invoices'
+    
+        
 
 
 class OrderStatusVariable(models.Model):
@@ -183,6 +184,7 @@ class Ledger(models.Model):
         ORDER_CREATED="order_created","Order Created"
         PAYMENT_ADDED="payment_added","Payment Added"
         ORDER_CANCELLED="order_cancelled","Order Cancelled"
+        ORDER_RETURNED = "order_returned","Order Returned"
         ORDER_PAID = "order_paid","Order Paid"
     
     transaction_type  = EnumField(choices=TransactionTypeChoice.choices,default=TransactionTypeChoice.ORDER_CREATED)

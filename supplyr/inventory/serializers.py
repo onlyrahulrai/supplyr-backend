@@ -901,15 +901,15 @@ class BuyerSellerConnectionSerializers(serializers.ModelSerializer):
 class BuyerDetailForDiscountSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     def get_name(self,buyer):
-        return buyer.owner.name
+        return buyer.owner.name if buyer.owner else None
     
     email = serializers.SerializerMethodField()
     def get_email(self,buyer):
-        return buyer.owner.email
+        return buyer.owner.email if buyer.owner else None
     
     mobile_number = serializers.SerializerMethodField()
     def get_mobile_number(self,buyer):
-        return buyer.owner.mobile_number
+        return buyer.owner.mobile_number if buyer.owner else None
     
     generic_discount = serializers.SerializerMethodField()
     def get_generic_discount(self,buyer):

@@ -153,13 +153,14 @@ class OrdersBulkUpdateView(APIView):
             
             order_filters = [option["slug"] for option in profile.order_status_options if new_status in option["transitions_possible"]]
             
-            print(" ----- Order Filters ----- ",order_filters)
             
-            orders = Order.objects.filter(pk__in = order_ids, seller=profile, is_active=True,status__in=order_filters).exclude(status__in=[Order.OrderStatusChoice.CANCELLED, new_status])
+            orders = Order.objects.filter(pk__in = order_ids, seller=profile, is_active=True,status__in=order_filters).exclude(status__in=[new_status])
+            
 
             with transaction.atomic():
                 _orders = list(orders)  # As the 'orders' queryset will remove the current orders after getting updated below, and no orders will be there because of status=new_status exclusion. Hence made a list to retain fetched orders list, to add history entry
                 orders.update(status = new_status)
+                
                 for order in _orders:
                     OrderHistory.objects.create(order = order, status = new_status, created_by = request.user, seller = profile)
                     
@@ -168,15 +169,13 @@ class OrdersBulkUpdateView(APIView):
                     if prev_ledger := Ledger.objects.filter(buyer=order.buyer,seller=order.seller).order_by("created_at").last():
                             prev_ledger_balance = prev_ledger.balance
                             
-                    print(" ---- Leader to generate ---- ",profile.invoice_options.get("generate_at_status","processed"))
-                            
                     if new_status == profile.invoice_options.get("generate_at_status","processed"):
-                        ledger,created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount ))
-                        
+                        ledger = Ledger.objects.create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount ))    
+                    
                     elif new_status == Order.OrderStatusChoice.CANCELLED or new_status == Order.OrderStatusChoice.RETURNED:
-                        balance = (prev_ledger_balance + order.total_amount) if order.is_paid else (prev_ledger_balance - order.total_amount)
-                        
-                        ledger,created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CANCELLED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=balance)
+                        transaction_type = Ledger.TransactionTypeChoice.ORDER_CANCELLED if (Ledger.TransactionTypeChoice.ORDER_CANCELLED == new_status) else Ledger.TransactionTypeChoice.ORDER_RETURNED
+
+                        ledger = Ledger.objects.create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CANCELLED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance + order.total_amount))
                     ######## ----- Ledger End ----- ########
 
                 if operation == 'change_status_with_variables':
