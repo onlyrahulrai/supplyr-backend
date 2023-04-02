@@ -3,6 +3,8 @@ from django.db import models
 from django_extensions.db.fields import AutoSlugField
 from django_mysql.models import EnumField
 from supplyr.profiles.models import SellerProfile
+from functools import reduce
+from num2words import num2words
 
 class Order(models.Model):
 
@@ -49,6 +51,13 @@ class Order(models.Model):
             if im := item.featured_image:
                 return im
 
+    @property
+    def subtotal(self):
+        return sum([(item.price * item.quantity) for item in self.items.all()])
+    
+    @property
+    def total_amount_in_text(self):
+        return num2words(self.total_amount)
 
     class Meta:
 
@@ -59,7 +68,6 @@ class Order(models.Model):
         
     def __str__(self):
         return f"{self.id} {self.buyer} {self.seller}"
-
 
 class OrderItem(models.Model):
 
@@ -81,6 +89,10 @@ class OrderItem(models.Model):
     @property
     def tax_amount(self):
         return (self.igst + self.cgst + self.sgst)
+    
+    @property
+    def total_amount(self):
+        return ((self.quantity * self.price) - self.extra_discount) if self.order.seller.product_price_includes_taxes else (self.taxable_amount + self.tax_amount)
 
     @property
     def featured_image(self):
@@ -121,19 +133,16 @@ class OrderHistory(models.Model):
         verbose_name_plural = 'Order Histories'
         ordering = ('-created_at',)
         
-        
 class Invoice(models.Model):
     invoice_number = models.CharField(max_length=50,null=True,blank=True)
     order = models.ForeignKey(Order,on_delete=models.CASCADE,related_name="invoices")
+    invoice_pdf  = models.FileField(upload_to='invoice_pdfs/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         verbose_name_plural = 'Invoices'
     
-        
-
-
 class OrderStatusVariable(models.Model):
     class DataTypeChoices(models.TextChoices):
         TEXT = 'text', 'Text'
@@ -151,11 +160,6 @@ class OrderStatusVariable(models.Model):
 
     def __str__(self):
         return self.name
-
-# class OrderStatusVariableSellerMapping(models.Model):
-#     variable = models.ForeignKey(OrderStatusVariable, related_name="status_variable_mappings")
-#     seller = models.ForeignKey(SellerProfile, related_name="order_status_variable_mappings")
-#     created_at = models.DateTimeField(auto_now_add=True)
 
 class OrderStatusVariableValue(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='status_variable_values')

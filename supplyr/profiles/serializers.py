@@ -109,6 +109,7 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
             "tags",
             "addresses",
             'user_settings',
+            "invoice_template",
             "order_status_variables",
             "vendors",
             'sub_categories',
@@ -319,6 +320,7 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
             'default_gst_rate',
             'gst_number',
             'user_settings',
+            'invoice_template',
             'pan_number',
             "default_currency",
             "currency_representation",
@@ -329,7 +331,10 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
 
         read_only_fields = [
             'gst_certificate',
-            ]
+            'owner_name',
+            'owner_email',
+            'owner_phone'
+        ]
 
         extra_kwargs = {
             'business_name': {

@@ -1,0 +1,27 @@
+<div className="p-1 border-top-0" style="min-height: 180px">
+    <small>
+      <strong class="text-secondary fw-semibold">Customer Info: </strong>
+    </small>&nbsp;
+    <br />
+    <div>
+      <span>
+        <small class="text-secondary fw-semibold">{{invoice.order.address.name}}</small>
+      </span>
+      <br />
+      <span>
+        <small class="text-secondary fw-semibold">{{invoice.order.address.line1}}</small>
+      </span>
+      <br />
+      <span>
+        <small class="text-secondary fw-semibold">{{invoice.order.address.line2}}</small>
+      </span>
+      <br />
+      <span>
+        <small class="text-secondary fw-semibold">{{invoice.order.address.city}} - {{invoice.order.address.pin}}</small>
+      </span>
+      <br />
+      <span>
+        <small class="text-secondary fw-semibold">{{invoice.order.address.state.name}}</small>
+      </span>
+    </div>
+  </div>

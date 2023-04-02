@@ -184,7 +184,6 @@ class Product(Model):
             return (len(self.active_variants_prefetched) > 0) and self.active_variants_prefetched[0]
         return self.variants.filter(is_active=True).first()
     
-    
 class AutoCategoryRule(models.Model):
     attribute_name_choices = (
         ("product_title","Product title"),
@@ -215,7 +214,6 @@ class AutoCategoryRule(models.Model):
     attribute_unit = EnumField(choices=Product.WeightUnit.choices,null=True,blank=True)
     comparison_type = EnumField(choices=comparison_type_choices,null=True,blank=True)
     is_active = models.BooleanField(default=True)
-
 
 class Variant(Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
@@ -255,7 +253,6 @@ class Variant(Model):
         if self.option3_name:
             desc += f', {self.option3_name}: {self.option3_value}'
         return desc
-
 
 class ProductImage(Model):
 

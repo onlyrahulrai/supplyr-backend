@@ -1,0 +1,154 @@
+    <!-- HTML Content -->
+    <div>
+        <table>
+                <tr>
+                    <th></th>    
+                    <th></th>    
+                    <th></th>    
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ccc;padding: 0px 3px;">
+                        {% include 'invoice/exporter.html' %}
+                    </td>
+                    <td colspan="2">
+                        <table>
+                            <tr>
+                                <th></th>    
+                                <th></th>    
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 3px;border-top: 1px solid #ccc;border-right: 1px solid #ccc;">
+                                    <div className="border">
+                                        <small>
+                                            <strong>Invoice No.</strong> - {{invoice.invoice_number}}
+                                        </small>
+                                        <div>
+                                            <small>
+                                                <strong>DATE -</strong> &nbsp; {{invoice.created_at}}
+                                            </small>
+                                            <br />
+                                            <br />
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="padding: 6px 3px;border-top: 1px solid #ccc;border-right: 1px solid #ccc;">
+                                    <small>
+                                        <strong>Exporter's Ref:</strong>
+                                        <br>
+                                    </small>
+                                </td>
+                                <tr>
+                                    <td colspan="2" style="border-top: 1px solid #ccc;border-right: 1px solid #ccc;border-bottom: 1px solid #ccc; padding: 6px 3px;">
+                                        <small>
+                                            <strong>Buyer's Order No. - </strong> {{invoice.order.order_number}}
+                                        </small>
+                                        <div>
+                                            <small>
+                                                <strong>
+                                                    DATE - 
+                                                </strong> {{invoice.order.created_at}}
+                                            </small>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" style="padding: 6px 3px;border-right: 1px solid #ccc;border-bottom: 1px solid #ccc;">
+                                        <small>
+                                            <strong>Other Reference (s)</strong>
+                                        </small>
+                                    </td>
+                                </tr>
+                            </tr>    
+                        </table>
+                    </td>
+                </tr>
+        </table>
+
+        <table style="border-right:1px solid #ccc;border-left: 1px solid #ccc;">
+            <tr>
+                <th></th>    
+                <th></th>    
+                <th></th>    
+            </tr>
+            <tr>
+                <td style="padding: 6px 3px;">
+                    {% include 'invoice/consignee.html' %}
+                </td>
+                <td colspan="2">
+                    <table>
+                        <tr>     
+                            <th></th>    
+                            <th></th>    
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="padding:8px 3px;border-bottom: 1px solid #ccc;">
+                                <small> IEC. NO. ---- </small>, GSTIN: ---- <br />
+                                <strong>Buyer (If other than consignee)</strong>    
+                            </td>    
+                        </tr>
+                        <tr>
+                            <td style="padding:8px 3px;border-right: 1px solid #ccc;">
+                                <strong>Country of Origin</strong> <br />    
+                                <small>of goods</small> <br />
+                                <strong>{{invoice.order.seller.seller_addresses.first.state.country}}</strong>
+                            </td>    
+                            <td style="padding:8px 3px">
+                                <strong>Country of final</strong> <br />
+                                <small>Destination</small> <br />
+                                <strong>{{invoice.order.address.state.country}}</strong>
+                            </td>    
+                        </tr>
+                    </table>    
+                </td>
+            </tr>    
+        </table>
+
+        <table style="border-top: 1px solid #ccc;border-bottom: 1px solid #ccc;">
+            <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+            <tr>
+                <td  colspan="2">
+                    <table>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>   
+                        <tr>
+                            <td style="padding:9px 3px;border-left: 1px solid #ccc;border-right:1px solid #ccc;">Pre-Carriage by</td>    
+                            <td colspan="2" style="padding:9px 3px;border-right: 1px solid #ccc;">Place of Receipt</td>    
+                        </tr> 
+                        <tr>
+                            <td style="padding:9px 3px;border:1px solid #ccc;">Vessel No.</td>    
+                            <td colspan="2" style="padding:9px 3px;border: 1px solid #ccc;">Port of Loading</td>    
+                        </tr> 
+                        <tr>
+                            <td style="padding:9px 3px;border-left: 1px solid #ccc;border-right:1px solid #ccc">Port of Disch.</td>    
+                            <td colspan="2" style="padding:9px 3px;border-right:1px solid #ccc;">
+                                <strong>Final Destinat.</strong><br>
+                                <strong>
+                                    <small>Rahul Rai (Noida)</small>    
+                                </strong>    
+                            </td>    
+                        </tr> 
+                    </table>
+                </td>
+                <td style="padding:9px 3px;border-right: 1px solid #ccc;">
+                    <strong>Terms of Delivery & Payment:</strong> <br>
+                    <strong><small>C I F</small></strong><br>
+                    <strong>120 DAYS FROM THE DATE OF B/L ON D/A</strong>
+                </td>
+            </tr>
+        </table>
+
+        <br>
+        
+        {% include "invoice/products.html" %}
+
+        <br>
+
+        {% include "invoice/footer.html" %}
+    </div>

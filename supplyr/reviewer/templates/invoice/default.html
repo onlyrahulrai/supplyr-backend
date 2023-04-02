@@ -1,0 +1,56 @@
+    <!-- HTML Content -->
+	<div>
+		<table style="border-bottom: 1px solid #000;">
+				<tr>
+					<td>
+						{% include 'invoice/exporter.html' %}
+					</td>
+					<td class="border-left border-right" style="padding-left:2pt;">
+						<div class="p-1">
+							<small>
+							<strong class="text-secondary fw-semibold"
+								>Invoice No.</strong
+							>
+							- {{invoice.invoice_number}}
+							</small>
+							<div>
+							<small>
+								<strong class="text-secondary fw-semibold"> DATE </strong> -
+								&nbsp; {{invoice.created_at}}
+							</small>
+							<br />
+							<br />
+							</div>
+						</div>
+
+						<hr>
+
+
+						<div>
+							<small>
+								<strong class="text-secondary fw-semibold">Buyer's Order No.</strong>
+								- {{invoice.order.order_number}}
+							</small>
+							<div>
+								<small>
+									<strong class="text-secondary fw-semibold"> DATE </strong> -
+									{{invoice.order.created_at}}
+								</small>
+							</div>
+							<br />
+						</div>
+					</td>
+					<td style="padding-left:2pt;">
+						{% include 'invoice/consignee.html' %}
+					</td>
+				</tr>
+		</table>
+
+		<br>
+
+		{% include "invoice/products.html" %}
+
+		<br>
+
+        {% include "invoice/footer.html" %}
+	</div>

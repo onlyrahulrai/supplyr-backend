@@ -16,7 +16,9 @@ from rest_framework.generics import RetrieveAPIView
 from supplyr.inventory.serializers import ProductListSerializer
 from supplyr.inventory.models import Product,ProductImage
 from supplyr.core.app_config import ADD_LEDGER_ENTRY_ON_MARK_ORDER_PAID
-
+from supplyr.core.functions import render_to_pdf
+from io import BytesIO
+from django.core.files import File
 
 class OrderView(mixins.ListModelMixin,
                   mixins.CreateModelMixin,
@@ -170,7 +172,23 @@ class OrdersBulkUpdateView(APIView):
                             prev_ledger_balance = prev_ledger.balance
                             
                     if new_status == profile.invoice_options.get("generate_at_status","processed"):
-                        ledger = Ledger.objects.create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount ))    
+                        ledger,ledger_created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount ))
+                        
+                        if ledger_created:
+                            invoice,invoice_created = Invoice.objects.get_or_create(order=order) 
+                                       
+                            invoice_number = profile.get_invoice_prefix(invoice.id)
+                    
+                            invoice_name = f"{invoice_number}.pdf"
+                    
+                            if invoice_created:
+                                invoice.invoice_number = invoice_number
+                                
+                                invoice_pdf = render_to_pdf('invoice/index.html',{"invoice":invoice})
+                                
+                                invoice.invoice_pdf.save(invoice_name, File(BytesIO(invoice_pdf.content)))
+                                
+                                invoice.save()
                     
                     elif new_status == Order.OrderStatusChoice.CANCELLED or new_status == Order.OrderStatusChoice.RETURNED:
                         transaction_type = Ledger.TransactionTypeChoice.ORDER_CANCELLED if (Ledger.TransactionTypeChoice.ORDER_CANCELLED == new_status) else Ledger.TransactionTypeChoice.ORDER_RETURNED
@@ -240,7 +258,6 @@ class OrderCancellationView(APIView, APISourceMixin):
 
         return Response({'success': True, 'order_data': order_data})
 
-
 class PaymentCreateAPIView(generics.GenericAPIView,mixins.CreateModelMixin):
     serializer_class = PaymentSerializer
     permission_classes = [IsApproved]
@@ -275,3 +292,12 @@ class OrderStatusVariableAPIView(generics.GenericAPIView,mixins.UpdateModelMixin
     
     def put(self, request,*args,**kwargs):
         return self.partial_update(request,*args,**kwargs)
+
+class InvoiceTemplateView(generics.GenericAPIView,mixins.ListModelMixin):
+    permission_classes = [IsApproved]
+    serializer_class = InvoiceTemplateSerializer
+    queryset = InvoiceTemplate.objects.all()
+    pagination_class = None
+    
+    def get(self,request,*args,**kwargs):
+        return self.list(request,*args,**kwargs)
