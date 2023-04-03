@@ -24,7 +24,7 @@
         
         <tr>
             <td>
-                {{item.id}}
+                {{forloop.counter}}
             </td>
             <td colspan="2">
                 <div className="d-flex align-items-center">
@@ -35,14 +35,14 @@
                 {{item.quantity}}
             </td>
             <td>
-                {{item.taxable_amount|apply_seller_currency:invoice}}
+                <span>{{item.taxable_amount|apply_seller_currency:invoice}}</span>
             </td>
             <td>
-                {{item.tax_amount|apply_seller_currency:invoice}}
+                <span>{{item.tax_amount|apply_seller_currency:invoice}}</span>
             </td>
 
             <td>
-                {{item.total_amount|apply_seller_currency:invoice}}
+                <span>{{item.total_amount|apply_seller_currency:invoice}}</span>
             </td>
         </tr>
 
@@ -56,17 +56,17 @@
             <td></td>
             <td>
                 <strong class="text-secondary fw-semibold">
-                    {{invoice.order.taxable_amount|apply_seller_currency:invoice}}
+                    <span>{{invoice.order.taxable_amount|apply_seller_currency:invoice}}</span>
                 </strong>
             </td>
             <td>
                 <strong class="text-secondary fw-semibold">
-                    {{invoice.order.tax_amount|apply_seller_currency:invoice}}
+                    <span>{{invoice.order.tax_amount|apply_seller_currency:invoice}}</span>
                 </strong>
             </td>
             <td>
                 <strong class="text-secondary fw-semibold">
-                    {{invoice.order.total_amount|apply_seller_currency:invoice}}
+                    <span>{{invoice.order.total_amount|apply_seller_currency:invoice}}</span>
                 </strong>
             </td>
         </tr>
