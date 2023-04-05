@@ -1,27 +1,32 @@
 <div class="p-1">
-    <small class="text-secondary fw-semibold"><strong>Seller Info:</strong> </small>&nbsp;
+  <strong class="text-secondary">Seller Info:</strong>&nbsp;
+  <br />
+
+  <div>
+    <span class="text-secondary normal">{{invoice.order.seller.business_name}}</span>
+
     <br />
-  
-    <div>
-      <small class="text-secondary fw-semibold">{{invoice.order.seller.business_name}}</small
-      >
-  
-      <br />
-  
-      <small class="text-secondary fw-semibold">{{invoice.order.seller.seller_addresses.first.line1}}</small
-      >
-  
-      <br />
-  
-      <small class="text-secondary fw-semibold">{{invoice.order.seller.seller_addresses.first.line2}}</small
-      >
-  
-      <br />
-      <small class="text-secondary fw-semibold">{{invoice.order.seller.seller_addresses.first.city}} - {{invoice.order.seller.seller_addresses.first.pin_code}}</small>
-  
-      <br />
-  
-      <small class="text-secondary fw-semibold">{{invoice.order.seller.seller_addresses.first.state.name}}</strong></small>
-    </div>
+
+    <span class="text-secondary normal"
+      >{{invoice.order.seller.seller_addresses.first.line1}}</span
+    >
+
+    <br />
+
+    <span class="text-secondary normal"
+      >{{invoice.order.seller.seller_addresses.first.line2}}</span
+    >
+
+    <br />
+    <span class="text-secondary normal"
+      >{{invoice.order.seller.seller_addresses.first.city}} -
+      {{invoice.order.seller.seller_addresses.first.pin_code}}</span
+    >
+
+    <br />
+
+    <span class="text-secondary normal"
+      >{{invoice.order.seller.seller_addresses.first.state.name}}</span
+    >
   </div>
-  
+</div>

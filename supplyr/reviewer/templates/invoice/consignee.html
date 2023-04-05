@@ -1,27 +1,18 @@
 <div className="p-1 border-top-0" style="min-height: 180px">
-    <small>
-      <strong class="text-secondary fw-semibold">Customer Info: </strong>
-    </small>&nbsp;
+  <strong class="text-secondary">Customer Info: </strong>
+  &nbsp;
+  <br />
+  <div>
+    <span class="text-secondary normal">{{invoice.order.address.name}} </span>
     <br />
-    <div>
-      <span>
-        <small class="text-secondary fw-semibold">{{invoice.order.address.name}}</small>
-      </span>
-      <br />
-      <span>
-        <small class="text-secondary fw-semibold">{{invoice.order.address.line1}}</small>
-      </span>
-      <br />
-      <span>
-        <small class="text-secondary fw-semibold">{{invoice.order.address.line2}}</small>
-      </span>
-      <br />
-      <span>
-        <small class="text-secondary fw-semibold">{{invoice.order.address.city}} - {{invoice.order.address.pin}}</small>
-      </span>
-      <br />
-      <span>
-        <small class="text-secondary fw-semibold">{{invoice.order.address.state.name}}</small>
-      </span>
-    </div>
+    <span class="text-secondary normal">{{invoice.order.address.line1}} </span>
+    <br />
+    <span class="text-secondary normal">{{invoice.order.address.line2}}</span>
+    <br />
+    <span class="text-secondary normal"
+      >{{invoice.order.address.city}} - {{invoice.order.address.pin}}
+    </span>
+    <br />
+    <span class="text-secondary normal">{{invoice.order.address.state.name}} </span>
   </div>
+</div>

@@ -4,42 +4,46 @@
 <html>
 <head>
     <meta charset="UTF-8" >
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">   
-    
-    <style>
-        @page {
-            size: a4 portrait;
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">  
+    <link rel="stylesheet" href="./static/css/invoice.css"> 
 
-            @frame header_frame {     
-                -pdf-frame-content: header_content;
-                left: 44pt; width: 512pt; top: 50pt; height: 40pt;
-            }
-            @frame content_frame {          /* Content Frame */
-                left: 44pt; width: 512pt; top: 90pt; height: 632pt;
-            }
-            @frame footer_frame {           /* Another static Frame */
-                -pdf-frame-content: footer_content;
-                left: 44pt; width: 512pt; top: 772pt; height: 20pt;
-            }
-        }
+    {% if invoice.order.seller.invoice_template.slug == 'plain' %}
+        <style>
+            @page {
+                size: a5 portrait;
 
-        span{
-            font-family: STSong-Light;
-        }
+                @frame header_frame {     
+                    -pdf-frame-content: header_content;
+                    left: 16pt; width: 388pt; top: 18pt; height: 15pt;
+                }
+                @frame content_frame {          /* Content Frame */
+                    left: 16pt; width: 388pt; top: 48pt; height: 518pt;
+                }
+                @frame footer_frame {           /* Another static Frame */
+                    -pdf-frame-content: footer_content;
+                    left: 16pt; width: 388pt; top: 578pt; height: 20pt;
+                }
+            }
+        </style>
+    {% else %}
+        <style>
+            @page {
+                size: a4 portrait;
 
-        .text-center{
-            text-align: center !important;
-        }
-        .border-left{
-            border-left: 1px solid #000;
-        }
-        .border-right{
-            border-right:1px solid #000;
-        }
-        .text-left{
-            text-align: left;
-        }
-    </style>
+                @frame header_frame {     
+                    -pdf-frame-content: header_content;
+                    left: 44pt; width: 512pt; top: 50pt; height: 20pt;
+                }
+                @frame content_frame {          /* Content Frame */
+                    left: 44pt; width: 512pt; top: 90pt; height: 728pt;
+                }
+                @frame footer_frame {           /* Another static Frame */
+                    -pdf-frame-content: footer_content;
+                    left: 44pt; width: 512pt; top: 812pt; height: 20pt;
+                }
+            }
+        </style>
+    {% endif %}
 </head>
 
 <body>
@@ -56,9 +60,9 @@
     {% block content %}
     <!-- HTML Content -->
         {% if invoice.order.seller.invoice_template %}
-            {{ invoice.order.seller.invoice_template.code|do_something:invoice }}
+        {{ invoice.order.seller.invoice_template.code|do_something:invoice }}
         {% else %}
-            {% include 'invoice/cross-border-template.html' %}
+        {% include 'invoice/default.html' %}
         {% endif %}
     {% endblock content %}
 </body>

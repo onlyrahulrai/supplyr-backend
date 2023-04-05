@@ -17,45 +17,34 @@
                                 <th></th>    
                             </tr>
                             <tr>
-                                <td style="padding: 6px 3px;border-top: 1px solid #ccc;border-right: 1px solid #ccc;">
+                                <td style="padding: 6px 1px 6px 2px;border-top: 1px solid #ccc;border-right: 1px solid #ccc;">
                                     <div className="border">
-                                        <small>
-                                            <strong>Invoice No.</strong> - {{invoice.invoice_number}}
-                                        </small>
+                                        <strong class="text-secondary normal">Invoice No -</strong> 
+                                         {{invoice.invoice_number}}
                                         <div>
-                                            <small>
-                                                <strong>DATE -</strong> &nbsp; {{invoice.created_at}}
-                                            </small>
+                                            <strong class="text-secondary normal">DATE -</strong> &nbsp; {{invoice.created_at}}
                                             <br />
                                             <br />
                                         </div>
                                     </div>
                                 </td>
                                 <td style="padding: 6px 3px;border-top: 1px solid #ccc;border-right: 1px solid #ccc;">
-                                    <small>
-                                        <strong>Exporter's Ref:</strong>
-                                        <br>
-                                    </small>
+                                    <strong class="text-secondary normal">Exporter's Ref:</strong>
+                                    <br>
                                 </td>
                                 <tr>
                                     <td colspan="2" style="border-top: 1px solid #ccc;border-right: 1px solid #ccc;border-bottom: 1px solid #ccc; padding: 6px 3px;">
-                                        <small>
-                                            <strong>Buyer's Order No. - </strong> {{invoice.order.order_number}}
-                                        </small>
+                                        <strong class="text-secondary normal">Buyer's Order No. - </strong> {{invoice.order.order_number}}
                                         <div>
-                                            <small>
-                                                <strong>
+                                            <strong class="text-secondary normal">
                                                     DATE - 
-                                                </strong> {{invoice.order.created_at}}
-                                            </small>
+                                            </strong> {{invoice.order.created_at}}
                                         </div>
                                     </td>
                                 </tr>
                                 <tr>
                                     <td colspan="2" style="padding: 6px 3px;border-right: 1px solid #ccc;border-bottom: 1px solid #ccc;">
-                                        <small>
-                                            <strong>Other Reference (s)</strong>
-                                        </small>
+                                        <strong class="text-secondary normal">Other Reference (s)</strong>
                                     </td>
                                 </tr>
                             </tr>    
@@ -118,15 +107,25 @@
                             <th></th>
                         </tr>   
                         <tr>
-                            <td style="padding:9px 3px;border-left: 1px solid #ccc;border-right:1px solid #ccc;">Pre-Carriage by</td>    
-                            <td colspan="2" style="padding:9px 3px;border-right: 1px solid #ccc;">Place of Receipt</td>    
+                            <td style="padding:9px 3px;border-left: 1px solid #ccc;border-right:1px solid #ccc;">
+                                <strong>Pre-Carriage by</strong>
+                            </td>    
+                            <td colspan="2" style="padding:9px 3px;border-right: 1px solid #ccc;">
+                                <strong>Place of Receipt</strong>
+                            </td>    
                         </tr> 
                         <tr>
-                            <td style="padding:9px 3px;border:1px solid #ccc;">Vessel No.</td>    
-                            <td colspan="2" style="padding:9px 3px;border: 1px solid #ccc;">Port of Loading</td>    
+                            <td style="padding:9px 3px;border:1px solid #ccc;">
+                                <strong>Vessel No.</strong>
+                            </td>    
+                            <td colspan="2" style="padding:9px 3px;border: 1px solid #ccc;">
+                                <strong>Port of Loading</strong>
+                            </td>    
                         </tr> 
                         <tr>
-                            <td style="padding:9px 3px;border-left: 1px solid #ccc;border-right:1px solid #ccc">Port of Disch.</td>    
+                            <td style="padding:9px 3px;border-left: 1px solid #ccc;border-right:1px solid #ccc">
+                                <strong> Port of Disch. </strong> 
+                            </td>    
                             <td colspan="2" style="padding:9px 3px;border-right:1px solid #ccc;">
                                 <strong>Final Destinat.</strong><br>
                                 <strong>

@@ -8,7 +8,7 @@
     <tr>
         <td colspan="2">
             <div>
-                <small>Amount Chargeable (In Words)</small>
+                <span>Amount Chargeable (In Words)</span>
                 <br />
                 <strong>- {{invoice.order.total_amount_in_text}}</strong>	
             </div>
@@ -16,18 +16,18 @@
             <br />
             <br />
             <div>
-                <small class="text-secondary fw-semibold">
+                <span class="text-secondary fw-semibold">
                 <u>DECLARATION</u>
-                </small>
+                </span>
                 <br />
-                <small class="text-secondary fw-semibold">
+                <span class="text-secondary fw-semibold">
                     We declare that this invoice shows the actual price of the
                     goods described
-                </small>
+                </span>
                 <br />
-                <small class="text-secondary fw-semibold">
+                <span class="text-secondary fw-semibold">
                     and that all particulars are true and correct.
-                </small>
+                </span>
             </div>
         </td>	
         <td>
@@ -35,31 +35,31 @@
                 <table>
                     <tr>
                         <td style="text-align:left;">Subtotal:</td>
-                        <td><span>{{invoice.order.subtotal|apply_seller_currency:invoice}}</span></td>
+                        <td><span class="amount">{{invoice.order.subtotal|apply_seller_currency:invoice}}</span></td>
                     </tr>	
                     <tr>
                         <td  style="text-align:left;">Discounts:</td>
-                        <td><span>{{invoice.order.total_extra_discount|apply_seller_currency:invoice}}</span></td>
+                        <td><span class="amount">{{invoice.order.total_extra_discount|apply_seller_currency:invoice}}</span></td>
                     </tr>	
                     <tr>
                         <td  style="text-align:left;">Taxable Amount:</td>
-                        <td><span>{{invoice.order.taxable_amount|apply_seller_currency:invoice}}</span></td>
+                        <td><span class="amount">{{invoice.order.taxable_amount|apply_seller_currency:invoice}}</span></td>
                     </tr>	
                     <tr>
                         <td  style="text-align:left;">Total(SGST):</td>
-                        <td><span>{{invoice.order.sgst|apply_seller_currency:invoice}}</span></td>
+                        <td><span class="amount">{{invoice.order.sgst|apply_seller_currency:invoice}}</span></td>
                     </tr>	
                     <tr>
                         <td  style="text-align:left;">Total(CGST):</td>
-                        <td><span>{{invoice.order.cgst|apply_seller_currency:invoice}}</span></td>
+                        <td><span class="amount">{{invoice.order.cgst|apply_seller_currency:invoice}}</span></td>
                     </tr>	
                     <tr>
                         <td  style="text-align:left;">Total(IGST):</td>
-                        <td><span>{{invoice.order.igst|apply_seller_currency:invoice}}</span></td>
+                        <td><span class="amount">{{invoice.order.igst|apply_seller_currency:invoice}}</span></td>
                     </tr>	
                     <tr>
                         <td  style="text-align:left;">Final Amount:</td>
-                        <td><span>{{invoice.order.total_amount|apply_seller_currency:invoice}}</span></td>
+                        <td><span class="amount">{{invoice.order.total_amount|apply_seller_currency:invoice}}</span></td>
                     </tr>	
                 </table>
             </div>	
@@ -67,9 +67,9 @@
             <br>
 
             <div style="border:1px solid;padding: 12px 5px;">
-                <small>
+                <span>
                     Signature & Date:
-                </small>	
+                </span>	
             </div>
         </td>	
     </tr>		
