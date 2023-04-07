@@ -163,13 +163,12 @@ class OrderSerializer(serializers.ModelSerializer):
             if prev_ledger := Ledger.objects.filter(buyer=order.buyer,seller=order.seller).order_by("created_at").last():
                 prev_ledger_balance = prev_ledger.balance
                             
-            if validated_data["seller"].default_order_status == validated_data["seller"].invoice_options.get("generate_at_status","processed"):
+            if validated_data["seller"].default_order_status == validated_data["seller"].invoice_options.get("generate_at_status","delivered"):
                 ledger,ledger_created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount )) 
                 
                 if ledger_created:
                     invoice,invoice_created = Invoice.objects.get_or_create(order=order) 
                    
-                    
                     invoice_number = validated_data['seller'].get_invoice_prefix(invoice.id)
                     
                     invoice_name = f"{invoice_number}.pdf"

@@ -1,3 +1,4 @@
+    {% load extras %}
     <!-- HTML Content -->
     <div>
         <table>
@@ -104,7 +105,6 @@
                         <tr>
                             <th></th>
                             <th></th>
-                            <th></th>
                         </tr>   
                         <tr>
                             <td style="padding:9px 3px;border-left: 1px solid #ccc;border-right:1px solid #ccc;">
@@ -116,21 +116,22 @@
                         </tr> 
                         <tr>
                             <td style="padding:9px 3px;border:1px solid #ccc;">
-                                <strong>Vessel No.</strong>
+                                <strong>Vessel No.</strong><br>
+                                {{invoice.order|get_status_variable_value:"vessel-no"}}
                             </td>    
                             <td colspan="2" style="padding:9px 3px;border: 1px solid #ccc;">
-                                <strong>Port of Loading</strong>
+                                <strong>Port of Loading</strong><br>
+                                {{invoice.order|get_status_variable_value:"port-of-loading"}}  
                             </td>    
                         </tr> 
                         <tr>
                             <td style="padding:9px 3px;border-left: 1px solid #ccc;border-right:1px solid #ccc">
-                                <strong> Port of Disch. </strong> 
+                                <strong> Port of Dispatch </strong> <br>
+                                {{invoice.order|get_status_variable_value:"port-of-dispatch"}}   
                             </td>    
                             <td colspan="2" style="padding:9px 3px;border-right:1px solid #ccc;">
                                 <strong>Final Destinat.</strong><br>
-                                <strong>
-                                    <small>Rahul Rai (Noida)</small>    
-                                </strong>    
+                                {{invoice.order.address.state.country}}  
                             </td>    
                         </tr> 
                     </table>

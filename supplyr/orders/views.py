@@ -171,7 +171,7 @@ class OrdersBulkUpdateView(APIView):
                     if prev_ledger := Ledger.objects.filter(buyer=order.buyer,seller=order.seller).order_by("created_at").last():
                             prev_ledger_balance = prev_ledger.balance
                             
-                    if new_status == profile.invoice_options.get("generate_at_status","processed"):
+                    if new_status == profile.invoice_options.get("generate_at_status","delivered"):
                         ledger,ledger_created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount ))
                         
                         if ledger_created:
