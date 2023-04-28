@@ -99,10 +99,10 @@ class OrderSerializer(serializers.ModelSerializer):
             #Raise exxception
             
 
-            item['actual_price'] = float(item.get("actual_price",variant.price or variant.actual_price))
-            item['price'] =  float(item.get("price",variant.actual_price))
+            item['actual_price'] = float(item.get("actual_price", variant.actual_price))
+            item['price'] =  float(item.get("price",variant.price))
             item['product_variant_id'] = item['variant_id']
-            subtotal += (item['price'] or item['actual_price'])*item['quantity'] #TODO: Remove the later part after 'or', as it might never get executed
+            subtotal += item['price']*item['quantity'] #TODO: Remove the later part after 'or', as it might never get executed
             if not seller_id:
                 seller_id = variant.product.owner_id
             elif seller_id != variant.product.owner_id:

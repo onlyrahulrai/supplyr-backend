@@ -49,7 +49,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     price = serializers.SerializerMethodField()
     def get_price(self, instance):
-        return instance.default_variant.price or instance.default_variant.actual_price
+        return instance.default_variant.price
 
     sale_price_minimum = serializers.SerializerMethodField()
     def get_sale_price_minimum(self, instance):
