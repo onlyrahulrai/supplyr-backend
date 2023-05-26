@@ -1,0 +1,154 @@
+    {% load extras %}
+    <!-- HTML Content -->
+    <div>
+        <table>
+                <tr>
+                    <th></th>    
+                    <th></th>    
+                    <th></th>    
+                </tr>
+                <tr>
+                    <td style="border: 1px solid #ccc;padding: 0px 3px;">
+                        {% include 'invoice/exporter.html' %}
+                    </td>
+                    <td colspan="2">
+                        <table>
+                            <tr>
+                                <th></th>    
+                                <th></th>    
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px 1px 6px 2px;border-top: 1px solid #ccc;border-right: 1px solid #ccc;">
+                                    <div className="border">
+                                        <strong class="text-secondary normal">Invoice No -</strong> 
+                                         {{invoice.invoice_number}}
+                                        <div>
+                                            <strong class="text-secondary normal">DATE -</strong> &nbsp; {{invoice.created_at}}
+                                            <br />
+                                            <br />
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="padding: 6px 3px;border-top: 1px solid #ccc;border-right: 1px solid #ccc;">
+                                    <strong class="text-secondary normal">Exporter's Ref:</strong>
+                                    <br>
+                                </td>
+                                <tr>
+                                    <td colspan="2" style="border-top: 1px solid #ccc;border-right: 1px solid #ccc;border-bottom: 1px solid #ccc; padding: 6px 3px;">
+                                        <strong class="text-secondary normal">Buyer's Order No. - </strong> {{invoice.order.order_number}}
+                                        <div>
+                                            <strong class="text-secondary normal">
+                                                    DATE - 
+                                            </strong> {{invoice.order.created_at}}
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" style="padding: 6px 3px;border-right: 1px solid #ccc;border-bottom: 1px solid #ccc;">
+                                        <strong class="text-secondary normal">Other Reference (s)</strong>
+                                    </td>
+                                </tr>
+                            </tr>    
+                        </table>
+                    </td>
+                </tr>
+        </table>
+
+        <table style="border-right:1px solid #ccc;border-left: 1px solid #ccc;">
+            <tr>
+                <th></th>    
+                <th></th>    
+                <th></th>    
+            </tr>
+            <tr>
+                <td style="padding: 6px 3px;">
+                    {% include 'invoice/consignee.html' %}
+                </td>
+                <td colspan="2">
+                    <table>
+                        <tr>     
+                            <th></th>    
+                            <th></th>    
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="padding:8px 3px;border-bottom: 1px solid #ccc;">
+                                <small> IEC. NO. ---- </small>, GSTIN: ---- <br />
+                                <strong>Buyer (If other than consignee)</strong>    
+                            </td>    
+                        </tr>
+                        <tr>
+                            <td style="padding:8px 3px;border-right: 1px solid #ccc;">
+                                <strong>Country of Origin</strong> <br />    
+                                <small>of goods</small> <br />
+                                <strong>{{invoice.order.seller.seller_addresses.first.state.country}}</strong>
+                            </td>    
+                            <td style="padding:8px 3px">
+                                <strong>Country of final</strong> <br />
+                                <small>Destination</small> <br />
+                                <strong>{{invoice.order.address.state.country}}</strong>
+                            </td>    
+                        </tr>
+                    </table>    
+                </td>
+            </tr>    
+        </table>
+
+        <table style="border-top: 1px solid #ccc;border-bottom: 1px solid #ccc;">
+            <tr>
+                <th></th>
+                <th></th>
+                <th></th>
+            </tr>
+            <tr>
+                <td  colspan="2">
+                    <table>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                        </tr>   
+                        <tr>
+                            <td style="padding:9px 3px;border-left: 1px solid #ccc;border-right:1px solid #ccc;">
+                                <strong>Pre-Carriage by</strong>
+                            </td>    
+                            <td colspan="2" style="padding:9px 3px;border-right: 1px solid #ccc;">
+                                <strong>Place of Receipt</strong>
+                            </td>    
+                        </tr> 
+                        <tr>
+                            <td style="padding:9px 3px;border:1px solid #ccc;">
+                                <strong>Vessel No.</strong><br>
+                                {{invoice.order|get_status_variable_value:"vessel-no"}}
+                            </td>    
+                            <td colspan="2" style="padding:9px 3px;border: 1px solid #ccc;">
+                                <strong>Port of Loading</strong><br>
+                                {{invoice.order|get_status_variable_value:"port-of-loading"}}  
+                            </td>    
+                        </tr> 
+                        <tr>
+                            <td style="padding:9px 3px;border-left: 1px solid #ccc;border-right:1px solid #ccc">
+                                <strong> Port of Dispatch </strong> <br>
+                                {{invoice.order|get_status_variable_value:"port-of-dispatch"}}   
+                            </td>    
+                            <td colspan="2" style="padding:9px 3px;border-right:1px solid #ccc;">
+                                <strong>Final Destinat.</strong><br>
+                                {{invoice.order.address.state.country}}  
+                            </td>    
+                        </tr> 
+                    </table>
+                </td>
+                <td style="padding:9px 3px;border-right: 1px solid #ccc;">
+                    <strong>Terms of Delivery & Payment:</strong> <br>
+                    <strong><small>C I F</small></strong><br>
+                    <strong>120 DAYS FROM THE DATE OF B/L ON D/A</strong>
+                </td>
+            </tr>
+        </table>
+
+        <br>
+        
+        {% include "invoice/products.html" %}
+
+        <br>
+
+        {% include "invoice/footer.html" %}
+    </div>

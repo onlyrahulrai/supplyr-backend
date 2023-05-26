@@ -1,0 +1,59 @@
+<!-- HTML Content -->
+<div>
+    <table>
+        <tr>
+            <th></th>
+            <th></th>
+        </tr>
+        <tr>
+          <td style="border: 1px solid #000;padding: 3px;">
+            <div>
+                    <span class="normal">
+                        <strong class="text-secondary normal">Buyer's Order No.</strong> -
+                        {{invoice.order.order_number}}
+                    </span>
+                    <br>
+                    <span class="normal">
+                        <strong class="text-secondary normal">Order DATE -</strong>&nbsp;
+                        {{invoice.order.created_at}}
+                    </span>
+            </div>
+          </td>
+          <td style="padding: 0 3px;border: 1px solid #000;">
+            <div>
+                <span class="normal">
+                    <strong class="text-secondary normal">Invoice No.</strong> -
+                    {{invoice.invoice_number}}
+                </span>
+                <br>
+                <span class="normal">
+                    <strong class="text-secondary normal">Invoice DATE -</strong>
+                    &nbsp; {{invoice.created_at}}
+                </span> 
+                
+            </div>
+          </td>
+        </tr>
+    </table>
+  <table>
+    <tr
+      style="
+        border-top: 1px solid #000;
+        padding: 6px 0;
+        border-bottom: 1px solid #000;
+      "
+    >
+      <td style="border-right: 1px solid #000;border-left: 1px solid #000;padding: 3px;">{% include 'invoice/exporter.html' %}</td>
+      <td style="padding-left: 2pt;border-right: 1px solid #000;">{% include 'invoice/consignee.html' %}</td>
+    </tr>
+  </table>
+
+  <div style="border: 1px solid #000;">
+    {% include "invoice/products.html" %}
+  </div>
+  
+
+  <br />
+
+  {% include "invoice/footer.html" %}
+</div>

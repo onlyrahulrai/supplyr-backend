@@ -16,7 +16,9 @@ from rest_framework.generics import RetrieveAPIView
 from supplyr.inventory.serializers import ProductListSerializer
 from supplyr.inventory.models import Product,ProductImage
 from supplyr.core.app_config import ADD_LEDGER_ENTRY_ON_MARK_ORDER_PAID
-
+from supplyr.core.functions import render_to_pdf
+from io import BytesIO
+from django.core.files import File
 
 class OrderView(mixins.ListModelMixin,
                   mixins.CreateModelMixin,
@@ -153,13 +155,14 @@ class OrdersBulkUpdateView(APIView):
             
             order_filters = [option["slug"] for option in profile.order_status_options if new_status in option["transitions_possible"]]
             
-            print(" ----- Order Filters ----- ",order_filters)
             
-            orders = Order.objects.filter(pk__in = order_ids, seller=profile, is_active=True,status__in=order_filters).exclude(status__in=[Order.OrderStatusChoice.CANCELLED, new_status])
+            orders = Order.objects.filter(pk__in = order_ids, seller=profile, is_active=True,status__in=order_filters).exclude(status__in=[new_status])
+            
 
             with transaction.atomic():
                 _orders = list(orders)  # As the 'orders' queryset will remove the current orders after getting updated below, and no orders will be there because of status=new_status exclusion. Hence made a list to retain fetched orders list, to add history entry
                 orders.update(status = new_status)
+                
                 for order in _orders:
                     OrderHistory.objects.create(order = order, status = new_status, created_by = request.user, seller = profile)
                     
@@ -168,15 +171,29 @@ class OrdersBulkUpdateView(APIView):
                     if prev_ledger := Ledger.objects.filter(buyer=order.buyer,seller=order.seller).order_by("created_at").last():
                             prev_ledger_balance = prev_ledger.balance
                             
-                    print(" ---- Leader to generate ---- ",profile.invoice_options.get("generate_at_status","processed"))
-                            
-                    if new_status == profile.invoice_options.get("generate_at_status","processed"):
-                        ledger,created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount ))
+                    if new_status == profile.invoice_options.get("generate_at_status","delivered"):
+                        ledger,ledger_created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount ))
                         
+                        if ledger_created:
+                            invoice,invoice_created = Invoice.objects.get_or_create(order=order) 
+                                       
+                            invoice_number = profile.get_invoice_prefix(invoice.id)
+                    
+                            invoice_name = f"{invoice_number}.pdf"
+                    
+                            if invoice_created:
+                                invoice.invoice_number = invoice_number
+                                
+                                invoice_pdf = render_to_pdf('invoice/index.html',{"invoice":invoice})
+                                
+                                invoice.invoice_pdf.save(invoice_name, File(BytesIO(invoice_pdf.content)))
+                                
+                                invoice.save()
+                    
                     elif new_status == Order.OrderStatusChoice.CANCELLED or new_status == Order.OrderStatusChoice.RETURNED:
-                        balance = (prev_ledger_balance + order.total_amount) if order.is_paid else (prev_ledger_balance - order.total_amount)
-                        
-                        ledger,created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CANCELLED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=balance)
+                        transaction_type = Ledger.TransactionTypeChoice.ORDER_CANCELLED if (Ledger.TransactionTypeChoice.ORDER_CANCELLED == new_status) else Ledger.TransactionTypeChoice.ORDER_RETURNED
+
+                        ledger = Ledger.objects.create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CANCELLED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance + order.total_amount))
                     ######## ----- Ledger End ----- ########
 
                 if operation == 'change_status_with_variables':
@@ -241,7 +258,6 @@ class OrderCancellationView(APIView, APISourceMixin):
 
         return Response({'success': True, 'order_data': order_data})
 
-
 class PaymentCreateAPIView(generics.GenericAPIView,mixins.CreateModelMixin):
     serializer_class = PaymentSerializer
     permission_classes = [IsApproved]
@@ -276,3 +292,12 @@ class OrderStatusVariableAPIView(generics.GenericAPIView,mixins.UpdateModelMixin
     
     def put(self, request,*args,**kwargs):
         return self.partial_update(request,*args,**kwargs)
+
+class InvoiceTemplateView(generics.GenericAPIView,mixins.ListModelMixin):
+    permission_classes = [IsApproved]
+    serializer_class = InvoiceTemplateSerializer
+    queryset = InvoiceTemplate.objects.all()
+    pagination_class = None
+    
+    def get(self,request,*args,**kwargs):
+        return self.list(request,*args,**kwargs)

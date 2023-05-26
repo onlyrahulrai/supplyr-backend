@@ -1,0 +1,75 @@
+{% load extras %}
+
+<table class="table table-hover mt-3" style="width:100%;">
+        <thead>
+            <tr style="padding-top: 3px;">
+                <th class="text-left" style="padding-left: 3px;">
+                    S. No.
+                </th>
+                <th class="text-left">
+                    Title <br /> (Package Name)
+                </th>
+                <th></th>
+                <th class="text-center">
+                    Quantity
+                </th>
+                <th class="text-left">Amount:</th>
+                <th class="text-left">Tax:</th>
+                <th class="text-left">
+                    Total Amount <br />(in INR)
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {%  for item in invoice.order.items.all %}
+            
+            <tr>
+                <td style="padding-left: 3px;">
+                    {{forloop.counter}}
+                </td>
+                <td colspan="2">
+                    <div className="d-flex align-items-center">
+                        {{item.product_variant.product.title}}
+                    </div>
+                </td>
+                <td class="text-center">
+                    {{item.quantity}}
+                </td>
+                <td>
+                    <span class="amount">{{item.taxable_amount|apply_seller_currency:invoice}}</span>
+                </td>
+                <td>
+                    <span class="amount">{{item.tax_amount|apply_seller_currency:invoice}}</span>
+                </td>
+
+                <td>
+                    <span class="amount">{{item.total_amount|apply_seller_currency:invoice}}</span>
+                </td>
+            </tr>
+
+            {% endfor %}
+
+            <tr style="border-top: 1px solid #000;padding: 6px 0;">
+                <td colspan="2" style="padding-left: 3px;">
+                    <strong class="text-secondary fw-semibold">Total</strong>
+                </td>
+                <td></td>
+                <td></td>
+                <td>
+                    <strong class="text-secondary fw-semibold">
+                        <span>{{invoice.order.taxable_amount|apply_seller_currency:invoice}}</span>
+                    </strong>
+                </td>
+                <td>
+                    <strong class="text-secondary fw-semibold">
+                        <span>{{invoice.order.tax_amount|apply_seller_currency:invoice}}</span>
+                    </strong>
+                </td>
+                <td>
+                    <strong class="text-secondary fw-semibold">
+                        <span>{{invoice.order.total_amount|apply_seller_currency:invoice}}</span>
+                    </strong>
+                </td>
+            </tr>
+        </tbody>
+</table>

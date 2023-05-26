@@ -9,7 +9,8 @@ from .models import (
     ManuallyCreatedBuyer, 
     AddressState,
     SellerAddress,
-    CategoryOverrideGst
+    CategoryOverrideGst,
+    InvoiceTemplate
 )
 from django import forms
 from prettyjson import PrettyJSONWidget
@@ -90,7 +91,15 @@ class SellerProfileAdmin(admin.ModelAdmin):
 
 admin.site.register(BuyerProfile)
 admin.site.register(SalespersonProfile)
-admin.site.register(ManuallyCreatedBuyer)
+
+@admin.register(ManuallyCreatedBuyer)
+class ManuallyCreatedBuyerAdmin(admin.ModelAdmin):
+    list_display = ('id','email','mobile_number')
+    
+@admin.register(InvoiceTemplate)
+class  InvoiceTemplateAdmin(admin.ModelAdmin):
+    list_display = ('id','name') 
+
 admin.site.register(SalespersonPreregisteredUser)
 admin.site.register(AddressState)
 admin.site.register(SellerAddress)

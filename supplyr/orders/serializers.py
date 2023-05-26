@@ -8,12 +8,16 @@ from django.db.models import F
 from datetime import timedelta
 
 from .models import *
+from supplyr.profiles.models import InvoiceTemplate
 from supplyr.inventory.models import Variant
 from supplyr.profiles.serializers import BuyerAddressSerializer
 from supplyr.inventory.serializers import VariantDetailsSerializer
 from supplyr.orders.models import Payment,Ledger
 from supplyr.inventory.serializers import SellerBuyersConnectionSerializer
 from django.shortcuts import get_object_or_404
+from supplyr.core.functions import render_to_pdf
+from io import BytesIO
+from django.core.files import File
 
 class OrderItemSerializer(serializers.ModelSerializer):
     # featured_image = serializers.SerializerMethodField()
@@ -41,7 +45,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
         fields = ["id", 'quantity', 'item_note','taxable_amount',"tax_amount",'cgst','sgst','igst','price', 'actual_price',"extra_discount" ,'product_variant', 'product_variant_id']
 
 class OrderSerializer(serializers.ModelSerializer):
-    
     
     # items = OrderItemSerializer(many=True)
     items = serializers.SerializerMethodField()
@@ -96,10 +99,10 @@ class OrderSerializer(serializers.ModelSerializer):
             #Raise exxception
             
 
-            item['actual_price'] = float(item.get("actual_price",variant.price or variant.actual_price))
-            item['price'] =  float(item.get("price",variant.actual_price))
+            item['actual_price'] = float(item.get("actual_price", variant.actual_price))
+            item['price'] =  float(item.get("price",variant.price))
             item['product_variant_id'] = item['variant_id']
-            subtotal += (item['price'] or item['actual_price'])*item['quantity'] #TODO: Remove the later part after 'or', as it might never get executed
+            subtotal += item['price']*item['quantity'] #TODO: Remove the later part after 'or', as it might never get executed
             if not seller_id:
                 seller_id = variant.product.owner_id
             elif seller_id != variant.product.owner_id:
@@ -147,6 +150,7 @@ class OrderSerializer(serializers.ModelSerializer):
             
             validated_data["seller"].order_number_counter += 1
             validated_data["seller"].save()
+            
             for item in items:
                 variant_id = item.pop("variant_id")
                 _item = OrderItem.objects.create(**item, order = order)
@@ -154,7 +158,28 @@ class OrderSerializer(serializers.ModelSerializer):
                 product_variant = _item.product_variant
                 product_variant.quantity = F('quantity') - _item.quantity
                 product_variant.save()
-        
+
+            prev_ledger_balance = 0
+            if prev_ledger := Ledger.objects.filter(buyer=order.buyer,seller=order.seller).order_by("created_at").last():
+                prev_ledger_balance = prev_ledger.balance
+                            
+            if validated_data["seller"].default_order_status == validated_data["seller"].invoice_options.get("generate_at_status","delivered"):
+                ledger,ledger_created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount )) 
+                
+                if ledger_created:
+                    invoice,invoice_created = Invoice.objects.get_or_create(order=order) 
+                   
+                    invoice_number = validated_data['seller'].get_invoice_prefix(invoice.id)
+                    
+                    invoice_name = f"{invoice_number}.pdf"
+                    
+                    if invoice_created:
+                        invoice.invoice_number = invoice_number
+                        
+                        invoice_pdf = render_to_pdf('invoice/index.html',{"invoice":invoice})
+                        
+                        invoice.invoice_pdf.save(invoice_name, File(BytesIO(invoice_pdf.content)))
+                        invoice.save()
         return order
     def update(self, instance, validated_data):
         items = validated_data.pop("items")
@@ -380,18 +405,29 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
 class GenerateInvoiceSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
-        invoice,created = Invoice.objects.get_or_create(**validated_data)
-        prefix = self.context["request"].user.seller_profiles.first().invoice_prefix
-        if prefix:
-            invoice.invoice_number = f'{prefix}{invoice.id}/21-22'
-        else:
-            invoice.invoice_number = f'{invoice.id}/21-22'
-        invoice.save()
-        return invoice
+        with transaction.atomic():
+            invoice,created = Invoice.objects.get_or_create(**validated_data)
+            
+            prefix = self.context["request"].user.seller_profiles.first().invoice_prefix
+            
+            invoice_number = f'{prefix}{invoice.id}/21-22' if prefix else f'{invoice.id}/21-22'
+            
+            invoice_name = f"{invoice_number}.pdf"
+            
+            if created: 
+                invoice.invoice_number = invoice_number
+                
+                invoice_pdf = render_to_pdf('invoice/index.html',{"invoice":invoice})
+                
+                invoice.invoice_pdf.save(invoice_name, File(BytesIO(invoice_pdf.content)))
+                    
+                invoice.save()
+            
+            return invoice
     
     class Meta:
         model = Invoice
-        fields = ["id","order","invoice_number","created_at"]
+        fields = ["id","order","invoice_number","invoice_pdf","created_at"]
         
 class PaymentShortDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -467,65 +503,7 @@ class OrderStatusVariableSerializer(serializers.ModelSerializer):
             }
         }
         
-# class SellerOrderDetailsSerializer(serializers.ModelSerializer):
-#     order_time = serializers.SerializerMethodField()
-#     order_date = serializers.SerializerMethodField()
-#     order_status = serializers.SerializerMethodField()
-#     seller_name = serializers.SerializerMethodField()
-#     created_by_user = serializers.SerializerMethodField()
-#     created_by_entity = serializers.SerializerMethodField()
-    
-#     invoice = serializers.SerializerMethodField()
-#     status_variable_values = serializers.SerializerMethodField()
-#     items = serializers.SerializerMethodField()
-    
-#     def get_order_date(self, order):
-#         return order.created_at.astimezone().strftime("%b %d, %Y")
-    
-#     def get_order_time(self, order):
-#         return order.created_at.astimezone().strftime('%H:%M %p')
-    
-#     def get_order_status(self,order):
-#         return order.status
-    
-#     def get_seller_name(self,order):
-#         return order.seller.business_name
-    
-#     def get_created_by_user(self, order):
-#         return order.created_by.name
-    
-#     def get_created_by_entity(self, order):
-#         if order.salesperson:
-#             return order.salesperson.seller.business_name
-#         else:
-#             return order.buyer.business_name
-        
-#     def get_invoice(self,order): 
-#         invoice = order.invoices.first()   
-#         data = GenerateInvoiceSerializer(invoice).data if invoice else None
-#         return  data
-    
-#     def get_status_variable_values(self, order):
-#         return StatusVariableValueSerializer(order.status_variable_values.all(), many=True).data
-    
-#     def get_items(self,order):
-#         return OrderItemSerializer(order.items.filter(is_active=True),many=True).data
-    
-#     history = OrderHistorySerializer(many=True)
-    
-#     buyer = SellerBuyersConnectionSerializer()
-    
-#     def to_representation(self, instance):
-#         output = super(SellerOrderDetailsSerializer, self).to_representation(instance)
-#         output["cgst"] = float(instance.cgst)
-#         output["sgst"] = float(instance.sgst)
-#         output["igst"] = float(instance.igst)
-#         output["taxable_amount"] = float(instance.taxable_amount)
-#         output["total_amount"] = float(instance.total_amount)
-#         output["total_extra_discount"] = float(instance.total_extra_discount)
-#         return output
-    
-#     class Meta:
-#         model = Order
-#         fields = ["id","order_date","order_time","order_number","seller_name","order_status","taxable_amount","sgst","cgst","igst","total_amount","total_extra_discount","created_by_user","created_by_entity","items","invoice","history","status_variable_values","buyer","buyer_id","address_id"]
-        
+class InvoiceTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvoiceTemplate
+        fields = ['id','name','slug','image_url']

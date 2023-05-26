@@ -66,7 +66,6 @@ class BuyerProfilingView(views.APIView, UserInfoMixin):
             return Response(serializer_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class SellerProfilingView(views.APIView, UserInfoMixin):
     permission_classes = [IsUnapproved]
 
@@ -125,7 +124,6 @@ class SellerProfileSettings(views.APIView,UserInfoMixin):
             return Response(serialized_data,status=status.HTTP_200_OK)
         return Response(serializer.errors,status=status.HTTP_400_BAD_REQUEST)
 
-
 class ResendEmailConfirmation(views.APIView):
     permission_classes = [IsAuthenticated] 
 
@@ -142,7 +140,6 @@ class ResendEmailConfirmation(views.APIView):
                 return Response({'message': 'Email confirmation sent'}, status=status.HTTP_201_CREATED)
             except:
                 return Response({'message': 'An unexpected error occurred'}, status=status.HTTP_403_FORBIDDEN)
-
 
 class ProfilingDocumentsUploadView(views.APIView):    #Seller
     
@@ -164,8 +161,6 @@ class ProfilingDocumentsUploadView(views.APIView):    #Seller
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 
 class AddressView(generics.ListCreateAPIView, generics.UpdateAPIView, generics.DestroyAPIView, APISourceMixin):
     """
@@ -515,7 +510,3 @@ class GstConfigSettingAPIView(generics.CreateAPIView,generics.RetrieveAPIView,Us
                 
                 return Response(response)
             return Response(serializer.errors)
-    
-    
-    
-    

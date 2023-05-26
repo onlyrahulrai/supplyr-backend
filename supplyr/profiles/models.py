@@ -7,6 +7,7 @@ from os.path import splitext
 from django.utils import timezone
 from supplyr.profiles.data import COUNTRY_CHOICES, STATE_CHOICES,CURRENCY_CHOICES
 from supplyr.core.app_config import ORDER_STATUS_OPTIONS
+from django_extensions.db.fields import AutoSlugField
 
 def get_document_upload_path(instance, filename, document_category):
     file, ext = splitext(filename)
@@ -27,6 +28,26 @@ def user_setting_config(*args,**kwargs):
             "template":"default"
         }
     }
+
+class InvoiceTemplate(models.Model):
+    name = models.CharField(max_length=75)
+    slug = AutoSlugField(max_length=40, editable=True, populate_from=['name'], unique=True)
+    image = models.ImageField(upload_to="invoice-images", blank=True, null=True)
+    code = models.TextField(null=True,blank=True)
+    is_public = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    @property
+    def image_url(self):
+        try:
+            url = self.image.url
+        except:
+            url = ''
+        return url
+    
+    def __str__(self):
+        return self.name
 
 class SellerProfile(models.Model):
     class EntityTypes(models.TextChoices):
@@ -69,8 +90,10 @@ class SellerProfile(models.Model):
     gst_certificate = models.FileField(upload_to=get_gst_upload_path, max_length=150, blank=True, null=True)
     operational_fields = models.ManyToManyField('inventory.Category', blank=True)
     invoice_prefix = models.CharField(max_length=12,null=True,blank=True)
-    # translations = models.JSONField(default=translation_default)
     user_settings = models.JSONField(default=dict,null=True,blank=True)
+    
+    invoice_template = models.ForeignKey(InvoiceTemplate, on_delete=models.SET_NULL,null=True,blank=True)
+    
     status = EnumField(default="profile_created",choices=SellerStatusChoice.choices, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     connection_code = models.CharField(max_length=15)
@@ -84,14 +107,17 @@ class SellerProfile(models.Model):
     def default_order_status(self):
         return self.user_settings.get('order_options').get("default_order_status") if self.user_settings.get("order_options",{}).get("default_order_status") else min(self.order_status_options,key=lambda option:option["sequence"]).get("slug","awaiting_approval")
     
+    def get_invoice_prefix(self,invoice_id):
+        return f'{self.invoice_prefix}{invoice_id}/21-22' if self.invoice_prefix else f'{invoice.id}/21-22'
+    
     @property
     def invoice_options(self):
         return self.user_settings.get("invoice_options") if ('generate_at_status' in self.user_settings.get("invoice_options")) and ("template" in self.user_settings.get("invoice_options")) else {"generate_at_status":"dispatched",
             "template":"default"}
         
-    @property
-    def invoice_template(self):
-        return self.user_settings.get("invoice_options").get("template","default") if self.user_settings.get("invoice_options") else "default"
+    # @property
+    # def invoice_template(self):
+    #     return self.user_settings.get("invoice_options").get("template","default") if self.user_settings.get("invoice_options") else "default"
     
     @property
     def translations(self):
@@ -136,7 +162,6 @@ class SellerProfile(models.Model):
         if not len(self.user_settings.keys()):
             self.user_settings = self.default_user_settings
         super(SellerProfile, self).save(*args,**kwargs)
-
 
 class BuyerProfile(models.Model):
 
@@ -248,7 +273,6 @@ class BuyerSellerConnection(models.Model):
         verbose_name_plural = 'BuyerSellerConnections'
         unique_together = ('seller', 'buyer', 'is_active', 'deactivated_at')
 
-
 class SalespersonProfile(models.Model):
     owner = models.ForeignKey('core.User', on_delete=models.RESTRICT, related_name='salesperson_profiles', blank=True, null=True)
     seller = models.ForeignKey('profiles.SellerProfile', on_delete=models.RESTRICT, related_name='salespersons')
@@ -273,3 +297,4 @@ class CategoryOverrideGst(models.Model):
     
     def __str__(self):
         return f'{self.category} - {self.default_gst_rate}'
+    

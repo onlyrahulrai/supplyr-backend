@@ -1,0 +1,18 @@
+<div className="p-1 border-top-0" style="min-height: 180px">
+  <strong class="text-secondary">Customer Info: </strong>
+  &nbsp;
+  <br />
+  <div>
+    <span class="text-secondary normal">{{invoice.order.address.name}} </span>
+    <br />
+    <span class="text-secondary normal">{{invoice.order.address.line1}} </span>
+    <br />
+    <span class="text-secondary normal">{{invoice.order.address.line2}}</span>
+    <br />
+    <span class="text-secondary normal"
+      >{{invoice.order.address.city}} - {{invoice.order.address.pin}}
+    </span>
+    <br />
+    <span class="text-secondary normal">{{invoice.order.address.state.name}} </span>
+  </div>
+</div>

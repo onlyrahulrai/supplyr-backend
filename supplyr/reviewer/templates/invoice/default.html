@@ -1,0 +1,43 @@
+    <!-- HTML Content -->
+	<div>
+		<table style="border-bottom: 1px solid #000;">
+				<tr>
+					<td>
+						{% include 'invoice/exporter.html' %}
+					</td>
+					<td class="border-left border-right" style="padding: 6px 1px 6px 2px;">
+						<div>
+							<strong class="text-secondary normal">Invoice No.</strong>
+							- {{invoice.invoice_number}}
+							
+							<div>
+								<strong class="text-secondary normal"> DATE </strong> -&nbsp; {{invoice.created_at}}
+								<br />
+								<br />
+							</div>
+						</div>
+						
+						<hr>
+
+						<div>
+							<strong class="text-secondary normal">Buyer's Order No.</strong> - {{invoice.order.order_number}}
+							<div>
+								<strong class="text-secondary normal"> DATE </strong> - {{invoice.order.created_at}}
+							</div>
+							<br />
+						</div>
+					</td>
+					<td style="padding-left:2pt;">
+						{% include 'invoice/consignee.html' %}
+					</td>
+				</tr>
+		</table>
+
+		
+		{% include "invoice/products.html" %}
+		
+
+		<br>
+
+        {% include "invoice/footer.html" %}
+	</div>

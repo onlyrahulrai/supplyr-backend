@@ -1,0 +1,38 @@
+@font-face {
+  font-family: "Bold";
+  src:  url("./static/fonts/Roboto-Bold.ttf") format("truetype"); /* chrome firefox opera Safari, Android, iOS 4.2+*/
+}
+
+@font-face {
+  font-family: "Light";
+  src:  url("./static/fonts/Roboto-Light.ttf") format("truetype"); /* chrome firefox opera Safari, Android, iOS 4.2+*/
+}
+@font-face {
+  font-family: "Medium";
+  src:  url("./static/fonts/Roboto-Medium.ttf") format("truetype"); /* chrome firefox opera Safari, Android, iOS 4.2+*/
+}
+@font-face {
+  font-family: "Regular";
+  src:  url("./static/fonts/Roboto-Regular.ttf") format("truetype"); /* chrome firefox opera Safari, Android, iOS 4.2+*/
+}
+
+*{
+  font-family: Regular,sans-serif;
+}
+
+.text-center {
+  text-align: center !important;
+}
+.border-left {
+  border-left: 1px solid #000;
+}
+.border-right {
+  border-right: 1px solid #000;
+}
+.text-left {
+  text-align: left;
+}
+
+tr,th,td{
+  border: none;
+}
