@@ -10,29 +10,9 @@ urlpatterns = [
     path("order-status-variable/<str:orderId>/<str:pk>/",OrderStatusVariableAPIView.as_view(),name="order-status-variable"),
     path("product/<str:pk>/",ProductDetailView.as_view(),name="order-product-detail"),
     path(
-        '',
-        OrderView.as_view(),
-        name='order'
-    ),
-    path(
-        '<str:pk>/update/',
-        OrderView.as_view(),
-        name='order'
-    ),
-    path(
-        '<str:pk>/mark-as-paid/',
-        MarkAsOrderPaidView.as_view(),
-        name='mark-as-paid'
-    ),
-    path(
         'list/',
         OrderListView.as_view(),
         name='orders_list'
-    ),
-    path(
-        '<int:pk>/', 
-        OrderDetailsView.as_view(), 
-        name='order_details'
     ),
     path(
         'bulk-update/', 
@@ -42,5 +22,25 @@ urlpatterns = [
     path('cancel/',
         OrderCancellationView.as_view(),
         name='orders_cancel'
+    ),
+    path(
+        '<str:pk>/mark-as-paid/',
+        MarkAsOrderPaidView.as_view(),
+        name='mark-as-paid'
+    ),
+    path(
+        '<str:pk>/update/',
+        OrderView.as_view(),
+        name='order'
+    ),
+    path(
+        '<int:pk>/', 
+        OrderDetailsView.as_view(), 
+        name='order_details'
+    ),
+    path(
+        '',
+        OrderView.as_view(),
+        name='order'
     ),
 ]

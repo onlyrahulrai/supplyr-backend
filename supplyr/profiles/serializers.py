@@ -7,6 +7,7 @@ from supplyr.inventory.models import Category, Tags
 from supplyr.inventory.serializers import CategoriesSerializer2, SubCategorySerializer2, SubCategorySerializer, TagsSerializer, VendorsSerializer
 from supplyr.orders.models import OrderStatusVariable
 from itertools import groupby
+from supplyr.discounts.serializers import GenericDiscountSerializer,DiscountAssignedProductForBuyerSerializer
 
 User = get_user_model()
 
@@ -123,8 +124,6 @@ class ShortEntityDetailsSerializer(serializers.ModelSerializer):
             }
         }
 
-
-
 class CategoriesSerializer(serializers.ModelSerializer):
     """
     Used for generating cateogries list for displaying in seller profiling form
@@ -203,7 +202,6 @@ class BuyerProfileSerializer(serializers.ModelSerializer):
                 'write_only': True
             }
         }
-
 
 class UserDetailsSerializer(serializers.ModelSerializer):
     def _get_api_source(self):
@@ -356,7 +354,6 @@ class SellerProfilingSerializer(serializers.ModelSerializer):
             }
         }
 
-
 class SellerProfilingDocumentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = SellerProfile
@@ -365,10 +362,9 @@ class SellerProfilingDocumentsSerializer(serializers.ModelSerializer):
             'gst_certificate'
             ]
 
-
-class SellerShortDetailsSerializer(serializers.ModelSerializer):
+class SellerShortDetailsForSalespersonSerializer(serializers.ModelSerializer):
     '''
-    To be used by buyer app / salesperson app
+    To be used by salesperson app
     '''
 
     sub_categories = serializers.SerializerMethodField()
@@ -387,16 +383,58 @@ class SellerShortDetailsSerializer(serializers.ModelSerializer):
             'business_name',
             'sub_categories',
             'id',
-            'has_products_added',
+            'has_products_added'
             ]
+        
+class ShortCategoryOverrideGstSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CategoryOverrideGst
+        fields = "__all__"
+        
+class SellerShortDetailsForBuyerSerializer(SellerShortDetailsForSalespersonSerializer):
+    '''
+    To be used by buyer app
+    '''
+    
+    generic_discount = serializers.SerializerMethodField()
+    def get_generic_discount(self,profile): 
+        buyer = self.context["request"].user.buyer_profiles.first()
+        discount = profile.buyer_discounts.filter(Q(buyer=buyer) & Q(product=None) & Q(is_active=True)).first()
+        return GenericDiscountSerializer(discount).data  if discount else None
+    
+    discount_assigned_products = serializers.SerializerMethodField()
+    def get_discount_assigned_products(self, profile):
+        buyer = self.context['request'].user.buyer_profiles.first()
+        discounts = profile.buyer_discounts.filter(Q(buyer=buyer) & ~Q(product=None) & Q(is_active=True))
+        return DiscountAssignedProductForBuyerSerializer(discounts, many=True).data 
+    
 
+    category_override_gst = serializers.SerializerMethodField()
+    def get_category_override_gst(self,profile):
+        override_categories = profile.override_categories.filter(Q(is_active=True))
+        
+        return ShortCategoryOverrideGstSerializer(override_categories,many=True).data
+
+    class Meta:
+        model = SellerProfile
+        fields = [
+            'business_name',
+            'sub_categories',
+            'id',
+            'has_products_added',
+            'generic_discount',
+            'discount_assigned_products',
+            "default_gst_rate",
+            'category_override_gst',
+            "product_price_includes_taxes"
+            ]
 
 class SalespersonProfileSerializer(serializers.ModelSerializer):
     """
     To be used in fetching user details in case of request from salesperson api.
     """
 
-    seller = SellerShortDetailsSerializer()
+    seller = SellerShortDetailsForSalespersonSerializer()
 
     class Meta:
         model = SalespersonProfile
@@ -447,7 +485,7 @@ class CategoryOverrideGstSerializer(serializers.ModelSerializer):
     class Meta:
         model = CategoryOverrideGst
         fields = ['id','category','default_gst_rate']
-        
+                
 class SellerGstConfigSettingSerializer(serializers.ModelSerializer):
     override_categories = serializers.SerializerMethodField()
     def get_override_categories(self,seller):

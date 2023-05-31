@@ -17,16 +17,7 @@ urlpatterns = [
     
     path('cart-items-info/', VariantDetailView.as_view(), name='variants_details'),
     path('update-favourites/', UpdateFavouritesView.as_view()),
-    path("_seller-buyers/",BuyerSellerConnectionAPIView.as_view(),name="_seller-buyers"),
-    path("seller-buyers/",SellerBuyersAPIView.as_view(),name="seller-buyers"),
-    path("seller-buyers/<str:pk>/",SellerBuyersAPIView.as_view(),name="seller-buyers"),
     path("seller-categories/",SellerCategoriesAPIView.as_view(),name="seller-categories"),
     
     path("sellers-buyer-detail/<str:pk>/",SellerBuyersDetailAPIView.as_view(),name="sellers-buyer-detail"),
-        
-    ######### Buyer discount start ##########
-    path("buyer-details/<str:pk>/",BuyerDetailForDiscountAPIView.as_view(),name="buyer_detail_for_discounts"),
-    path("buyer-discounts/",BuyerDiscountAPIView.as_view(),name="buyer-discounts"),
-    path("buyer-discounts/<str:pk>/",BuyerDiscountAPIView.as_view(),name="buyer-discounts"),
-    ######### Buyer discount end ##########
 ]

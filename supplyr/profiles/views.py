@@ -13,7 +13,7 @@ from .serializers import (
     SalespersonProfileSerializer2, 
     SellerProfilingSerializer, 
     SellerProfilingDocumentsSerializer, 
-    SellerShortDetailsSerializer,
+    SellerShortDetailsForBuyerSerializer,
     SellerAddressSerializer,
     SellerGstConfigSettingSerializer
 )
@@ -28,6 +28,7 @@ from supplyr.core.permissions import (
     IsFromBuyerSellerOrSalesAPI,
     IsFromSellerOrBuyerAPI
 )
+from supplyr.discounts.serializers import BuyerShortDetailSerializer
 from supplyr.utils.api.mixins import APISourceMixin
 
 from allauth.account.utils import send_email_confirmation
@@ -237,10 +238,9 @@ class SellerAddressView(generics.ListCreateAPIView,generics.UpdateAPIView,APISou
         
         return Response(rsp)
         
-class SellerView(views.APIView, APISourceMixin):
-
+class SellerView(generics.GenericAPIView, mixins.CreateModelMixin,mixins.DestroyModelMixin):
     permission_classes = [IsAuthenticated, IsFromSellerOrBuyerAPI]
-
+        
     def post(self, request, *args, **kwargs):
         code = request.data['buyer_id'] if "seller" in request.resolver_match.kwargs.values() else request.data['connection_code']
         
@@ -248,7 +248,7 @@ class SellerView(views.APIView, APISourceMixin):
             seller = request.user.get_seller_profile()
             buyer = get_object_or_404(BuyerProfile,id=code)
             connection,created = BuyerSellerConnection.objects.get_or_create(seller=seller, buyer = buyer)
-            return Response(SellerBuyersConnectionSerializer(buyer).data)
+            return Response(BuyerShortDetailSerializer(buyer,context={"request":request}).data)
         else:
             if seller := SellerProfile.objects.filter(connection_code__iexact = code, is_active= True, status=SellerProfile.SellerStatusChoice.APPROVED).first():
                 connection,created = BuyerSellerConnection.objects.get_or_create(seller=seller, is_active=True, buyer = self.request.user.get_buyer_profile())
@@ -271,7 +271,7 @@ class SellerView(views.APIView, APISourceMixin):
 
 class SellersListView(generics.ListAPIView):
     permission_classes = [IsFromBuyerAPI]
-    serializer_class = SellerShortDetailsSerializer
+    serializer_class = SellerShortDetailsForBuyerSerializer
     pagination_class = None
     # queryset = SellerProfile.objects.all()
     def get_queryset(self):
@@ -315,59 +315,17 @@ class RecentBuyersView(generics.ListAPIView):
         buyer_objects_ordered = [buyer_objects[_id] for _id in buyer_ids_ordered[:max_recent_shown]] # ordered by id
         return buyer_objects_ordered
 
-class CreateBuyerView(views.APIView):
+class CreateBuyerView(generics.GenericAPIView,mixins.CreateModelMixin):
     """
     For salesperson, who wishes to add a non existant buyer
     """
     # permission_classes = [IsFromSalesAPI]
     permission_classes = [IsFromSellerOrSalesAPI]
-
+    serializer_class = BuyerShortDetailSerializer
+    
     @transaction.atomic
     def post(self, request, *args, **kwargs):
-        email = request.data.get('email')
-        business_name = request.data.get('business_name')
-        mobile_number = request.data.get('mobile_number')
-
-        errors = {}
-        if User.objects.filter(email__iexact=email).exists():
-            errors['email'] = 'User already exist with this email ID'
-        elif ManuallyCreatedBuyer.objects.filter(email__iexact=email).exists():
-            errors['email'] = 'A buyer is already created with this email ID'
-        
-        if User.objects.filter(mobile_number=mobile_number).exists():
-            errors['mobile_number'] = 'User Already exist with this mobile number'
-        elif ManuallyCreatedBuyer.objects.filter(mobile_number=mobile_number):
-            errors['mobile_number'] = 'A buyer is already created with this mobile number'
-        
-        if errors:
-            return Response(errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-        buyer_profile = BuyerProfile.objects.create(
-            business_name=business_name,
-            )
-        profile = request.user.get_seller_profile() if "seller" in request.resolver_match.kwargs.values() else request.user.get_sales_profile()
-        
-
-        if "seller" in request.resolver_match.kwargs.values():
-            connection,created = BuyerSellerConnection.objects.get_or_create(buyer=buyer_profile,seller=profile)
-            ManuallyCreatedBuyer.objects.create(
-                buyer_profile = buyer_profile,
-                email=email,
-                mobile_number=mobile_number,
-                created_by_seller=profile
-            )
-        else:
-            ManuallyCreatedBuyer.objects.create(
-                buyer_profile = buyer_profile,
-                email=email,
-                mobile_number=mobile_number,
-                created_by=profile
-            )
-
-        # buyer_profile_data = BuyerProfileSerializer(buyer_profile).data
-        buyer_profile_data = SellerBuyersConnectionSerializer(buyer_profile).data
-        return Response(buyer_profile_data)
+        return self.create(request,*args,**kwargs)
 
 class SalespersonView(generics.ListCreateAPIView, generics.DestroyAPIView):
     """
@@ -510,3 +468,27 @@ class GstConfigSettingAPIView(generics.CreateAPIView,generics.RetrieveAPIView,Us
                 
                 return Response(response)
             return Response(serializer.errors)
+        
+class SellerContactWithBuyersForOrderAPIView(generics.ListAPIView,generics.RetrieveAPIView):
+    permission_classes = [IsApproved,IsFromSellerAPI]
+    serializer_class = BuyerShortDetailSerializer
+    
+    def get_queryset(self):
+        query = self.request.GET.get("search",None)
+        seller = self.request.user.seller_profiles.first()
+
+        connections = seller.connections.filter(Q(is_active=True))
+            
+        buyerIDs = [connection.buyer.id for connection in connections]
+        
+        profiles = BuyerProfile.objects.filter(Q(id__in=buyerIDs) & Q(is_active=True))
+        
+        if query:
+            profiles = profiles.filter(Q(business_name__icontains=query) | Q(owner__email__icontains=query) | Q(owner__mobile_number__icontains=query) | Q(manuallycreatedbuyer__email__icontains=query) | Q(manuallycreatedbuyer__mobile_number__icontains=query)).prefetch_related('manuallycreatedbuyer_set')
+            
+        return profiles
+    
+    def get(self,request,*args,**kwargs):
+        if self.kwargs.get("pk"):
+            return self.retrieve(request,*args,**kwargs)
+        return self.list(request,*args,**kwargs)

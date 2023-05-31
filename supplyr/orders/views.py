@@ -61,7 +61,15 @@ class MarkAsOrderPaidView(APIView):
                         prev_ledger_balance = 0
                         if prev_ledger := Ledger.objects.filter(buyer=instance.buyer,seller=instance.seller).order_by("created_at").last():
                             prev_ledger_balance = prev_ledger.balance
-                        ledger,created = Ledger.objects.get_or_create(order=instance,transaction_type=Ledger.TransactionTypeChoice.ORDER_PAID,seller=seller,buyer=instance.buyer,amount=instance.total_amount,balance=(prev_ledger_balance + instance.total_amount ))
+                        ledger,created = Ledger.objects.get_or_create(order=instance,transaction_type=Ledger.TransactionTypeChoice.ORDER_PAID,seller=seller,buyer=instance.buyer,defaults={"amount":instance.total_amount,"balance":(prev_ledger_balance + instance.total_amount )})
+                        
+                        if created:
+                            payment = Payment.objects.create(seller=seller,buyer=instance.buyer,amount=instance.total_amount,mode=Payment.PaymentMode.BankTransfer,remarks="Order Marked as Paid")
+                    
+                            ledger.payment = payment
+                            
+                            ledger.save()
+                            
                     return Response({"message":"Success"},status=status.HTTP_202_ACCEPTED)
                 return Response(serializer.errors)
 
@@ -172,7 +180,7 @@ class OrdersBulkUpdateView(APIView):
                             prev_ledger_balance = prev_ledger.balance
                             
                     if new_status == profile.invoice_options.get("generate_at_status","delivered"):
-                        ledger,ledger_created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount ))
+                        ledger,ledger_created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,defaults={"amount":order.total_amount,"balance":(prev_ledger_balance - order.total_amount )})
                         
                         if ledger_created:
                             invoice,invoice_created = Invoice.objects.get_or_create(order=order) 
@@ -193,7 +201,8 @@ class OrdersBulkUpdateView(APIView):
                     elif new_status == Order.OrderStatusChoice.CANCELLED or new_status == Order.OrderStatusChoice.RETURNED:
                         transaction_type = Ledger.TransactionTypeChoice.ORDER_CANCELLED if (Ledger.TransactionTypeChoice.ORDER_CANCELLED == new_status) else Ledger.TransactionTypeChoice.ORDER_RETURNED
 
-                        ledger = Ledger.objects.create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CANCELLED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance + order.total_amount))
+
+                        ledger = Ledger.objects.create(order=order,transaction_type=transaction_type,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance + order.total_amount))
                     ######## ----- Ledger End ----- ########
 
                 if operation == 'change_status_with_variables':

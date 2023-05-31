@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'supplyr.profiles.apps.ProfilesConfig',
     'supplyr.orders.apps.OrdersConfig',
     'supplyr.reviewer.apps.ReviewerConfig',
+    'supplyr.discounts.apps.DiscountsConfig',
     
     
     
