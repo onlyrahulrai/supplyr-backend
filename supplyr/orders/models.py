@@ -38,6 +38,7 @@ class Order(models.Model):
     # total_subamount = models.DecimalField(default=0,max_digits=14,decimal_places=2)
     total_extra_discount = models.DecimalField(default=0,max_digits=12, decimal_places=2)
     address = models.ForeignKey('profiles.BuyerAddress', on_delete=models.RESTRICT,null=True,blank=True)
+    source = models.CharField(max_length=78, null=True, blank=True)
 
     salesperson = models.ForeignKey('profiles.SalespersonProfile', on_delete=models.RESTRICT, blank=True, null=True, related_name='orders') # Populated when order is placed by a salesperson
     

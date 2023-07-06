@@ -197,6 +197,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
         with transaction.atomic():
+            validated_data['source'] = self._get_api_source()
             validated_data['status'] = validated_data["seller"].default_order_status
             
             validated_data["order_number"] = (f'{validated_data["seller"].order_number_prefix or ""}{validated_data["seller"].order_number_counter + 1}')
