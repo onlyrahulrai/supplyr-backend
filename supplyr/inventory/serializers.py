@@ -12,6 +12,7 @@ from django.conf import settings
 from django.db import transaction
 from django.db.models.functions import Coalesce
 from django.db.models import Q
+from supplyr.discounts.serializers import DiscountAssignedProductSerializer
 
 
 class ChoiceField(serializers.ChoiceField):
@@ -148,6 +149,9 @@ class VariantSerializer(serializers.ModelSerializer):
 
         return variant_obj
 
+    sub_categories = serializers.SerializerMethodField()
+    def get_sub_categories(self,variant):
+        return variant.product.sub_categories.all().values_list("id",flat=True)
 
     class Meta:
         model = Variant
@@ -465,12 +469,13 @@ class ProductImageSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 class VariantDetailsSerializer(serializers.ModelSerializer):
-
     class ProductShortDetailsSerializer(serializers.ModelSerializer):
         seller_name = serializers.CharField(source='owner.business_name')
+        product_price_includes_taxes =  serializers.BooleanField(source='owner.product_price_includes_taxes')
+        
         class Meta:
             model = Product
-            fields = ["id",'title',"slug", 'has_multiple_variants','sub_categories','id', 'seller_name',"allow_inventory_tracking","allow_overselling"]
+            fields = ["id",'title',"slug", 'has_multiple_variants','sub_categories','id', 'seller_name',"allow_inventory_tracking","allow_overselling","product_price_includes_taxes"]
             
     title = serializers.SerializerMethodField()
     def get_title(self,variant):
@@ -784,7 +789,6 @@ class AutoCategoryRuleSerializer(serializers.ModelSerializer):
     def get_attribute_value(self,auto):
         if auto.attribute_name == "weight":
             return get_wight_in_grams(auto.attribute_value,auto.attribute_unit)
-            # return float(auto.attribute_value) * 1000 if auto.attribute_unit == "mg" else float(auto.attribute_value) / 1000 if auto.attribute_unit == "kg" else auto.attribute_value
         return auto.attribute_value
 
     class Meta:
@@ -835,150 +839,6 @@ class BuyerAddressSerializerForSeller(serializers.ModelSerializer):
         model = BuyerAddress
         fields = ["id","name","line1","line2","pin","city","state"]
         
-############### Buyer Discount Part Started ###############
-
-class GenericDiscountSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BuyerDiscount
-        fields = ["id","seller","buyer","discount_type","discount_value"]
-        
-class ExclusiveProductDiscountSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = BuyerDiscount
-        fields = ["id","seller","product","buyer","discount_type","discount_value"]
-        
-class ExclusiveProductDiscountDetailSerializer(serializers.ModelSerializer):
-    class ProductShortDetailsSerializer(serializers.ModelSerializer):
-        
-        featured_image = serializers.SerializerMethodField()
-        def get_featured_image(self, product):
-            if product.featured_image:
-                return product.featured_image.image_md.url
-            return None
-        
-        variants = serializers.SerializerMethodField()
-        def get_variants(self,product):
-            return product.variants.filter(is_active=True).values_list("id",flat=True)
-        
-        class Meta:
-            model = Product
-            fields = ["id",'title',"featured_image","variants"]
-            
-        
-    product = ProductShortDetailsSerializer()
-    
-    class Meta:
-        model = BuyerDiscount
-        fields = ["id","product","buyer","seller","discount_type","discount_value"]
-
-class BuyerSellerConnectionSerializers(serializers.ModelSerializer):
-    
-    buyer = serializers.SerializerMethodField()
-    def get_buyer(self,connection):
-        name = connection.buyer.owner.name  if connection.buyer.owner else ""
-        email = connection.buyer.owner.email  if connection.buyer.owner else connection.buyer.manuallycreatedbuyer_set.first().email
-        mobile_number = connection.buyer.owner.mobile_number  if connection.buyer.owner else connection.buyer.manuallycreatedbuyer_set.first().mobile_number
-        
-        return {"id":connection.buyer.id,"name":name,"email":email,"business_name":connection.buyer.business_name,"mobile_number":mobile_number}
-    
-    generic_discount = serializers.SerializerMethodField()
-    def get_generic_discount(self,connection):
-        discount = connection.buyer.buyer_discounts.filter(product=None,variant=None,is_active=True)
-        if len(discount) > 0:
-            return GenericDiscountSerializer(discount.first()).data
-        return None
-    
-    product_discounts = serializers.SerializerMethodField()
-    def get_product_discounts(self,connection):
-        products = connection.buyer.buyer_discounts.filter(~Q(product=None) & Q(variant=None) & Q(is_active=True))
-        return ExclusiveProductDiscountDetailSerializer(products,many=True).data
-
-         
-    class Meta:
-        model = BuyerSellerConnection
-        fields = ["id","buyer","generic_discount","product_discounts"] 
-        
-class BuyerDetailForDiscountSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-    def get_name(self,buyer):
-        return buyer.owner.name if buyer.owner else None
-    
-    email = serializers.SerializerMethodField()
-    def get_email(self,buyer):
-        return buyer.owner.email if buyer.owner else None
-    
-    mobile_number = serializers.SerializerMethodField()
-    def get_mobile_number(self,buyer):
-        return buyer.owner.mobile_number if buyer.owner else None
-    
-    generic_discount = serializers.SerializerMethodField()
-    def get_generic_discount(self,buyer):
-        discount = buyer.buyer_discounts.filter(product=None,variant=None,is_active=True)
-        if len(discount) > 0:
-            return GenericDiscountSerializer(discount.first()).data
-        return None
-    
-    product_discounts = serializers.SerializerMethodField()
-    def get_product_discounts(self,buyer):
-        products = buyer.buyer_discounts.filter(~Q(product=None) & Q(variant=None) & Q(is_active=True))
-        return ExclusiveProductDiscountDetailSerializer(products,many=True).data
-    
-    address = serializers.SerializerMethodField()
-    def get_address(self,buyer):
-        addresses = buyer.buyer_address.filter(is_active=True)
-        return BuyerAddressSerializerForSeller(addresses,many=True).data
-    
-    class Meta:
-        model = BuyerProfile
-        fields = ["id","name","email","mobile_number","business_name","address","generic_discount","product_discounts"]
-        
-class AddressStatesSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AddressState
-        fields = '__all__'
-        
-class SellerBuyersConnectionSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-    def get_name(self,buyer):
-        name = buyer.owner.name if buyer.owner else ""
-        return name
-    
-    email = serializers.SerializerMethodField()
-    def get_email(self,buyer):
-        email = buyer.owner.email if buyer.owner else buyer.manuallycreatedbuyer_set.first().email
-        return email
-    
-    mobile_number = serializers.SerializerMethodField()
-    def get_mobile_number(self,buyer):
-        mobile_number = buyer.owner.mobile_number if buyer.owner else buyer.manuallycreatedbuyer_set.first().mobile_number
-        return mobile_number
-    generic_discount = serializers.SerializerMethodField()
-    def get_generic_discount(self,buyer):
-        discount = buyer.buyer_discounts.filter(product=None,variant=None,is_active=True)
-        if len(discount) > 0:
-            return GenericDiscountSerializer(discount.first()).data
-        return None
-    
-    product_discounts = serializers.SerializerMethodField()
-    def get_product_discounts(self,buyer):
-        products = buyer.buyer_discounts.filter(~Q(product=None) & Q(variant=None) & Q(is_active=True))
-        return ExclusiveProductDiscountDetailSerializer(products,many=True).data
-    
-    address = serializers.SerializerMethodField()
-    def get_address(self,buyer):
-        addresses = buyer.buyer_address.filter(is_active=True)
-        return BuyerAddressSerializerForSeller(addresses,many=True).data
-    
-    states = serializers.SerializerMethodField()
-    def get_states(self,buyer):
-        return AddressStatesSerializer(AddressState.objects.all(),many=True).data
-    
-    class Meta:
-        model = BuyerProfile
-        fields = ["id","name","email","mobile_number","business_name","address","generic_discount","product_discounts",'states']
-        
-############### Buyer Discount Part End ###############
-
 class SellerCategoriesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Category

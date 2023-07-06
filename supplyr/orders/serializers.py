@@ -4,20 +4,20 @@ from rest_framework.exceptions import ValidationError
 from django.db import transaction
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.utils import timezone
-from django.db.models import F
+from django.db.models import F,Q
 from datetime import timedelta
 
 from .models import *
-from supplyr.profiles.models import InvoiceTemplate
+from supplyr.profiles.models import InvoiceTemplate,BuyerProfile,BuyerAddress
 from supplyr.inventory.models import Variant
 from supplyr.profiles.serializers import BuyerAddressSerializer
 from supplyr.inventory.serializers import VariantDetailsSerializer
 from supplyr.orders.models import Payment,Ledger
-from supplyr.inventory.serializers import SellerBuyersConnectionSerializer
 from django.shortcuts import get_object_or_404
 from supplyr.core.functions import render_to_pdf
 from io import BytesIO
 from django.core.files import File
+from supplyr.discounts.serializers import BuyerShortDetailSerializer
 
 class OrderItemSerializer(serializers.ModelSerializer):
     # featured_image = serializers.SerializerMethodField()
@@ -81,6 +81,8 @@ class OrderSerializer(serializers.ModelSerializer):
             buyer_profile_id = buyer_id
         else:
             buyer_profile_id = self.context['request'].user.get_buyer_profile().id
+            
+        buyer_profile = get_object_or_404(BuyerProfile,pk=buyer_profile_id)
         
         for item in data['items']:
             error = None
@@ -90,32 +92,84 @@ class OrderSerializer(serializers.ModelSerializer):
                 unhandled_errors =  True
                 
             if variant.product.allow_inventory_tracking == True and variant.product.allow_overselling == False:
-                if variant.quantity < item['quantity']:
+                if variant.quantity < int(item['quantity']):
                     raise ValidationError({"cart": "Selcted quantities of some products no longer available."})
                 # handled_errors = "Selcted quantities of some products no longer available."
             
             if unhandled_errors:
                 raise serializers.ValidationError({"Data not validated.": ''})
             #Raise exxception
-            
-
-            item['actual_price'] = float(item.get("actual_price", variant.actual_price))
-            item['price'] =  float(item.get("price",variant.price))
-            item['product_variant_id'] = item['variant_id']
-            subtotal += item['price']*item['quantity'] #TODO: Remove the later part after 'or', as it might never get executed
+                        
             if not seller_id:
                 seller_id = variant.product.owner_id
             elif seller_id != variant.product.owner_id:
                 handled_errors = "Incorrect Data ! Sellers of all items do not match"
+                
+            seller_profile = get_object_or_404(SellerProfile,pk=seller_id)
+            
+            discount_assigned_product = buyer_profile.buyer_discounts.filter(Q(seller=seller_profile) & ~Q(product=None) & Q(is_active=True)).filter(Q(product=variant.product.id)).first()
+                        
+            generic_discount = buyer_profile.buyer_discounts.filter(Q(seller=seller_profile) & Q(product=None) & Q(is_active=True)).first()
+                        
+            buyer_discount = discount_assigned_product if discount_assigned_product else generic_discount
+            
+            price = (item.get("price",0) if item.get("price") else variant.price)
+                    
+            extra_discount = (item.get("extra_discount") if item.get("extra_discount") else ((price *  buyer_discount.discount_value) / 100 if(buyer_discount.discount_type == "percentage") else buyer_discount.discount_value if (buyer_discount.discount_type == "amount") else 0) * int(item['quantity']))
+            
+            print(" Extra Discount ",extra_discount)
+                        
+            price_after_extra_discount = float(price - (extra_discount/item['quantity']))
+                        
+            sub_categories = list(variant.product.sub_categories.all().values_list("id",flat=True))
+                        
+            override_categories = [override_category for override_category in seller_profile.override_categories.filter(Q(is_active=True)).order_by("default_gst_rate") if override_category.category.id in sub_categories]
+                        
+            default_gst_rate = float(override_categories.pop().default_gst_rate if(len(override_categories)) else seller_profile.default_gst_rate)
+                        
+            gst_amount = price_after_extra_discount - (price_after_extra_discount * 100) / (default_gst_rate + 100) if seller_profile.product_price_includes_taxes else (price_after_extra_discount * default_gst_rate) / 100
+                        
+            taxable_amount = price_after_extra_discount - gst_amount if seller_profile.product_price_includes_taxes else price_after_extra_discount
+            
+            buyer_address = get_object_or_404(BuyerAddress,pk=data.get("address")) 
+            
+            is_order_from_same_state = True if (buyer_address.state.id == seller_profile.seller_addresses.first().state.id) else False if buyer_address else False
+                        
+            taxes = {"cgst":gst_amount/2,"sgst":gst_amount/2} if is_order_from_same_state else {"igst":gst_amount}  
+            
+            item['actual_price'] = float(item.get("actual_price", variant.actual_price))
+            item['price'] =  float(price)
+            item['product_variant_id'] = item['variant_id']
+            item["taxable_amount"] = round(taxable_amount * int(item['quantity']),2)
+            item["extra_discount"] = round(extra_discount,2)
+            item["igst"] = round(taxes.get("igst",0) * int(item['quantity']),2)
+            item["cgst"] = round(taxes.get("cgst",0) * int(item['quantity']),2)
+            item["sgst"] = round(taxes.get("sgst",0) * int(item['quantity']),2)
+            
+            subtotal += item['price']*int(item['quantity']) #TODO: Remove the later part after 'or', as it might never get executed
 
         seller = get_object_or_404(SellerProfile,pk=seller_id)
         
-        tax_amount = (data.get("igst",0) + data.get("cgst",0) + data.get("sgst",0))
+        taxes = dict()
         
-        total_amount = subtotal if(seller.product_price_includes_taxes) else (subtotal + tax_amount)
-
-        data['total_amount'] = round((total_amount  - data.get("total_extra_discount",0)),2)
-        data["total_extra_discount"] = round(data.get("total_extra_discount",0),2)
+        for item in data.get("items"):
+            for key,value in item.items():
+                if key not in taxes:
+                    taxes[key] = 0
+                
+                if key in ["sgst","igst","cgst","extra_discount","taxable_amount"]:
+                    taxes[key] += float(value)
+        
+        tax_amount = (taxes.get("igst",0) + taxes.get("cgst",0) + taxes.get("sgst",0))
+        
+        # total_amount = subtotal if(seller.product_price_includes_taxes) else (subtotal + tax_amount)
+        
+        data["igst"] = round(taxes.get("igst"),2)
+        data["cgst"] = round(taxes.get("cgst"),2)
+        data["sgst"] = round(taxes.get("sgst"),2)
+        data["taxable_amount"] = round(taxes.get("taxable_amount"),2)
+        data["total_extra_discount"] = round(taxes.get("extra_discount",0),2)
+        data['total_amount'] = round(taxes.get("taxable_amount",0)  + tax_amount,2)
         data['seller'] = seller_id
 
         if 'request' in self.context:
@@ -164,7 +218,7 @@ class OrderSerializer(serializers.ModelSerializer):
                 prev_ledger_balance = prev_ledger.balance
                             
             if validated_data["seller"].default_order_status == validated_data["seller"].invoice_options.get("generate_at_status","delivered"):
-                ledger,ledger_created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount )) 
+                ledger,ledger_created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,defaults={"balance":(prev_ledger_balance - order.total_amount),"amount":order.total_amount}) 
                 
                 if ledger_created:
                     invoice,invoice_created = Invoice.objects.get_or_create(order=order) 
@@ -386,7 +440,7 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
     def get_status_variable_values(self, order):
         return StatusVariableValueSerializer(order.status_variable_values.all(), many=True).data
     
-    buyer = SellerBuyersConnectionSerializer()
+    buyer = BuyerShortDetailSerializer()
     
     def to_representation(self, instance):
         output = super(OrderDetailsSerializer, self).to_representation(instance)

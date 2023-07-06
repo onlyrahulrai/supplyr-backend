@@ -27,7 +27,10 @@ urlpatterns = [
     
     path('seller-address/', SellerAddressView.as_view(), name='seller-adress-create'),
     path('seller-address/<str:pk>/', SellerAddressView.as_view(), name='seller-adress-update'),
-    path("gst-config-setting/",GstConfigSettingAPIView.as_view(),name="gst-config-setting")
+    path("gst-config-setting/",GstConfigSettingAPIView.as_view(),name="gst-config-setting"),
     
     ############################# Seller Address ##########################
+    
+    path("seller-contact-with-buyers-for-order/",SellerContactWithBuyersForOrderAPIView.as_view(),name="seller-buyers"),
+    path("seller-contact-with-buyers-for-order/<str:pk>/",SellerContactWithBuyersForOrderAPIView.as_view(),name="seller-buyers"),
 ]
