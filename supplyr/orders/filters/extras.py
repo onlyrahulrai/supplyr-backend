@@ -13,7 +13,7 @@ def do_something(html_code, invoice):
 def apply_seller_currency(amount,invoice):
     currency_representation = invoice.order.seller.currency_representation if invoice.order.seller.currency_representation else '${{amount}}'
     code = template.Template(f'<span>{currency_representation}</span>')
-    context = template.Context({'amount':amount})
+    context = template.Context({'amount':amount,'amount_no_decimals':int(amount)})
     return code.render(context)
 
 @register.filter
