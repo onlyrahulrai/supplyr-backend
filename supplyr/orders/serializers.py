@@ -35,6 +35,8 @@ class OrderItemSerializer(serializers.ModelSerializer):
         output["igst"] = float(instance.igst)
         output["extra_discount"] = float(instance.extra_discount)
         output["taxable_amount"] = float(instance.taxable_amount)
+        output['total_amount'] = float(instance.taxable_amount + instance.tax_amount)
+        output['subTotal'] = round(float(instance.price) * int(instance.quantity),2)
         output["tax_amount"] = float(instance.tax_amount)
         output["price"] = float(instance.price)
         output["actual_price"] = float(instance.actual_price)
@@ -42,7 +44,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     
     class Meta: 
         model = OrderItem
-        fields = ["id", 'quantity', 'item_note','taxable_amount',"tax_amount",'cgst','sgst','igst','price', 'actual_price',"extra_discount" ,'product_variant', 'product_variant_id']
+        fields = ["id", 'quantity', 'item_note','taxable_amount',"tax_amount",'total_amount','cgst','sgst','igst','price', 'actual_price',"extra_discount" ,'product_variant', 'product_variant_id']
 
 class OrderSerializer(serializers.ModelSerializer):
     
@@ -86,6 +88,7 @@ class OrderSerializer(serializers.ModelSerializer):
         
         for item in data['items']:
             error = None
+            
             variant = Variant.objects.filter(id=item['variant_id'], is_active=True).first()
             
             if not variant:
@@ -113,13 +116,11 @@ class OrderSerializer(serializers.ModelSerializer):
                         
             buyer_discount = discount_assigned_product if discount_assigned_product else generic_discount
             
-            price = (item.get("price",0) if item.get("price") else variant.price)
+            price = float(item.get("price",variant.price))
                     
-            extra_discount = (item.get("extra_discount") if item.get("extra_discount") else ((price *  buyer_discount.discount_value) / 100 if(buyer_discount.discount_type == "percentage") else buyer_discount.discount_value if (buyer_discount.discount_type == "amount") else 0) * int(item['quantity']))
-            
-            print(" Extra Discount ",extra_discount)
+            extra_discount = min(float(item.get("extra_discount",(((price *  float(buyer_discount.discount_value)) / 100) if(buyer_discount.discount_type == "percentage") else buyer_discount.discount_value if (buyer_discount.discount_type == "amount") else 0))),price) if buyer_discount else 0
                         
-            price_after_extra_discount = float(price - (extra_discount/item['quantity']))
+            price_after_extra_discount = (price - extra_discount)
                         
             sub_categories = list(variant.product.sub_categories.all().values_list("id",flat=True))
                         
@@ -137,16 +138,19 @@ class OrderSerializer(serializers.ModelSerializer):
                         
             taxes = {"cgst":gst_amount/2,"sgst":gst_amount/2} if is_order_from_same_state else {"igst":gst_amount}  
             
-            item['actual_price'] = float(item.get("actual_price", variant.actual_price))
-            item['price'] =  float(price)
-            item['product_variant_id'] = item['variant_id']
-            item["taxable_amount"] = round(taxable_amount * int(item['quantity']),2)
-            item["extra_discount"] = round(extra_discount,2)
-            item["igst"] = round(taxes.get("igst",0) * int(item['quantity']),2)
-            item["cgst"] = round(taxes.get("cgst",0) * int(item['quantity']),2)
-            item["sgst"] = round(taxes.get("sgst",0) * int(item['quantity']),2)
             
-            subtotal += item['price']*int(item['quantity']) #TODO: Remove the later part after 'or', as it might never get executed
+            quantity = int(item['quantity'])
+            
+            item['actual_price'] = float(item.get("actual_price", variant.actual_price))
+            item['price'] =  price
+            item['product_variant_id'] = item['variant_id']
+            item["taxable_amount"] = round(taxable_amount,2) * quantity
+            item["extra_discount"] = min(price,round(extra_discount,2))
+            item["igst"] = round(taxes.get("igst",0),2) * quantity
+            item["cgst"] = round(taxes.get("cgst",0),2) * quantity
+            item["sgst"] = round(taxes.get("sgst",0),2) * quantity
+            
+            subtotal += item['price']* quantity #TODO: Remove the later part after 'or', as it might never get executed
 
         seller = get_object_or_404(SellerProfile,pk=seller_id)
         
@@ -158,18 +162,16 @@ class OrderSerializer(serializers.ModelSerializer):
                     taxes[key] = 0
                 
                 if key in ["sgst","igst","cgst","extra_discount","taxable_amount"]:
-                    taxes[key] += float(value)
+                    taxes[key] += (float(value) * item.get('quantity',0) if(key == "extra_discount") else float(value))
         
         tax_amount = (taxes.get("igst",0) + taxes.get("cgst",0) + taxes.get("sgst",0))
-        
-        # total_amount = subtotal if(seller.product_price_includes_taxes) else (subtotal + tax_amount)
         
         data["igst"] = round(taxes.get("igst"),2)
         data["cgst"] = round(taxes.get("cgst"),2)
         data["sgst"] = round(taxes.get("sgst"),2)
         data["taxable_amount"] = round(taxes.get("taxable_amount"),2)
         data["total_extra_discount"] = round(taxes.get("extra_discount",0),2)
-        data['total_amount'] = round(taxes.get("taxable_amount",0)  + tax_amount,2)
+        data['total_amount'] = round(round(taxes.get("taxable_amount",0),2)  + round(tax_amount,2),2)
         data['seller'] = seller_id
 
         if 'request' in self.context:
