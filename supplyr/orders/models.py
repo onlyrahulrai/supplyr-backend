@@ -34,6 +34,7 @@ class Order(models.Model):
     sgst = models.DecimalField(default=0,max_digits=12,decimal_places=2)
     cgst = models.DecimalField(default=0,max_digits=12,decimal_places=2)
     igst = models.DecimalField(default=0,max_digits=12,decimal_places=2)
+    subtotal = models.DecimalField(default=0,max_digits=12,decimal_places=2)
     total_amount = models.DecimalField(max_digits=14, decimal_places=2)
     # total_subamount = models.DecimalField(default=0,max_digits=14,decimal_places=2)
     total_extra_discount = models.DecimalField(default=0,max_digits=12, decimal_places=2)
@@ -52,9 +53,6 @@ class Order(models.Model):
             if im := item.featured_image:
                 return im
 
-    @property
-    def subtotal(self):
-        return sum([(item.price * item.quantity) for item in self.items.all()])
     
     @property
     def total_amount_in_text(self):
@@ -80,8 +78,10 @@ class OrderItem(models.Model):
     cgst = models.DecimalField(default=0,max_digits=12,decimal_places=2)
     sgst = models.DecimalField(default=0,max_digits=12,decimal_places=2)
     igst = models.DecimalField(default=0,max_digits=12,decimal_places=2)
+    subtotal = models.DecimalField(default=0,max_digits=12,decimal_places=2)
     price = models.DecimalField(max_digits=12, decimal_places=2)
     actual_price = models.DecimalField(max_digits=12, decimal_places=2)
+    total_amount = models.DecimalField(max_digits=12,decimal_places=2,default=0)
     
 
     is_active = models.BooleanField(default=True)
@@ -89,11 +89,8 @@ class OrderItem(models.Model):
 
     @property
     def tax_amount(self):
-        return (self.igst + self.cgst + self.sgst)
+        return round((self.igst + self.cgst + self.sgst),2)
     
-    @property
-    def total_amount(self):
-        return ((self.quantity * self.price) - self.extra_discount) if self.order.seller.product_price_includes_taxes else (self.taxable_amount + self.tax_amount)
 
     @property
     def featured_image(self):
@@ -214,5 +211,3 @@ class Ledger(models.Model):
         else:
             description_str = f"Order #{self.order.id} mark as paid by {'you' if self.order.created_by == self.seller.owner else 'buyer' }"
         return description_str
-  
-  
