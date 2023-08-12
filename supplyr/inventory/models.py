@@ -288,6 +288,9 @@ class ProductImage(Model):
     def get_image_md_upload_path(self, filename):
         return self.get_image_upload_path(filename, size="md")
     
+    @property
+    def name(self):
+        return self.image.name.split('/')[-1]
 
     product = models.ForeignKey(Product, on_delete=models.CASCADE, blank=True, null=True, related_name='images')
     image = models.ImageField(upload_to = get_image_upload_path)

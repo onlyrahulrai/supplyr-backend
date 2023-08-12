@@ -464,6 +464,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
         fields = [
             # 'uploaded_by',
             'image',
+            'name',
             'id'
             ]
         read_only_fields = ['id']
