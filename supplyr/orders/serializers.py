@@ -19,6 +19,7 @@ from io import BytesIO
 from django.core.files import File
 from supplyr.discounts.serializers import BuyerShortDetailSerializer
 
+
 class OrderItemSerializer(serializers.ModelSerializer):
     # featured_image = serializers.SerializerMethodField()
     # def get_featured_image(self, order):
@@ -35,16 +36,17 @@ class OrderItemSerializer(serializers.ModelSerializer):
         output["igst"] = float(instance.igst)
         output["extra_discount"] = float(instance.extra_discount)
         output["taxable_amount"] = float(instance.taxable_amount)
-        output['total_amount'] = float(instance.taxable_amount + instance.tax_amount)
-        output['subTotal'] = round(float(instance.price) * int(instance.quantity),2)
+        output['total_amount'] = float(instance.total_amount)
+        output['subtotal'] = float(instance.subtotal)
         output["tax_amount"] = float(instance.tax_amount)
         output["price"] = float(instance.price)
         output["actual_price"] = float(instance.actual_price)
+        output["subtotal"] = float(instance.subtotal)
         return output
     
     class Meta: 
         model = OrderItem
-        fields = ["id", 'quantity', 'item_note','taxable_amount',"tax_amount",'total_amount','cgst','sgst','igst','price', 'actual_price',"extra_discount" ,'product_variant', 'product_variant_id']
+        fields = ["id", 'quantity', 'item_note','taxable_amount',"tax_amount",'subtotal','total_amount','cgst','sgst','igst','price', 'actual_price',"extra_discount" ,'product_variant', 'product_variant_id']
 
 class OrderSerializer(serializers.ModelSerializer):
     
@@ -57,7 +59,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["id","order_number","items","buyer","seller","created_by","total_amount","total_extra_discount","taxable_amount","sgst","cgst","igst","address","status","created_at","cancelled_at","cancelled_by","is_paid"]
+        fields = ["id","order_number","items","buyer","seller","created_by","subtotal","total_amount","total_extra_discount","taxable_amount","sgst","cgst","igst","address","status","created_at","cancelled_at","cancelled_by","is_paid"]
         # exclude = ['is_active']
         read_only_fields = ['order_number','cancelled_at']
 
@@ -118,7 +120,10 @@ class OrderSerializer(serializers.ModelSerializer):
             
             price = float(item.get("price",variant.price))
                     
-            extra_discount = min(float(item.get("extra_discount",(((price *  float(buyer_discount.discount_value)) / 100) if(buyer_discount.discount_type == "percentage") else buyer_discount.discount_value if (buyer_discount.discount_type == "amount") else 0))),price) if buyer_discount else 0
+            extra_discount = min(float(item.get(
+                "extra_discount",
+                ((price * min(100,float(buyer_discount.discount_value))) / 100) if (buyer_discount.discount_type == "percentage") else float(buyer_discount.discount_value) if (buyer_discount.discount_type == "amount") else  0
+            )),price) if buyer_discount else 0
                         
             price_after_extra_discount = (price - extra_discount)
                         
@@ -129,8 +134,10 @@ class OrderSerializer(serializers.ModelSerializer):
             default_gst_rate = float(override_categories.pop().default_gst_rate if(len(override_categories)) else seller_profile.default_gst_rate)
                         
             gst_amount = price_after_extra_discount - (price_after_extra_discount * 100) / (default_gst_rate + 100) if seller_profile.product_price_includes_taxes else (price_after_extra_discount * default_gst_rate) / 100
-                        
-            taxable_amount = price_after_extra_discount - gst_amount if seller_profile.product_price_includes_taxes else price_after_extra_discount
+            
+            quantity = int(item['quantity'])
+            
+            item_subtotal = round(((price - gst_amount) if seller_profile.product_price_includes_taxes else price) * quantity,2)
             
             buyer_address = get_object_or_404(BuyerAddress,pk=data.get("address")) 
             
@@ -138,19 +145,18 @@ class OrderSerializer(serializers.ModelSerializer):
                         
             taxes = {"cgst":gst_amount/2,"sgst":gst_amount/2} if is_order_from_same_state else {"igst":gst_amount}  
             
-            
-            quantity = int(item['quantity'])
-            
             item['actual_price'] = float(item.get("actual_price", variant.actual_price))
             item['price'] =  price
             item['product_variant_id'] = item['variant_id']
-            item["taxable_amount"] = round(taxable_amount,2) * quantity
+            item["taxable_amount"] = round(item_subtotal - (extra_discount * quantity),2)
             item["extra_discount"] = min(price,round(extra_discount,2))
-            item["igst"] = round(taxes.get("igst",0),2) * quantity
-            item["cgst"] = round(taxes.get("cgst",0),2) * quantity
-            item["sgst"] = round(taxes.get("sgst",0),2) * quantity
+            item["igst"] = round(taxes.get("igst",0) * quantity,2)
+            item["cgst"] = round(taxes.get("cgst",0) * quantity,2)
+            item["sgst"] = round(taxes.get("sgst",0) * quantity,2)
+            item['total_amount'] = round((item_subtotal - (extra_discount * quantity)) + (gst_amount * quantity),2)
+            item['subtotal'] = item_subtotal
             
-            subtotal += item['price']* quantity #TODO: Remove the later part after 'or', as it might never get executed
+            subtotal += item_subtotal #TODO: Remove the later part after 'or', as it might never get executed
 
         seller = get_object_or_404(SellerProfile,pk=seller_id)
         
@@ -166,12 +172,13 @@ class OrderSerializer(serializers.ModelSerializer):
         
         tax_amount = (taxes.get("igst",0) + taxes.get("cgst",0) + taxes.get("sgst",0))
         
-        data["igst"] = round(taxes.get("igst"),2)
-        data["cgst"] = round(taxes.get("cgst"),2)
-        data["sgst"] = round(taxes.get("sgst"),2)
-        data["taxable_amount"] = round(taxes.get("taxable_amount"),2)
+        data["igst"] = round(taxes.get("igst",0),2)
+        data["cgst"] = round(taxes.get("cgst",0),2)
+        data["sgst"] = round(taxes.get("sgst",0),2)
+        data["taxable_amount"] = round(taxes.get("taxable_amount",0),2)
         data["total_extra_discount"] = round(taxes.get("extra_discount",0),2)
-        data['total_amount'] = round(round(taxes.get("taxable_amount",0),2)  + round(tax_amount,2),2)
+        data['total_amount'] = round(taxes.get("taxable_amount",0)  + tax_amount,2)
+        data['subtotal'] = round(subtotal,2)
         data['seller'] = seller_id
 
         if 'request' in self.context:
@@ -453,11 +460,12 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
         output["taxable_amount"] = float(instance.taxable_amount)
         output["total_amount"] = float(instance.total_amount)
         output["total_extra_discount"] = float(instance.total_extra_discount)
+        output["subtotal"] = float(instance.subtotal)
         return output
 
     class Meta:
         model = Order
-        fields=['order_number', 'order_date', 'order_time','seller_name', 'buyer_name','buyer_business_name',"buyer_id" ,'order_status','taxable_amount','sgst','cgst','igst', 'total_amount',"total_extra_discount",'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values','buyer',"tax_amount","is_paid"]
+        fields=['order_number', 'order_date', 'order_time','seller_name', 'buyer_name','buyer_business_name',"buyer_id" ,'order_status','taxable_amount','sgst','cgst','igst', 'total_amount',"total_extra_discount","subtotal",'items', "invoice",'address', 'history', 'created_by_user', 'created_by_entity', 'status_variable_values','buyer',"tax_amount","is_paid"]
         
 class GenerateInvoiceSerializer(serializers.ModelSerializer):
     
