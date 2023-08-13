@@ -68,9 +68,28 @@ class Order(models.Model):
     def __str__(self):
         return f"{self.id} {self.buyer} {self.seller}"
 
+class OrderGroup(models.Model):
+    class OrderGroupChoice(models.TextChoices):
+        CANCELLED = 'cancelled', 'Cancelled'
+        DISPATCHED = 'dispatched', 'Dispatched'
+        DELIVERED = 'delivered', 'Delivered'
+        RETURNED = "returned","Returned"
+    
+    #group_index = # order wise group serial number 1,2,3..  
+    group_index = models.CharField(max_length=200)
+    parent = models.ForeignKey(Order, on_delete=models.CASCADE,related_name="groups")
+    is_paid = models.BooleanField(default=False)
+    status = EnumField(choices=Order.OrderStatusChoice.choices,default=Order.OrderStatusChoice.APPROVED)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ["parent","group_index"]
+
 class OrderItem(models.Model):
 
     order = models.ForeignKey(Order, on_delete=models.RESTRICT, related_name='items')
+    order_group = models.ForeignKey(OrderGroup, on_delete=models.SET_NULL, related_name='items',null=True,blank=True)
+    status = EnumField(choices=Order.OrderStatusChoice.choices,default=Order.OrderStatusChoice.AWAITING_APPROVAL)
     product_variant = models.ForeignKey('inventory.Variant', on_delete=models.RESTRICT)
     quantity = models.IntegerField()
     extra_discount = models.DecimalField(default=0,max_digits=12, decimal_places=2)
@@ -120,6 +139,8 @@ class OrderStatusChoices(models.Model):
 
 class OrderHistory(models.Model):
     order = models.ForeignKey(Order, on_delete=models.RESTRICT, related_name='history')
+    order_group = models.ForeignKey(OrderGroup, on_delete=models.RESTRICT,related_name='history',null=True,blank=True)
+    items = models.ManyToManyField(OrderItem)
     status = EnumField(choices=Order.OrderStatusChoice.choices)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey('core.User', on_delete=models.RESTRICT)
@@ -134,6 +155,7 @@ class OrderHistory(models.Model):
 class Invoice(models.Model):
     invoice_number = models.CharField(max_length=50,null=True,blank=True)
     order = models.ForeignKey(Order,on_delete=models.CASCADE,related_name="invoices")
+    order_group = models.ForeignKey(OrderGroup, on_delete=models.SET_NULL,null=True,blank=True ,related_name="invoices")
     invoice_pdf  = models.FileField(upload_to='invoice_pdfs/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -161,6 +183,7 @@ class OrderStatusVariable(models.Model):
 
 class OrderStatusVariableValue(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='status_variable_values')
+    order_group = models.ForeignKey(OrderGroup, on_delete=models.SET_NULL,null=True,related_name='status_variable_values')
     variable = models.ForeignKey(OrderStatusVariable, on_delete=models.RESTRICT, related_name="values")
     value = models.TextField(blank=True, null=True)
 
@@ -190,6 +213,7 @@ class Ledger(models.Model):
         ORDER_PAID = "order_paid","Order Paid"
     
     transaction_type  = EnumField(choices=TransactionTypeChoice.choices,default=TransactionTypeChoice.ORDER_CREATED)
+    order_group = models.ForeignKey(OrderGroup, on_delete=models.SET_NULL,null=True)
     seller = models.ForeignKey(SellerProfile, on_delete=models.CASCADE,related_name="ledgers",null=True,blank=True)
     buyer = models.ForeignKey('profiles.BuyerProfile', on_delete=models.CASCADE,related_name="ledgers",null=True,blank=True)
     amount = models.DecimalField(default=0,decimal_places=2,max_digits=12)

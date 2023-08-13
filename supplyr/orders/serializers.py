@@ -139,9 +139,9 @@ class OrderSerializer(serializers.ModelSerializer):
             
             item_subtotal = round(((price - gst_amount) if seller_profile.product_price_includes_taxes else price) * quantity,2)
             
-            buyer_address = get_object_or_404(BuyerAddress,pk=data.get("address")) 
+            buyer_address = get_object_or_404(BuyerAddress,pk=data.get("address")) if data.get("address") else None
             
-            is_order_from_same_state = True if (buyer_address.state.id == seller_profile.seller_addresses.first().state.id) else False if buyer_address else False
+            is_order_from_same_state = True if (data.get("address") and seller_profile.seller_addresses.first() and buyer_address.state.id == seller_profile.seller_addresses.first().state.id) else False if buyer_address else False
                         
             taxes = {"cgst":gst_amount/2,"sgst":gst_amount/2} if is_order_from_same_state else {"igst":gst_amount}  
             
@@ -167,7 +167,7 @@ class OrderSerializer(serializers.ModelSerializer):
                 if key not in taxes:
                     taxes[key] = 0
                 
-                if key in ["sgst","igst","cgst","extra_discount","taxable_amount"]:
+                if key in ["sgst","igst","cgst","extra_discount","taxable_amount",'total_amount']:
                     taxes[key] += (float(value) * item.get('quantity',0) if(key == "extra_discount") else float(value))
         
         tax_amount = (taxes.get("igst",0) + taxes.get("cgst",0) + taxes.get("sgst",0))
@@ -177,7 +177,7 @@ class OrderSerializer(serializers.ModelSerializer):
         data["sgst"] = round(taxes.get("sgst",0),2)
         data["taxable_amount"] = round(taxes.get("taxable_amount",0),2)
         data["total_extra_discount"] = round(taxes.get("extra_discount",0),2)
-        data['total_amount'] = round(taxes.get("taxable_amount",0)  + tax_amount,2)
+        data['total_amount'] = round(taxes.get("total_amount",0),2)
         data['subtotal'] = round(subtotal,2)
         data['seller'] = seller_id
 
