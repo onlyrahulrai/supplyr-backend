@@ -22,7 +22,7 @@ ORDER_STATUS_OPTIONS = [
         "slug":"processed",
         "name":"Processed",
         "sequence":3,
-        "transitions_possible":["dispatched","approved","cancelled"],
+        "transitions_possible":["dispatched","cancelled"],
         "editing_allowed":False,
     },
     {

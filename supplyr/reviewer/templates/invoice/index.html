@@ -60,9 +60,9 @@
     {% block content %}
     <!-- HTML Content -->
         {% if invoice.order.seller.invoice_template %}
-        {{ invoice.order.seller.invoice_template.code|do_something:invoice }}
+            {{ invoice.order.seller.invoice_template.code|do_something:invoice }}
         {% else %}
-        {% include 'invoice/default.html' %}
+            {% include 'invoice/default.html' %}
         {% endif %}
     {% endblock content %}
 </body>

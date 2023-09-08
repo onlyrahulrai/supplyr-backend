@@ -58,6 +58,14 @@ class Order(models.Model):
     def total_amount_in_text(self):
         return num2words(self.total_amount)
 
+    @property
+    def is_global_fulfillment(self):
+        statuses = set([item.order_group.status if item.order_group else item.status for item in self.items.all()])
+        
+        print("Statuses: ",set([item.order_group.status if item.order_group else item.status for item in self.items.all()]))
+        
+        return (len(statuses) == 1)
+
     class Meta:
 
         verbose_name = 'Order'
@@ -69,18 +77,42 @@ class Order(models.Model):
         return f"{self.id} {self.buyer} {self.seller}"
 
 class OrderGroup(models.Model):
-    class OrderGroupChoice(models.TextChoices):
-        CANCELLED = 'cancelled', 'Cancelled'
-        DISPATCHED = 'dispatched', 'Dispatched'
-        DELIVERED = 'delivered', 'Delivered'
-        RETURNED = "returned","Returned"
-    
     #group_index = # order wise group serial number 1,2,3..  
     group_index = models.CharField(max_length=200)
     parent = models.ForeignKey(Order, on_delete=models.CASCADE,related_name="groups")
     is_paid = models.BooleanField(default=False)
     status = EnumField(choices=Order.OrderStatusChoice.choices,default=Order.OrderStatusChoice.APPROVED)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    @property
+    def prices(self):
+        
+        ordergroup_calculation = {
+            "subtotal": 0,
+            "extra_discount": 0,
+            "igst": 0,
+            "cgst": 0,
+            "sgst": 0,
+            "taxable_amount": 0,
+            'total_amount': 0,
+            'tax_amount':0
+        }
+        
+        for item in self.items.all():
+            ordergroup_calculation["subtotal"] += item.subtotal 
+            ordergroup_calculation["extra_discount"] += (item.extra_discount * item.quantity)
+            ordergroup_calculation[ "igst"] += item.igst
+            ordergroup_calculation["cgst"] += item.cgst
+            ordergroup_calculation["sgst"] += item.sgst
+            ordergroup_calculation["taxable_amount"] += item.taxable_amount
+            ordergroup_calculation['total_amount'] += item.total_amount
+            ordergroup_calculation['tax_amount'] += (item.igst + item.cgst + item.sgst)
+                
+        return ordergroup_calculation
+        
+    @property
+    def total_amount_in_text(self):
+        return num2words(self.prices.get("total_amount"))
     
     class Meta:
         unique_together = ["parent","group_index"]

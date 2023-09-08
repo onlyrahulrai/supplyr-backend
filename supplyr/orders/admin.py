@@ -4,7 +4,7 @@ from django.contrib import admin
 
 from .models import *
 
-
+admin.site.register(OrderGroup)
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
@@ -71,6 +71,5 @@ class PaymentAdmin(admin.ModelAdmin):
     list_display = ("id","seller","buyer","amount","mode","remarks")
     
 admin.site.register(Ledger)
-    
     
 admin.site.register(Invoice)

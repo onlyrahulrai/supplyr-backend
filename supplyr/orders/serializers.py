@@ -19,6 +19,41 @@ from io import BytesIO
 from django.core.files import File
 from supplyr.discounts.serializers import BuyerShortDetailSerializer
 
+class OrderGroupSerializer(serializers.ModelSerializer):   
+    class Meta:
+        model = OrderGroup
+        fields = ["id","group_index","is_paid","parent","status"]
+
+class OrderGroupItemSerializer(OrderGroupSerializer):
+    invoice = serializers.SerializerMethodField()
+    
+    status_variable_values = serializers.SerializerMethodField()    
+    
+    def get_invoice(self,obj): 
+        inv = None
+        if i := obj.invoices.first():
+            inv =  GenerateInvoiceSerializer(i).data
+        return inv
+    
+    def get_status_variable_values(self,obj):
+        variables = obj.status_variable_values.filter(order_group__isnull=False) if obj.status_variable_values.first() else []
+        serializer = StatusVariableValueSerializer(variables, many=True)
+        return serializer.data
+
+    class Meta:
+        model = OrderGroup
+        fields = ["id","group_index","is_paid","parent","status","invoice","status_variable_values"]
+        extra_kwargs={
+            "invoice":{
+                "read_only":True
+            },
+            "status_variable_values":{
+                "read_only":True
+            },
+            "is_paid":{
+                "read_only":True
+            }
+        }
 
 class OrderItemSerializer(serializers.ModelSerializer):
     # featured_image = serializers.SerializerMethodField()
@@ -28,6 +63,8 @@ class OrderItemSerializer(serializers.ModelSerializer):
     
     product_variant = VariantDetailsSerializer(read_only=True)
     product_variant_id = serializers.PrimaryKeyRelatedField(queryset=Variant.objects.all(), source='product_variant', write_only=True)
+    
+    order_group = OrderGroupItemSerializer(read_only=True)
     
     def to_representation(self, instance):
         output = super(OrderItemSerializer, self).to_representation(instance)
@@ -46,7 +83,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
     
     class Meta: 
         model = OrderItem
-        fields = ["id", 'quantity', 'item_note','taxable_amount',"tax_amount",'subtotal','total_amount','cgst','sgst','igst','price', 'actual_price',"extra_discount" ,'product_variant', 'product_variant_id']
+        fields = ["id", 'quantity', 'item_note','status','taxable_amount','order_group',"tax_amount",'subtotal','total_amount','cgst','sgst','igst','price', 'actual_price',"extra_discount" ,'product_variant', 'product_variant_id']
 
 class OrderSerializer(serializers.ModelSerializer):
     
@@ -376,7 +413,7 @@ class OrderHistorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderHistory
-        fields = ['status', 'created_by_user', 'created_by_entity', 'time', 'date']
+        fields = ['status', 'created_by_user','items' ,'created_by_entity', 'time', 'date']
 
 class StatusVariableValueSerializer(serializers.ModelSerializer):
     
@@ -390,7 +427,8 @@ class StatusVariableValueSerializer(serializers.ModelSerializer):
 
     status = serializers.SerializerMethodField()
     def get_status(self, instance):
-        return "dispatched"
+        print(" Status ",instance.variable.linked_order_status.name)
+        return instance.variable.linked_order_status.name
 
     is_internal = serializers.SerializerMethodField()
     def get_is_internal(self, instance):    # TODO: Security - Don;t send variable to non-accessible people (like, don't send internal variables to buyers) 
@@ -398,7 +436,7 @@ class StatusVariableValueSerializer(serializers.ModelSerializer):
         
     class Meta:
         model = OrderStatusVariableValue
-        fields = ["id", 'status', 'variable_name', 'value', 'variable_slug', 'is_internal']
+        fields = ["id", 'status', 'variable_name','order_group' ,'value', 'variable_slug', 'is_internal']
 
 class OrderDetailsSerializer(SellerOrderListSerializer):
 
@@ -448,7 +486,8 @@ class OrderDetailsSerializer(SellerOrderListSerializer):
         return GenerateInvoiceSerializer(order.invoices.first()).data
 
     def get_status_variable_values(self, order):
-        return StatusVariableValueSerializer(order.status_variable_values.all(), many=True).data
+        variables = order.status_variable_values.all() if order.is_global_fulfillment else order.status_variable_values.filter(order_group=None)
+        return StatusVariableValueSerializer(variables, many=True).data
     
     buyer = BuyerShortDetailSerializer()
     
@@ -492,7 +531,7 @@ class GenerateInvoiceSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Invoice
-        fields = ["id","order","invoice_number","invoice_pdf","created_at"]
+        fields = ["id","order","invoice_number","order_group","invoice_pdf","created_at"]
         
 class PaymentShortDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -558,7 +597,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 class OrderStatusVariableSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderStatusVariableValue
-        fields = ["id","value","order","variable"]
+        fields = ["id","value","order",'order_group',"variable"]
         extra_kwargs = {
             "order":{
                 "read_only":True

@@ -1,0 +1,77 @@
+{% load extras %}
+<table>
+    <tr>
+        <th></th>	
+        <th></th>	
+        <th></th>	
+    </tr>
+    <tr>
+        <td colspan="2">
+            <div>
+                <span>Amount Chargeable (In Words)</span>
+                <br />
+                <strong>- {{invoice.order_group.total_amount_in_text}}</strong>	
+            </div>
+            <br />
+            <br />
+            <br />
+            <div>
+                <span class="text-secondary fw-semibold">
+                <u>DECLARATION</u>
+                </span>
+                <br />
+                <span class="text-secondary fw-semibold">
+                    We declare that this invoice shows the actual price of the
+                    goods described
+                </span>
+                <br />
+                <span class="text-secondary fw-semibold">
+                    and that all particulars are true and correct.
+                </span>
+            </div>
+        </td>	
+
+        <td>
+            <div style="text-align: right;">
+                <table>
+                    <tr>
+                        <td style="text-align:left;">Subtotal:</td>
+                        <td><span class="amount">{{invoice.order_group.prices|get_item:"subtotal"|apply_seller_currency:invoice}}</span></td>
+                    </tr>	
+                    <tr>
+                        <td  style="text-align:left;">Discounts:</td>
+                        <td><span class="amount">{{invoice.order_group.prices|get_item:"extra_discount"|apply_seller_currency:invoice}}</span></td>
+                    </tr>	
+                    <tr>
+                        <td  style="text-align:left;">Taxable Amount:</td>
+                        <td><span class="amount">{{invoice.order_group.prices|get_item:"taxable_amount"|apply_seller_currency:invoice}}</span></td>
+                    </tr>	
+                    <tr>
+                        <td  style="text-align:left;">Total(SGST):</td>
+                        <td><span class="amount">{{invoice.order_group.prices|get_item:"sgst"|apply_seller_currency:invoice}}</span></td>
+                    </tr>	
+                    <tr>
+                        <td  style="text-align:left;">Total(CGST):</td>
+                        <td><span class="amount">{{invoice.order_group.prices|get_item:"cgst"|apply_seller_currency:invoice}}</span></td>
+                    </tr>	
+                    <tr>
+                        <td  style="text-align:left;">Total(IGST):</td>
+                        <td><span class="amount">{{invoice.order_group.prices|get_item:"igst"|apply_seller_currency:invoice}}</span></td>
+                    </tr>	
+                    <tr>
+                        <td  style="text-align:left;">Final Amount:</td>
+                        <td><span class="amount">{{invoice.order_group.prices|get_item:"total_amount"|apply_seller_currency:invoice}}</span></td>
+                    </tr>	
+                </table>
+            </div>	
+
+            <br>
+
+            <div style="border:1px solid;padding: 12px 5px;">
+                <span>
+                    Signature & Date:
+                </span>	
+            </div>
+        </td>
+    </tr>		
+</table>

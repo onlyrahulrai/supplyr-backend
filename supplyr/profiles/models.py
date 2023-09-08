@@ -9,6 +9,15 @@ from supplyr.profiles.data import COUNTRY_CHOICES, STATE_CHOICES,CURRENCY_CHOICE
 from supplyr.core.app_config import ORDER_STATUS_OPTIONS
 from django_extensions.db.fields import AutoSlugField
 
+user_settings_config = {
+    "translations": {
+        "quantity": "Quantity"
+    },
+    "invoice_options": {
+        "generate_at_status": "processed"
+    }
+}
+
 def get_document_upload_path(instance, filename, document_category):
     file, ext = splitext(filename)
     new_filename = document_category + ext
@@ -86,13 +95,13 @@ class SellerProfile(models.Model):
     
     default_gst_rate = models.DecimalField(default=0,max_digits=5, decimal_places=2)
     default_currency = EnumField(default="INR",choices=CURRENCY_CHOICES)
-    currency_representation = models.CharField(default="₹",max_length=75,null=True,blank=True)
+    currency_representation = models.CharField(default="₹{{amount}}",max_length=75,null=True,blank=True)
     gst_certificate = models.FileField(upload_to=get_gst_upload_path, max_length=150, blank=True, null=True)
     operational_fields = models.ManyToManyField('inventory.Category', blank=True)
     invoice_prefix = models.CharField(max_length=12,null=True,blank=True)
-    user_settings = models.JSONField(default=dict,null=True,blank=True)
+    user_settings = models.JSONField(default=user_setting_config,null=True,blank=True)
     
-    invoice_template = models.ForeignKey(InvoiceTemplate, on_delete=models.SET_NULL,null=True,blank=True)
+    invoice_template = models.ForeignKey(InvoiceTemplate,on_delete=models.SET_NULL,null=True,blank=True)
     
     status = EnumField(default="profile_created",choices=SellerStatusChoice.choices, blank=True, null=True)
     is_active = models.BooleanField(default=True)
@@ -108,16 +117,12 @@ class SellerProfile(models.Model):
         return self.user_settings.get('order_options').get("default_order_status") if self.user_settings.get("order_options",{}).get("default_order_status") else min(self.order_status_options,key=lambda option:option["sequence"]).get("slug","awaiting_approval")
     
     def get_invoice_prefix(self,invoice_id):
-        return f'{self.invoice_prefix}{invoice_id}/21-22' if self.invoice_prefix else f'{invoice.id}/21-22'
+        return f'{self.invoice_prefix}{invoice_id}/21-22' if self.invoice_prefix else f'{invoice_id}/21-22'
     
     @property
     def invoice_options(self):
         return self.user_settings.get("invoice_options") if ('generate_at_status' in self.user_settings.get("invoice_options")) and ("template" in self.user_settings.get("invoice_options")) else {"generate_at_status":"dispatched",
             "template":"default"}
-        
-    # @property
-    # def invoice_template(self):
-    #     return self.user_settings.get("invoice_options").get("template","default") if self.user_settings.get("invoice_options") else "default"
     
     @property
     def translations(self):

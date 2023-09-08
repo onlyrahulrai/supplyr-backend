@@ -33,11 +33,22 @@
 				</tr>
 		</table>
 
-		
-		{% include "invoice/products.html" %}
-		
+		{% if invoice.order_group %}
 
-		<br>
+			{% include "invoice/partial-fulfillment-products.html" %}
 
-        {% include "invoice/footer.html" %}
+			<br>
+
+			{% include "invoice/partial-fulfillment-footer.html" %}
+
+		{% else %}
+		
+			{% include "invoice/products.html" %}
+			
+			<br>
+
+			{% include "invoice/footer.html" %}
+		
+		{% endif %}
+
 	</div>

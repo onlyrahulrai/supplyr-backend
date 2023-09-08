@@ -104,6 +104,8 @@ class GenerateInvoiceView(generics.GenericAPIView,mixins.CreateModelMixin):
     #     return invoice
     
     def post(self,request,*args,**kwargs):
+        print(" Requested Data ",request.data)
+        # return Response(" Hello World ")
         return self.create(request,*args,**kwargs)
 
 class OrderListView(mixins.ListModelMixin, generics.GenericAPIView, APISourceMixin):
@@ -213,6 +215,107 @@ class OrdersBulkUpdateView(APIView):
 
         return Response({'success': True})
 
+class BulkUpdateOrderItemsView(APIView):
+    permission_classes = [IsFromSellerAPI]
+    
+    def post(self,request,*args,**kwargs):
+        print(" Requested Data ",request.data)
+        
+        profile = request.user.seller_profiles.first()
+        
+        order = get_object_or_404(Order,pk=self.kwargs.get("orderId"),seller=profile)
+        
+        data = request.data.get('data')
+        
+        order_ids = data["order_ids"]
+        
+        status = data["status"]
+        
+        operation = request.data.get("operation")
+        
+        filters = [option["slug"] for option in profile.order_status_options if status in option["transitions_possible"]]
+        
+        with transaction.atomic():
+            orderitems = None
+            
+            order_group = None
+          
+            initial_orderitems = OrderItem.objects.filter(id__in=order_ids)
+            
+            print(" initial orderitems ",initial_orderitems)
+            
+            if operation in ['change_status', 'change_status_with_variables']:
+                orderitems = initial_orderitems.filter(Q(status__in=filters) | Q(order_group__status__in=filters))
+                
+                option = profile.order_status_options[[option["slug"] for option in profile.order_status_options].index(status)]
+                
+                if option["editing_allowed"]:
+                    for orderitem in orderitems:
+                        if orderitem_ordergroup := orderitem.order_group:
+                            
+                            variables = OrderStatusVariableValue.objects.filter(order_group=orderitem_ordergroup)
+                            
+                            for variable in variables:
+                                
+                                variable.delete()
+                                
+                        orderitem.status = status
+                        
+                        orderitem.order_group = None 
+                        
+                        orderitem.save()   
+                else:    
+                    group = order.groups.last()
+                        
+                    orderitem_ordergroup = orderitems.first().order_group.id if orderitems.first().order_group else None
+                        
+                    group_index = orderitems.first().order_group.group_index if orderitems.first().order_group else  int(group.group_index) + 1 if group else 1
+                        
+                    order_group,created = OrderGroup.objects.update_or_create(parent=order,group_index=group_index,defaults={"status":status})
+                    
+                    for orderitem in orderitems:
+                        
+                        orderitem.order_group = order_group
+                        
+                        orderitem.save()
+                    
+                    
+                ######## ----- Ledger Start ----- ########
+                prev_ledger_balance = 0
+                if prev_ledger := profile.ledgers.filter(buyer=order.buyer).last():
+                    prev_ledger_balance = prev_ledger.balance
+                      
+                generate_ledger_on_status = option.get("slug") if not option.get("editing_allowed") else profile.invoice_options.get("generate_at_status")
+                    
+                if status == generate_ledger_on_status:
+                    ledger,created = Ledger.objects.get_or_create(order=order,order_group=order_group,transaction_type=Ledger.TransactionTypeChoice.ORDER_CREATED,seller=order.seller,buyer=order.buyer,amount=order.total_amount,balance=(prev_ledger_balance - order.total_amount ))
+                    
+                elif status == Order.OrderStatusChoice.CANCELLED or status == Order.OrderStatusChoice.RETURNED:
+                    balance = (prev_ledger_balance + total_amount) if True else (prev_ledger_balance - total_amount)
+                        
+                    ledger,created = Ledger.objects.get_or_create(order=order,transaction_type=Ledger.TransactionTypeChoice.ORDER_CANCELLED,seller=order.seller,buyer=order.buyer,amount=total_amount,balance=balance)
+
+                ######## ----- Ledger End ----- ########
+                
+                orderhistory = OrderHistory.objects.create(order=order,order_group=order_group, status = status, created_by = request.user, seller = profile)
+                
+                for orderitem in orderitems:
+                    orderhistory.items.add(orderitem)
+                    
+                items = OrderItem.objects.filter(order=order)
+                
+                if order.is_global_fulfillment:
+                    order.status = status
+                    order.save()
+                    
+                if operation == "change_status_with_variables":
+                    variables = data["variables"]
+                    
+                    for variable_id in variables.keys():
+                        OrderStatusVariableValue.objects.update_or_create(variable_id = variable_id, order = order,order_group=order_group, defaults = {'value': variables[variable_id]})
+        
+        return Response({"message":"success","status":201})
+
 class OrderCancellationView(APIView, APISourceMixin):
     
     permission_classes = [IsAuthenticated]
@@ -300,6 +403,7 @@ class OrderStatusVariableAPIView(generics.GenericAPIView,mixins.UpdateModelMixin
         return OrderStatusVariableValue.objects.filter(order=order)
     
     def put(self, request,*args,**kwargs):
+        print(" Requested Data ",request.data)
         return self.partial_update(request,*args,**kwargs)
 
 class InvoiceTemplateView(generics.GenericAPIView,mixins.ListModelMixin):

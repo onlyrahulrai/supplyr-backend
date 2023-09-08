@@ -32,7 +32,7 @@ class OrderStatusVariableForSeller(serializers.ModelSerializer):
     linked_order_status = serializers.CharField(source="linked_order_status.slug")
     class Meta:
         model = OrderStatusVariable
-        fields = ( 'name', 'id', 'data_type', 'linked_order_status')
+        fields = ( 'name', 'id', 'data_type','slug','linked_order_status')
 
 class AddressStatesSerializer(serializers.ModelSerializer):
     class Meta:
